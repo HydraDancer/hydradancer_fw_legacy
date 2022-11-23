@@ -3,17 +3,17 @@ RM := rm -rf
 COMPILER_PREFIX ?= riscv-none-embed
 
 # Define option(s) defined in pre-processor compiler option(s)
-# DEFINE_OPTS = -DDEBUG=1
-DEFINE_OPTS =
+#DEFINE_OPTS = -DDEBUG=1
+DEFINE_OPTS = 
 # Optimisation option(s)
 OPTIM_OPTS = -O3
 # Debug option(s)
-# DEBUG = -g
-DEBUG =
+#DEBUG = -g
+DEBUG = 
 
 BUILD_DIR = ./build
 
-PROJECT = $(BUILD_DIR)/hydrausb3-hello-world
+PROJECT = $(BUILD_DIR)/hydrausb3-keyboard
 
 RVMSIS_DIR  = ../wch-ch56x-bsp/rvmsis
 RVMSIS_SRCS = $(wildcard $(RVMSIS_DIR)/*.c)
@@ -26,6 +26,10 @@ OBJS     += $(patsubst $(DRV_DIR)/%.c,$(BUILD_DIR)/%.o,$(DRV_SRCS))
 BOARD_DIR   = ../wch-ch56x-bsp/board
 BOARD_SRCS  = ../wch-ch56x-bsp/board/hydrausb3_v1.c
 OBJS     += $(patsubst $(BOARD_DIR)/%.c,$(BUILD_DIR)/%.o,$(BOARD_SRCS))
+
+# USB_DIR   = ../wch-ch56x-bsp/usb/usb_devbulk
+# USB_SRCS  = $(wildcard $(USB_DIR)/*.c)
+# OBJS        += $(patsubst $(USB_DIR)/%.c,$(BUILD_DIR)/%.o,$(USB_SRCS))
 
 SRC_DIR  = ./src
 SRC_SRCS = $(wildcard $(SRC_DIR)/*.c)
@@ -45,6 +49,7 @@ INCLUDES = \
   -I"$(RVMSIS_DIR)" \
   -I"$(DRV_DIR)" \
   -I"$(BOARD_DIR)" \
+  # -I"$(USB_DIR)" \
   -I"$(SRC_DIR)"
 
 # Add inputs and outputs from these tool invocations to the build variables
@@ -94,6 +99,12 @@ $(BUILD_DIR)/%.o: ../wch-ch56x-bsp/board/%.c | $$(@D)/.
 	@echo 'Building file: $<'
 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
 	@echo ' '
+
+# $(BUILD_DIR)/%.o: ../wch-ch56x-bsp/usb/usb_devbulk/%.c | $$(@D)/.
+# 	@echo 'Building file: $<'
+# 	mkdir -p $(@D)
+# 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
+# 	@echo ' '
 
 # Tool invocations
 $(PROJECT).elf: $(OBJS)
