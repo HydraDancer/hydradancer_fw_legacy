@@ -3,13 +3,13 @@ RM := rm -rf
 COMPILER_PREFIX ?= riscv-none-embed
 
 # Define option(s) defined in pre-processor compiler option(s)
-#DEFINE_OPTS = -DDEBUG=1
-DEFINE_OPTS = 
+# DEFINE_OPTS = -DDEBUG=1
+DEFINE_OPTS = -DDEBUG=1 -DERROR=1
 # Optimisation option(s)
 OPTIM_OPTS = -O3
 # Debug option(s)
-#DEBUG = -g
-DEBUG = 
+DEBUG = -g
+# DEBUG = 
 
 BUILD_DIR = ./build
 

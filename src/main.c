@@ -5,14 +5,15 @@
 #include "CH56x_usb30_util.h"
 #include "util_debug.h"
 
-// #define DEBUG 1
-// #define ERROR 1
+// #define DBG1 1
+#define ERROR 1
 
 /* Global define */
 #define U20_MAXPACKET_LEN       512
-#define U20_UEP0_MAXSIZE        64
+#define U20_UEP0_MAXSIZE        8
 
 
+// TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
 // TODOO: Add debgu over UART.
 // TODO: Homogenize var name to camelCase.
 // TODO: Homogenize var comments.
@@ -27,7 +28,7 @@ USB_DEV_DESCR st_device_descriptor = {
     .bDeviceClass = 0x0,    /* Defined in the interface descriptor. */
     .bDeviceSubClass = 0x00,
     .bDeviceProtocol = 0x00,
-    .bMaxPacketSize0 = 64,
+    .bMaxPacketSize0 = 8,
     .idVendor = 0x1337,
     .idProduct = 0x1337,
     .bcdDevice = 0x4200,
@@ -89,7 +90,7 @@ USB_CFG_DESCR_KEYBOARD st_configuration_descriptor_keyboard = {
         /* See https://www.usb.org/sites/default/files/hid1_11.pdf (p. 22). */
         .bLength = sizeof(USB_HID_DESCR),
         .bDescriptorType = USB_DESCR_TYP_HID,
-        .bcdHIDL = 1,
+        .bcdHIDL = 11,
         .bcdHIDH = 1,
         .bCountryCode = 8,
         .bNumDescriptors = 1,
@@ -102,7 +103,7 @@ USB_CFG_DESCR_KEYBOARD st_configuration_descriptor_keyboard = {
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x81,               /* In endpoint (MSB set to 1). */
         .bmAttributes = USB_ENDP_TYPE_INTER,    /* Transfer type. */
-        .wMaxPacketSizeL = 64,
+        .wMaxPacketSizeL = 8,
         .wMaxPacketSizeH = 0,
         .bInterval = 1,                         /* Polling interval, 1 for isochronous, else 0. */
     },
@@ -119,7 +120,7 @@ uint8_t string_langID[] =
 };
 
 uint8_t string_descriptor_manufacturer[] = {
-    0x0E,                    // .bLength
+    26,                    // .bLength
     USB_DESCR_TYP_STRING,   // .bDescriptorType
     'M', 0x00,
     'a', 0x00,
@@ -136,7 +137,7 @@ uint8_t string_descriptor_manufacturer[] = {
 };
 
 uint8_t string_descriptor_product[] = {
-    0x10,                    // .bLength
+    18,                    // .bLength
     USB_DESCR_TYP_STRING,   // .bDescriptorType
     'P', 0x0,
     'r', 0x0,
@@ -145,10 +146,11 @@ uint8_t string_descriptor_product[] = {
     'u', 0x0,
     'c', 0x0,
     't', 0x0,
+    't', 0x0,
 };
 
 uint8_t string_descriptor_serial_number[] = {
-    0x1C,                    // .bLength
+    28,                    // .bLength
     USB_DESCR_TYP_STRING,   // .bDescriptorType
     'S', 0x0,
     'e', 0x0,
@@ -167,7 +169,7 @@ uint8_t string_descriptor_serial_number[] = {
 
 
 uint8_t string_descriptor_config[] = {
-    0x0D,                    // .bLength
+    14,                    // .bLength
     USB_DESCR_TYP_STRING,   // .bDescriptorType
     'C', 0x0,
     'o', 0x0,
@@ -178,7 +180,7 @@ uint8_t string_descriptor_config[] = {
 };
 
 uint8_t string_descriptor_interface[] = {
-    0x14,                    // .bLength
+    20,                    // .bLength
     USB_DESCR_TYP_STRING,   // .bDescriptorType
     'I', 0x0,
     'n', 0x0,
@@ -215,7 +217,16 @@ main(void)
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
 
-#ifdef DEBUG
+#ifdef ERROR
+    cprintf("ERROR\r\n");
+#endif
+#ifdef TEST
+    cprintf("TEST\r\n");
+#endif
+#ifdef DBG1
+    cprintf("DBG1\r\n");
+#endif
+#ifdef DBG1
     cprintf("Main ...\r\n");
 #endif
 
@@ -242,21 +253,20 @@ main(void)
     R8_USB_CTRL &= ~(RB_USB_RESET_SIE | RB_USB_CLR_ALL);   // Not useful as the field is already 0.
 
     R8_USB_CTRL |= (RB_USB_INT_BUSY | RB_USB_DMA_EN);
-    R8_USB_CTRL |= UCST_HS;
+    R8_USB_CTRL |= UCST_LS;
     R8_USB_CTRL |= RB_DEV_PU_EN;
 
-    R8_USB_INT_EN = RB_USB_IE_SETUPACT | RB_USB_IE_TRANS | RB_USB_IE_SUSPEND  |RB_USB_IE_BUSRST ;
+    R8_USB_INT_EN = RB_USB_IE_ISOACT | RB_USB_IE_SETUPACT | RB_USB_IE_FIFOOV | RB_USB_IE_SUSPEND | RB_USB_IE_TRANS | RB_USB_IE_BUSRST ;
 
     /* Init as device's endpoints according to the doc (p. 105) */
-    /* No endpoints other than ep0 enabled */
     /* TODO: Init EP1 (or any other ep required for keyboard) */
     R8_UEP4_1_MOD = RB_UEP1_RX_EN | RB_UEP1_TX_EN;
     R8_UEP2_3_MOD = 0;
     R8_UEP5_6_MOD = 0;
     R8_UEP7_MOD   = 0;
 
-	R16_UEP0_MAX_LEN = 64;
-	R16_UEP1_MAX_LEN = 512;
+	R16_UEP0_MAX_LEN = U20_UEP0_MAXSIZE;
+	R16_UEP1_MAX_LEN = U20_MAXPACKET_LEN;
 
 	R32_UEP0_RT_DMA = (uint32_t)(uint8_t *)endp0RTbuff;
 	R32_UEP1_TX_DMA = (uint32_t)(uint8_t *)endp1Tbuff;
@@ -266,7 +276,7 @@ main(void)
 	R8_UEP0_TX_CTRL = 0;
 	R8_UEP0_RX_CTRL = 0;
 
-	R16_UEP1_T_LEN = U20_MAXPACKET_LEN;
+	R16_UEP1_T_LEN = 0;
 	R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
 	R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 
@@ -295,17 +305,26 @@ main(void)
 	R8_UEP7_TX_CTRL = UEP_T_RES_NAK;
 	R8_UEP7_RX_CTRL = UEP_R_RES_NAK;
 
-#ifdef DEBUG
+#ifdef DBG1
     cprintf("Main done!\r\n");
 #endif
 
     while (1) { }
 }
 
+__attribute__((interrupt("WCH-Interrupt-fast"))) void
+LINK_IRQHandler(void)
+{
+#ifdef ERROR
+    // TODO: Fix bsp_get_tick() not working.
+    // cprintf("\r\nCalled:\tUSBHS_IRQHandler()\t%08X\r\n", bsp_get_tick());
+    cprintf("LINK Handler!\r\n");
+#endif
+}
 
 /*******************************************************************************
  * @fn     USBHS_IRQHandler
- *
+ *DBG1
  * @brief  USB2.0 Interrupt Handler.
  *
  * @return None
@@ -313,14 +332,18 @@ main(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void
 USBHS_IRQHandler(void)
 {
-#ifdef DEBUG
-    // TODO: Fix bsp_get_tick() not working.
-    // cprintf("\r\nCalled:\tUSBHS_IRQHandler()\t%08X\r\n", bsp_get_tick());
-    cprintf("\r\nCalled:\tUSBHS_IRQHandler()\r\n");
+#ifdef ERROR
+    if ((R8_USB_INT_FG & RB_USB_IF_ISOACT)){
+        cprintf("Isochornous transfer!\r\n");
+        cprintf_st_cusp(UsbSetupBuf);
+    }
 #endif
-
     static uint16_t bytesToWrite = 0;
     static uint8_t *pDataToWrite = NULL;
+
+    static vuint8_t SetupReqType = 0;
+    static vuint8_t SetupReq = 0;
+    static vuint16_t SetupReqLen = 0; // Data length.
 
     uint8_t int_flag;
     int_flag = R8_USB_INT_FG;
@@ -328,43 +351,27 @@ USBHS_IRQHandler(void)
     if (int_flag & RB_USB_IF_ISOACT)
 	{
         /* Not enabled in R8_USB_INT_EN, should never trigger. */
-#ifdef DEBUG
-    cprintf("Interrupt flag:\tRB_USB_IF_ISOACT\r\n");
-#endif
     }
     else if (int_flag & RB_USB_IF_SETUOACT) // Setup interrupt.
 	{
-#ifdef DEBUG
-    cprintf("Interrupt flag:\tRB_USB_IF_SETUOACT\r\n");
-#endif
-		vuint8_t SetupReqType = UsbSetupBuf->bRequestType;
-		vuint8_t SetupReq = UsbSetupBuf->bRequest;
-		vuint16_t SetupReqLen = UsbSetupBuf->wLength; // Data length.
+		SetupReqType = UsbSetupBuf->bRequestType;
+		SetupReq = UsbSetupBuf->bRequest;
+		SetupReqLen = UsbSetupBuf->wLength; // Data length.
 
         if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD)
         {
             if ((SetupReqType & USB_REQ_TYP_MASK) == USB_REQ_TYP_CLASS) {
-#ifdef ERROR
-    cprintf("USB_REQ_TYP_CLASS\r\n");
-    cprintf_st_cusp(UsbSetupBuf);
-    cprintf("Polling for input!\r\n");
-#endif
+                if (SetupReq == HID_SET_IDLE) {
+                    // TODOO: Implememt Idle state.
+                    return;
+                }
                 // Build the Interrupt packet for keyboard.
-
-
             }
             /* If bRequest != 0 it is a non standard request, thus not covered  by the spec. */
             return;
         }
-#ifdef DEBUG
-    cprintf_st_cusp(UsbSetupBuf);
-    cprintf("USB Request: ");
-#endif
         switch(SetupReq) {
         case USB_GET_STATUS:
-#ifdef DEBUG
-    cprintf("USB_GET_STATUS\r\n");
-#endif
             endp0RTbuff[0] = 0x00;
             endp0RTbuff[1] = 0x00;
             bytesToWrite = 2;
@@ -385,9 +392,6 @@ USBHS_IRQHandler(void)
             }
             break;
         case USB_CLEAR_FEATURE:
-#ifdef DEBUG
-    cprintf("USB_CLEAR_FEATURE\r\n");
-#endif
             /* As of now, only endpoints (not device) can be cleared. */
             /* Clear endpoint. */
             if ( (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_ENDP ) {
@@ -406,9 +410,6 @@ USBHS_IRQHandler(void)
             }
             break;
         case USB_SET_FEATURE:
-#ifdef DEBUG
-    cprintf("USB_SET_FEATURE\r\n");
-#endif
             /* See USB spec. rev. 2.0 p258 for more details. */
             if ( (UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) == USB_REQ_RECIP_ENDP ) {
                 switch (UsbSetupBuf->wValue.w) {
@@ -431,135 +432,76 @@ USBHS_IRQHandler(void)
             }
             break;
         case USB_SET_ADDRESS:
-#ifdef DEBUG
-    cprintf("USB_SET_ADDRESS\r\n");
-#endif
             // NOTE: Address should not be set in this transaction but rather in the
             // following one (RB_USB_IF_TRANSFER IN). R8_USB_DEV_AD =
             // UsbSetupBuf->wValue.bw.bb1;
             break;
         case USB_GET_DESCRIPTOR:
-#ifdef DEBUG
-    cprintf("USB_GET_DESCRIPTOR\r\n");
-#endif
             /* See USB spec. rev. 2.0 p253 for more details. */
-#ifdef DEBUG
-    cprintf("Descriptor requested: ");
-#endif
             switch(UsbSetupBuf->wValue.bw.bb0) {
             case USB_DESCR_TYP_DEVICE:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_DEVICE\r\n");
-#endif
                 pDataToWrite = (uint8_t *)&st_device_descriptor;
                 bytesToWrite = sizeof(st_device_descriptor);
               break;
             case USB_DESCR_TYP_CONFIG:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_CONFIG\r\n");
-#endif
                 pDataToWrite = (uint8_t *)&st_configuration_descriptor_keyboard;
                 bytesToWrite = sizeof(st_configuration_descriptor_keyboard);
                 break;
             case USB_DESCR_TYP_STRING:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_STRING\r\n");
-#endif
                 {
+                    cprintf("Descriptor Required: %d\r\n", UsbSetupBuf->wValue.bw.bb1);
                     uint8_t i = UsbSetupBuf->wValue.bw.bb1;
-                    if (i >= 0 && i < (sizeof(string_descriptors)/sizeof(string_descriptors[0])))
+                    if (i >= 0 && i < (sizeof(string_descriptors)/sizeof(string_descriptors[0]))) {
                         pDataToWrite = (uint8_t *)string_descriptors[i];
-                        bytesToWrite = sizeof(string_descriptors[i]);
+                        bytesToWrite = string_descriptors[i][0];
+                    }
                 }
                 break;
             case USB_DESCR_TYP_INTERF:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_INTERF\r\n");
-#endif
                 pDataToWrite = (uint8_t *)&st_configuration_descriptor_keyboard.itf_descr;
                 bytesToWrite = sizeof(st_configuration_descriptor_keyboard.itf_descr);
                 break;
             case USB_DESCR_TYP_ENDP:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_ENDP\r\n");
-#endif
                 pDataToWrite = (uint8_t *)&st_configuration_descriptor_keyboard.endp_descr;
                 bytesToWrite = sizeof(st_configuration_descriptor_keyboard.endp_descr);
                 break;
-            case USB_DESCR_TYP_QUALIF:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_QUALIF\r\n");
-#endif
-                break;
-            case USB_DESCR_TYP_SPEED:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_SPEED\r\n");
-#endif
-                break;
             case USB_DESCR_TYP_HID:
-#ifdef DEBUG
-    cprintf("USB_DESCR_TYP_HID\r\n");
-#endif
                 pDataToWrite = (uint8_t *)&st_configuration_descriptor_keyboard.hid_descr;
                 bytesToWrite = sizeof(st_configuration_descriptor_keyboard.hid_descr);
                 break;
             case USB_DESCR_TYP_REPORT:
-#ifdef DEBUG
+#ifdef ERROR
     cprintf("USB_DESCR_TYP_REPORT\r\n");
 #endif
                 pDataToWrite = (uint8_t *)&hid_report_descriptor_keyboard;
                 bytesToWrite = sizeof(hid_report_descriptor_keyboard);
                 break;
             default:
-#ifdef ERROR
-    cprintf("USB_DESCR_TYP_UNKNOWN %x\r\n", UsbSetupBuf->wValue.bw.bb0);
-#endif
                 break;
             }
             break;
         case USB_SET_DESCRIPTOR:
-#ifdef DEBUG
-    cprintf("USB_SET_DESCRIPTOR\r\n");
-#endif
             break;
         case USB_GET_CONFIGURATION:
-#ifdef DEBUG
-    cprintf("USB_GET_CONFIGURATION\r\n");
-#endif
             /* We have only one configuration. */
             endp0RTbuff[0] = st_configuration_descriptor_keyboard.cfg_descr.bConfigurationValue; 
             bytesToWrite = 1;
             break;
         case USB_SET_CONFIGURATION:
-#ifdef DEBUG
-    cprintf("USB_SET_CONFIGURATION\r\n");
-#endif
             /* As of now there is only one configuration. */
             break;
         case USB_GET_INTERFACE:
-#ifdef DEBUG
-    cprintf("USB_GET_INTERFACE\r\n");
-#endif
             /* We have only one interface. */
             endp0RTbuff[0] = st_configuration_descriptor_keyboard.itf_descr.bInterfaceNumber; 
             bytesToWrite = 1;
             break;
         case USB_SET_INTERFACE:
-#ifdef DEBUG
-    cprintf("USB_SET_INTERFACE\r\n");
-#endif
             /* As of now there is only one interface. */
             break;
         case USB_SYNCH_FRAME:
-#ifdef DEBUG
-    cprintf("USB_SYNCH_FRAME\r\n");
-#endif
             break;
         default:
-#ifdef ERROR
-    cprintf("USB_SYNCH_FRAME\r\n");
-    cprintf_st_cusp(UsbSetupBuf);
-#endif
+            break;
         }
 
         /* Necessary for the first get_descriptor(configuration) */
@@ -568,8 +510,8 @@ USBHS_IRQHandler(void)
         }
 
         uint16_t bytesToWriteForCurrentTransaction = bytesToWrite;
-        if (bytesToWriteForCurrentTransaction >= U20_MAXPACKET_LEN) {
-            bytesToWriteForCurrentTransaction = U20_MAXPACKET_LEN;
+        if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
+            bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
         }
 
         if (pDataToWrite && bytesToWriteForCurrentTransaction > 0) {
@@ -592,83 +534,49 @@ USBHS_IRQHandler(void)
     }
     else if (int_flag & RB_USB_IF_FIFOOV)
 	{
-#ifdef DEBUG
-    cprintf("Interrupt flag:\tRB_USB_IF_FIFOOV\r\n");
-#endif
         /* Not enabled in R8_USB_INT_EN, should never trigger. */
     }
     else if (int_flag & RB_USB_IF_HST_SOF)
 	{
-#ifdef DEBUG
-    cprintf("Interrupt flag:\tRB_USB_IF_HST_SOF\r\n");
-#endif
         /* Not enabled in R8_USB_INT_EN, should never trigger. */
     }
     else if (int_flag & RB_USB_IF_SUSPEND)
 	{
-#ifdef DEBUG
-    cprintf("Interrupt flag:\tRB_USB_IF_SUSPEND\r\n");
-#endif
         R8_USB_INT_FG = RB_USB_IF_SUSPEND;
     }
     else if (int_flag & RB_USB_IF_TRANSFER)
 	{
-#ifdef DEBUG
-    cprintf("Interrupt flag:\tRB_USB_IF_TRANSFER\r\n");
-#endif
         // TODO: Add code, this should be used to transfer data that does not
         // fit in 1 transaction.
         uint32_t endpNum = R8_USB_INT_ST & 0xf;
         uint32_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
         uint16_t bytesToWriteForCurrentTransaction;
 
-#ifdef DEBUG
-    cprintf("Token type: ");
-#endif
         switch (endpNum) {
         case 0:
             // TODO: Refactor.
             switch (rxToken) {
             case UIS_TOKEN_OUT:
-#ifdef DEBUG
-    cprintf("UIS_TOKEN_OUT\r\n");
-    cprintf_st_cusp(UsbSetupBuf);
-#endif
                 break;
             case UIS_TOKEN_SOF:
-#ifdef DEBUG
-    cprintf("UIS_TOKEN_SOF\r\n");
-#endif
                 break;
             case UIS_TOKEN_IN:
-#ifdef DEBUG
-    cprintf("UIS_TOKEN_IN\r\n");
-    // cprintf_st_cusp(UsbSetupBuf);
-#endif
                 bytesToWriteForCurrentTransaction = bytesToWrite;
-                if (bytesToWriteForCurrentTransaction >= U20_MAXPACKET_LEN) {
-                    bytesToWriteForCurrentTransaction = U20_MAXPACKET_LEN;
+                if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
+                    bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
                 }
                 bytesToWrite -= bytesToWriteForCurrentTransaction;
 
-                switch(UsbSetupBuf->bRequest) {
+                switch(SetupReq) {
                 case USB_GET_DESCRIPTOR:
-#ifdef DEBUG
-    cprintf("USB_GET_DESCRIPTOR\r\n");
-    cprintf_st_cusp(UsbSetupBuf);
-#endif
                 if (pDataToWrite && bytesToWriteForCurrentTransaction > 0) {
-                    if (UsbSetupBuf->bRequestType & 0x80) { /* IN Transaction. */
+                    if (SetupReqType & 0x80) { /* IN Transaction. */
                         memcpy(endp0RTbuff, pDataToWrite, bytesToWriteForCurrentTransaction);
                         pDataToWrite += bytesToWriteForCurrentTransaction;
                     }
                 }
                 break;
             case USB_SET_ADDRESS:
-#ifdef DEBUG
-cprintf("USB_SET_ADDRESS\r\n");
-cprintf("Setting addr to %d\r\n", UsbSetupBuf->wValue.bw.bb1);
-#endif
                 R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
                 bytesToWriteForCurrentTransaction = 0;
                 break;
@@ -688,29 +596,40 @@ cprintf("Setting addr to %d\r\n", UsbSetupBuf->wValue.bw.bb1);
 
                 break;
             case UIS_TOKEN_SETUP:
-#ifdef DEBUG
-    cprintf("UIS_TOKEN_SETUP\r\n");
-#endif
                 break;
             }
             break;
         case 1:
             // TODO: Refactor.
             // ...
-//             if (rxToken == UIS_TOKEN_IN) {
-// #ifdef ERROR
-//     cprintf("Polling for input!\r\n");
-// #endif
-// 
-//                 uint8_t keyboard_payload[] = { 0x30, 0x00, 0x00, 0x00 };
-// 
-//                 memcpy(endp1Tbuff, keyboard_payload, sizeof(keyboard_payload));
-// 
-//                 R16_UEP1_T_LEN = 0;                               // Clear send length
-//                 R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1; // The state process is OUT
-//                 R8_UEP1_TX_CTRL = 0;                              // Clear send controller
-// 
-//             }
+            if (rxToken == UIS_TOKEN_IN) {
+#ifdef ERROR
+    cprintf("Polling for input!\r\n");
+#endif
+
+                // static uint8_t keyboard_payload[] = { 0x05, 0x0c, 0x17, 0x08, 0x28 };
+                static uint8_t keyboard_payload[] = { 0x17, 0x08, 0x16, 0x17, 0x28 };
+                static uint8_t i = 0;
+                uint8_t modulus = 10;
+
+                // Keyboard input crafting.
+                uint8_t output[] = { 0x00, 0x00, 0x00, 0x00 };
+                if (i%modulus == 0) {
+                    output[0] = keyboard_payload[(i%(modulus*sizeof(keyboard_payload)))/modulus];
+                }
+                i++;
+
+
+                if (SetupReqType & 0x80) { /* IN Transaction. */
+#ifdef ERROR
+    cprintf("Polling for input IN!\r\n");
+#endif
+                    memcpy(endp1Tbuff, output, sizeof(output));
+                    R16_UEP1_T_LEN = sizeof(output);
+                    R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+                    R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK ;
+                }
+            }
             break;
         }
 
@@ -718,10 +637,6 @@ cprintf("Setting addr to %d\r\n", UsbSetupBuf->wValue.bw.bb1);
     }
     else if (int_flag & RB_USB_IF_BUSRST)
 	{
-#ifdef DEBUG
-    cprintf("Interrupt flag:\tRB_USB_IF_BUSRST\r\n");
-    memset(UsbSetupBuf, 0, sizeof(*UsbSetupBuf));
-#endif
         // TODO
  		// R8_USB_CTRL = 0x06; 
 		// R8_USB_INT_EN = 0x00; 
@@ -740,7 +655,7 @@ cprintf("Setting addr to %d\r\n", UsbSetupBuf->wValue.bw.bb1);
         R8_USB_CTRL &= ~(RB_USB_RESET_SIE | RB_USB_CLR_ALL);   // Not useful as the field is already 0.
 
         R8_USB_CTRL |= (RB_USB_INT_BUSY | RB_USB_DMA_EN);
-        R8_USB_CTRL |= UCST_HS;
+        R8_USB_CTRL |= UCST_LS;
         R8_USB_CTRL |= RB_DEV_PU_EN;
 
         R8_USB_INT_EN = RB_USB_IE_SETUPACT | RB_USB_IE_TRANS | RB_USB_IE_SUSPEND  |RB_USB_IE_BUSRST ;
@@ -765,6 +680,6 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void HardFault_Handler(void)
 	cprintf(" MIE=0x%08X\r\n", __get_MIE());
 	cprintf(" MSTATUS=0x%08X\r\n", __get_MSTATUS());
 	cprintf(" MCAUSE=0x%08X\r\n", __get_MCAUSE());
-	bsp_wait_ms_delay(1);
+	bsp_wait_ms_delay(1000000);
 }
 
