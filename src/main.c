@@ -389,6 +389,30 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
     }
 }
 
+static uint16_t
+ep0_transmit(uint8_t bDirection, char *buffer, uint16_t sizeBuffer)
+{
+    /* bDirection : 1 = IN, 0 = OUT */
+    uint16_t bytesToWriteForCurrentTransaction = 0;
+
+    if (bDirection) {
+        bytesToWriteForCurrentTransaction = sizeBuffer;
+        if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
+            bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
+        }
+
+        if (buffer && bytesToWriteForCurrentTransaction > 0) {
+            memcpy(endp0RTbuff, buffer, bytesToWriteForCurrentTransaction);
+        }
+    }
+
+    R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
+    R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
+    R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+
+    return bytesToWriteForCurrentTransaction;
+}
+
 /*********************************************************************
  * @fn      main
  *
@@ -550,26 +574,13 @@ USBHS_IRQHandler(void)
             bytesToWrite = SetupReqLen;
         }
 
-        uint16_t bytesToWriteForCurrentTransaction = bytesToWrite;
-        if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
-            bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
-        }
-
-        if (pDataToWrite && bytesToWriteForCurrentTransaction > 0) {
-            if (UsbSetupBuf->bRequestType & 0x80) { /* IN Transaction. */
-                memcpy(endp0RTbuff, pDataToWrite, bytesToWriteForCurrentTransaction);
-                pDataToWrite += bytesToWriteForCurrentTransaction;
-            }
-        }
-
-        bytesToWrite -= bytesToWriteForCurrentTransaction;
-        if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction. */
+        uint16_t bytesTransmitted = ep0_transmit(SetupReqType & 0x80, pDataToWrite, bytesToWrite);
+        bytesToWrite -= bytesTransmitted;
+        if (bytesTransmitted == 0) {
             pDataToWrite = NULL;
+        } else {
+            pDataToWrite += bytesTransmitted;
         }
-
-        R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
-        R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1; // Data process or state process
-        R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
 
         R8_USB_INT_FG = RB_USB_IF_SETUOACT; // Clear int flag
     }

@@ -67,8 +67,8 @@ static USB_CFG_DESCR_FULL_HID stKeyboardConfigurationDescriptor = {
         /* See https://www.usb.org/sites/default/files/hid1_11.pdf (p. 22). */
         .bLength = sizeof(USB_HID_DESCR),
         .bDescriptorType = USB_DESCR_TYP_HID,
-        .bcdHIDL = 11,
-        .bcdHIDH = 1,
+        .bcdHIDL = 0x11,
+        .bcdHIDH = 0x01,
         .bCountryCode = 8,
         .bNumDescriptors = 1,
         .bDescriptorTypeX = USB_DESCR_TYP_REPORT,
