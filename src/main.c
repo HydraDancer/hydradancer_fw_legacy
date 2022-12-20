@@ -56,10 +56,12 @@ typedef union {
 } USB_CFG_DESCR_FULL, *PUSB_CFG_DESCR_FULL;
 
 /* function declarations */
+static uint8_t array_addr_len(void **array);
 static void U20_init(enum Speed sp);
 static void U20_endpoints_init(enum Endpoint endpointsMask);
 static void endpoint_clear(uint8_t endpointToClear);
 static void endpoint_halt(uint8_t endpointToHalt);
+static void fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /* variables */
 static enum ConfigurationDescriptorType cfgDescrType = CfgDescrBase;
@@ -458,8 +460,7 @@ USBHS_IRQHandler(void)
 		SetupReq = UsbSetupBuf->bRequest;
 		SetupReqLen = UsbSetupBuf->wLength;
 
-        if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD)
-        {
+        if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD) {
             /* If bRequest != 0 it is a non standard request, thus not covered  by the spec. */
             return;
         }
@@ -521,6 +522,7 @@ USBHS_IRQHandler(void)
             fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
             break;
         case USB_SET_DESCRIPTOR:
+                /* Unused. */
             break;
         case USB_GET_CONFIGURATION:
             /* We have only one configuration. */
@@ -544,7 +546,6 @@ USBHS_IRQHandler(void)
             break;
         }
 
-        /* Necessary for the first get_descriptor(configuration) */
         if (SetupReqLen < bytesToWrite) {
             bytesToWrite = SetupReqLen;
         }
