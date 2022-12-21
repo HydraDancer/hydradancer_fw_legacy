@@ -76,6 +76,7 @@ static void endpoint_clear(uint8_t endpointToClear);
 static void endpoint_halt(uint8_t endpointToHalt);
 static void fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 static uint16_t ep0_transceive_and_update(uint8_t bDirection, uint8_t **buffer, uint16_t *sizeBuffer);
+static void ep1_transmit_keyboard(void);
 
 /* variables */
 static enum ConfigurationDescriptorType cfgDescrType = CfgDescrBase;
@@ -450,6 +451,31 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
     }
 }
 
+static void
+ep1_transmit_keyboard(void)
+{
+    /* Link to USB HID Keyboard scan codes :
+     * https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2 */
+    static uint8_t keyboard_payload[] = { 0x17, 0x08, 0x16, 0x17, 0x28 };
+    static uint8_t i = 0;
+    uint8_t modulus = 4;
+
+    /* Keyboard input crafting. */
+    uint8_t output[] = { 0x00, 0x00, 0x00, 0x00 };
+    if (i%modulus == 0) {
+        output[0] = keyboard_payload[i/modulus];
+    }
+    i++;
+    if (i == (modulus*sizeof(keyboard_payload))-1) {
+        i = 0;
+    }
+
+    memcpy(endp1Tbuff, output, sizeof(output));
+    R16_UEP1_T_LEN = sizeof(output);
+    R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+    R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK ;
+}
+
 /*********************************************************************
  * @fn      main
  *
@@ -643,43 +669,15 @@ USBHS_IRQHandler(void)
                 R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
 
                 pDataToWrite = NULL;
-
                 R16_UEP0_T_LEN = 0;
                 R8_UEP0_TX_CTRL = 0;
                 R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
                 } else {
                     ep0_transceive_and_update(rxToken, &pDataToWrite, &bytesToWrite);
                 }
-
             break;
         case 1:
-            // TODO: Refactor.
-            // ...
-            if (rxToken == UIS_TOKEN_IN) {
-
-                // Link to USB HID Keyboard scan codes
-                // https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2
-
-                // static uint8_t keyboard_payload[] = { 0x05, 0x0c, 0x17, 0x08, 0x28 };
-                static uint8_t keyboard_payload[] = { 0x17, 0x08, 0x16, 0x17, 0x28 };
-                static uint8_t i = 0;
-                uint8_t modulus = 10;
-
-                // Keyboard input crafting.
-                uint8_t output[] = { 0x00, 0x00, 0x00, 0x00 };
-                if (i%modulus == 0) {
-                    output[0] = keyboard_payload[(i%(modulus*sizeof(keyboard_payload)))/modulus];
-                }
-                i++;
-
-
-                if (SetupReqType & 0x80) { /* IN Transaction. */
-                    memcpy(endp1Tbuff, output, sizeof(output));
-                    R16_UEP1_T_LEN = sizeof(output);
-                    R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-                    R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK ;
-                }
-            }
+            ep1_transmit_keyboard();
             break;
         }
 
