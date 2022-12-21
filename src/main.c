@@ -75,6 +75,7 @@ static void U20_endpoints_init(enum Endpoint endpointsMask);
 static void endpoint_clear(uint8_t endpointToClear);
 static void endpoint_halt(uint8_t endpointToHalt);
 static void fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+static uint16_t ep0_transceive_and_update(uint8_t bDirection, uint8_t **buffer, uint16_t *sizeBuffer);
 
 /* variables */
 static enum ConfigurationDescriptorType cfgDescrType = CfgDescrBase;
@@ -403,27 +404,39 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
 }
 
 static uint16_t
-ep0_transmit(uint8_t bDirection, char *buffer, uint16_t sizeBuffer)
+ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuffer)
 {
-    /* bDirection : 1 = IN, 0 = OUT */
     uint16_t bytesToWriteForCurrentTransaction = 0;
 
-    if (bDirection) {
-        bytesToWriteForCurrentTransaction = sizeBuffer;
+    switch (uisToken) {
+    case UIS_TOKEN_OUT:
+        break;
+    case UIS_TOKEN_SOF:
+        break;
+    case UIS_TOKEN_IN:
+        bytesToWriteForCurrentTransaction = *sizeBuffer;
         if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
             bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
         }
 
-        if (buffer && bytesToWriteForCurrentTransaction > 0) {
-            memcpy(endp0RTbuff, buffer, bytesToWriteForCurrentTransaction);
+        if (*buffer && bytesToWriteForCurrentTransaction > 0) {
+            memcpy(endp0RTbuff, *buffer, bytesToWriteForCurrentTransaction);
         }
+        break;
+    case UIS_TOKEN_SETUP:
+        break;
+    }
+
+    *sizeBuffer -= bytesToWriteForCurrentTransaction;
+    if (bytesToWriteForCurrentTransaction == 0) {
+        *buffer = NULL;
+    } else {
+        *buffer += bytesToWriteForCurrentTransaction;
     }
 
     R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
     R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
     R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
-
-    return bytesToWriteForCurrentTransaction;
 }
 
 /*********************************************************************
@@ -483,22 +496,19 @@ USBHS_IRQHandler(void)
     static vuint8_t SetupReq = 0;
     static vuint16_t SetupReqLen = 0;
 
-    uint8_t int_flag;
-    int_flag = R8_USB_INT_FG;
-
-    if (int_flag & RB_USB_IF_ISOACT)
+    if (R8_USB_INT_FG & RB_USB_IF_ISOACT)
 	{
         /* Unused. */
         R8_USB_INT_FG = RB_USB_IF_ISOACT;
     }
-    else if (int_flag & RB_USB_IF_SETUOACT) // Setup interrupt.
+    else if (R8_USB_INT_FG & RB_USB_IF_SETUOACT) // Setup interrupt.
 	{
 		SetupReqType = UsbSetupBuf->bRequestType;
 		SetupReq = UsbSetupBuf->bRequest;
 		SetupReqLen = UsbSetupBuf->wLength;
 
+        /* If bRequest != 0 it is a non standard request, thus not covered  by the spec. */
         if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD) {
-            /* If bRequest != 0 it is a non standard request, thus not covered  by the spec. */
             return;
         }
 
@@ -587,32 +597,30 @@ USBHS_IRQHandler(void)
             bytesToWrite = SetupReqLen;
         }
 
-        uint16_t bytesTransmitted = ep0_transmit(SetupReqType & 0x80, pDataToWrite, bytesToWrite);
-        bytesToWrite -= bytesTransmitted;
-        if (bytesTransmitted == 0) {
-            pDataToWrite = NULL;
-        } else {
-            pDataToWrite += bytesTransmitted;
+        uint8_t uisToken = UIS_TOKEN_OUT;
+        if (SetupReqType & 0x80) {
+            uisToken = UIS_TOKEN_IN;
         }
+        ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
 
-        R8_USB_INT_FG = RB_USB_IF_SETUOACT; // Clear int flag
+        R8_USB_INT_FG = RB_USB_IF_SETUOACT;
     }
-    else if (int_flag & RB_USB_IF_FIFOOV)
+    else if (R8_USB_INT_FG & RB_USB_IF_FIFOOV)
 	{
         /* Unused. */
         R8_USB_INT_FG = RB_USB_IF_FIFOOV;
     }
-    else if (int_flag & RB_USB_IF_SUSPEND)
+    else if (R8_USB_INT_FG & RB_USB_IF_SUSPEND)
 	{
         R8_USB_INT_FG = RB_USB_IF_SUSPEND;
     }
-    else if (int_flag & RB_USB_IF_TRANSFER)
+    else if (R8_USB_INT_FG & RB_USB_IF_TRANSFER)
 	{
-        // TODO: Add code, this should be used to transfer data that does not
-        // fit in 1 transaction.
-        uint32_t endpNum = R8_USB_INT_ST & 0xf;
+        uint32_t endpNum = R8_USB_INT_ST & RB_DEV_ENDP_MASK;
         uint32_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
         uint16_t bytesToWriteForCurrentTransaction;
+
+
 
         switch (endpNum) {
         case 0:
@@ -631,18 +639,18 @@ USBHS_IRQHandler(void)
 
                 switch(SetupReq) {
                 case USB_GET_DESCRIPTOR:
-                if (pDataToWrite && bytesToWriteForCurrentTransaction > 0) {
-                    if (SetupReqType & 0x80) { /* IN Transaction. */
-                        memcpy(endp0RTbuff, pDataToWrite, bytesToWriteForCurrentTransaction);
-                        pDataToWrite += bytesToWriteForCurrentTransaction;
+                    if (pDataToWrite && bytesToWriteForCurrentTransaction > 0) {
+                        if (SetupReqType & 0x80) { /* IN Transaction. */
+                            memcpy(endp0RTbuff, pDataToWrite, bytesToWriteForCurrentTransaction);
+                            pDataToWrite += bytesToWriteForCurrentTransaction;
+                        }
                     }
+                break;
+                case USB_SET_ADDRESS:
+                    R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
+                    bytesToWriteForCurrentTransaction = 0;
+                    break;
                 }
-                break;
-            case USB_SET_ADDRESS:
-                R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
-                bytesToWriteForCurrentTransaction = 0;
-                break;
-            }
 
             if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction. */
                 pDataToWrite = NULL;
@@ -694,7 +702,7 @@ USBHS_IRQHandler(void)
 
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag
     }
-    else if (int_flag & RB_USB_IF_BUSRST)
+    else if (R8_USB_INT_FG & RB_USB_IF_BUSRST)
 	{
         U20_init(speed);
         U20_endpoints_init(epMask);
