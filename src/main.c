@@ -7,10 +7,6 @@
 #include "CH56x_common.h"
 #include "CH56x_debug_log.h"
 
-#include "CH56x_usb30_util.h"
-#include "util_debug.h"
-
-
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
 // TODOO: Add debgu over UART.
@@ -23,6 +19,7 @@
 /* macros */
 #define U20_MAXPACKET_LEN       512
 #define U20_UEP0_MAXSIZE        8
+#define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
 
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };
@@ -36,6 +33,22 @@ enum Endpoint {
     Ep7Mask = 1 << 6,
 };
 enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid };
+
+typedef union {
+	uint16_t w;
+	struct BW {
+		uint8_t bb1; // low byte
+		uint8_t bb0;
+	} bw;
+} UINT16_UINT8;
+
+typedef struct __PACKED {
+	uint8_t       bRequestType;
+	uint8_t       bRequest;
+	UINT16_UINT8  wValue;
+	UINT16_UINT8  wIndex;
+	uint16_t      wLength;
+} *PUSB_SETUP;
 
 typedef struct __PACKED _USB_CONFIG_DESCR_FULL_BASE {
 	USB_CFG_DESCR  cfgDescr;

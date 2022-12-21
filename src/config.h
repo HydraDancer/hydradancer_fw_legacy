@@ -1,4 +1,5 @@
-#include "CH56xSFR.h"
+#ifndef CONFIG_H
+#define CONFIG_H
 
 /* variables */
 static USB_DEV_DESCR stKeyboardDeviceDescriptor = {
@@ -177,4 +178,6 @@ static uint8_t *keyboardStringDescriptors[] = {
     stringDescriptorInterface,
     NULL /* Must be NULL-terminated as we need to determine its length. */
 };
+
+#endif /* CONFIG_H */
 
