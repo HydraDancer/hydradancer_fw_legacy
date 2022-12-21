@@ -410,8 +410,10 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
 
     switch (uisToken) {
     case UIS_TOKEN_OUT:
+        /* Not implemented. */
         break;
     case UIS_TOKEN_SOF:
+        /* Not implemented. */
         break;
     case UIS_TOKEN_IN:
         bytesToWriteForCurrentTransaction = *sizeBuffer;
@@ -424,19 +426,28 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
         }
         break;
     case UIS_TOKEN_SETUP:
+        /* Not implemented. */
+        break;
+    default:
+        assert(0 && "ERROR: ep0_transceive_and_update() invalid uisToken");
         break;
     }
 
     *sizeBuffer -= bytesToWriteForCurrentTransaction;
-    if (bytesToWriteForCurrentTransaction == 0) {
+
+    if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction. */
         *buffer = NULL;
+
+        R16_UEP0_T_LEN = 0;
+        R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
+        R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
     } else {
         *buffer += bytesToWriteForCurrentTransaction;
-    }
 
-    R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
-    R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
-    R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+        R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
+        R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP0_TX_CTRL = ( R8_UEP0_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK;
+    }
 }
 
 /*********************************************************************
@@ -602,6 +613,10 @@ USBHS_IRQHandler(void)
             uisToken = UIS_TOKEN_IN;
         }
         ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
+        /* Packet type must cycle between DATA0 and DATA1. The request (the
+         * first packet) is DATA0, thus the next packet must be DATA1 and so on.
+         * So here the first packet is forced to 1. */
+        R8_UEP0_TX_CTRL |= RB_UEP_T_TOG_1;
 
         R8_USB_INT_FG = RB_USB_IF_SETUOACT;
     }
@@ -624,50 +639,18 @@ USBHS_IRQHandler(void)
 
         switch (endpNum) {
         case 0:
-            // TODO: Refactor.
-            switch (rxToken) {
-            case UIS_TOKEN_OUT:
-                break;
-            case UIS_TOKEN_SOF:
-                break;
-            case UIS_TOKEN_IN:
-                bytesToWriteForCurrentTransaction = bytesToWrite;
-                if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
-                    bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
-                }
-                bytesToWrite -= bytesToWriteForCurrentTransaction;
+            if (SetupReq == USB_SET_ADDRESS) {
+                R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
 
-                switch(SetupReq) {
-                case USB_GET_DESCRIPTOR:
-                    if (pDataToWrite && bytesToWriteForCurrentTransaction > 0) {
-                        if (SetupReqType & 0x80) { /* IN Transaction. */
-                            memcpy(endp0RTbuff, pDataToWrite, bytesToWriteForCurrentTransaction);
-                            pDataToWrite += bytesToWriteForCurrentTransaction;
-                        }
-                    }
-                break;
-                case USB_SET_ADDRESS:
-                    R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
-                    bytesToWriteForCurrentTransaction = 0;
-                    break;
-                }
-
-            if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction. */
                 pDataToWrite = NULL;
 
-                R16_UEP0_T_LEN = 0;                               // Clear send length
-                R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1; // The state process is OUT
-                R8_UEP0_TX_CTRL = 0;                              // Clear send controller
-            } else {
-                R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
-                R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
-                R8_UEP0_TX_CTRL = ( R8_UEP0_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK ;
-            }
+                R16_UEP0_T_LEN = 0;
+                R8_UEP0_TX_CTRL = 0;
+                R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+                } else {
+                    ep0_transceive_and_update(rxToken, &pDataToWrite, &bytesToWrite);
+                }
 
-                break;
-            case UIS_TOKEN_SETUP:
-                break;
-            }
             break;
         case 1:
             // TODO: Refactor.
