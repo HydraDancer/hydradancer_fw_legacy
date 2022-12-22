@@ -35,32 +35,32 @@ enum Endpoint {
 enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid };
 
 typedef union {
-	uint16_t w;
-	struct BW {
-		uint8_t bb1; // low byte
-		uint8_t bb0;
-	} bw;
+    uint16_t w;
+    struct BW {
+        uint8_t bb1; /* Low byte. */
+        uint8_t bb0;
+    } bw;
 } UINT16_UINT8;
 
 typedef struct __PACKED {
-	uint8_t       bRequestType;
-	uint8_t       bRequest;
-	UINT16_UINT8  wValue;
-	UINT16_UINT8  wIndex;
-	uint16_t      wLength;
+    uint8_t       bRequestType;
+    uint8_t       bRequest;
+    UINT16_UINT8  wValue;
+    UINT16_UINT8  wIndex;
+    uint16_t      wLength;
 } *PUSB_SETUP;
 
 typedef struct __PACKED _USB_CONFIG_DESCR_FULL_BASE {
-	USB_CFG_DESCR  cfgDescr;
-	USB_ITF_DESCR  itfDescr;
-	USB_ENDP_DESCR endpDescr;
+    USB_CFG_DESCR  cfgDescr;
+    USB_ITF_DESCR  itfDescr;
+    USB_ENDP_DESCR endpDescr;
 } USB_CFG_DESCR_FULL_BASE, *PUSB_CFG_DESCR_FULL_BASE;
 
 typedef struct __PACKED _USB_CONFIG_DESCR_FULL_HID {
-	USB_CFG_DESCR  cfgDescr;
-	USB_ITF_DESCR  itfDescr;
-	USB_HID_DESCR  hidDescr;
-	USB_ENDP_DESCR endpDescr;
+    USB_CFG_DESCR  cfgDescr;
+    USB_ITF_DESCR  itfDescr;
+    USB_HID_DESCR  hidDescr;
+    USB_ENDP_DESCR endpDescr;
 } USB_CFG_DESCR_FULL_HID, *PUSB_CFG_DESCR_FULL_HID;
 
 typedef union {
@@ -123,9 +123,9 @@ array_addr_len(void **array)
 static void
 U20_init(enum Speed sp)
 {
-	R32_USB_CONTROL = 0;
-	PFIC_EnableIRQ(USBHS_IRQn);
-	PFIC_EnableIRQ(LINK_IRQn);
+    R32_USB_CONTROL = 0;
+    PFIC_EnableIRQ(USBHS_IRQn);
+    PFIC_EnableIRQ(LINK_IRQn);
 
     /* Init as device according to the doc (p. 105) */
     R8_USB_CTRL = 0;
@@ -137,7 +137,7 @@ U20_init(enum Speed sp)
     R8_USB_CTRL |= sp;
 
     R8_USB_INT_EN = RB_USB_IE_ISOACT | RB_USB_IE_SETUPACT | RB_USB_IE_FIFOOV
-        | RB_USB_IE_SUSPEND | RB_USB_IE_TRANS | RB_USB_IE_BUSRST;
+                    | RB_USB_IE_SUSPEND | RB_USB_IE_TRANS | RB_USB_IE_BUSRST;
 }
 
 static void
@@ -148,34 +148,34 @@ U20_endpoints_init(enum Endpoint endpointsMask)
     R8_UEP5_6_MOD = 0;
     R8_UEP7_MOD   = 0;
 
-	R16_UEP0_MAX_LEN = U20_UEP0_MAXSIZE;
-	R16_UEP1_MAX_LEN = U20_MAXPACKET_LEN;
-	R16_UEP2_MAX_LEN = U20_MAXPACKET_LEN;
-	R16_UEP3_MAX_LEN = U20_MAXPACKET_LEN;
-	R16_UEP4_MAX_LEN = U20_MAXPACKET_LEN;
-	R16_UEP5_MAX_LEN = U20_MAXPACKET_LEN;
-	R16_UEP6_MAX_LEN = U20_MAXPACKET_LEN;
-	R16_UEP7_MAX_LEN = U20_MAXPACKET_LEN;
+    R16_UEP0_MAX_LEN = U20_UEP0_MAXSIZE;
+    R16_UEP1_MAX_LEN = U20_MAXPACKET_LEN;
+    R16_UEP2_MAX_LEN = U20_MAXPACKET_LEN;
+    R16_UEP3_MAX_LEN = U20_MAXPACKET_LEN;
+    R16_UEP4_MAX_LEN = U20_MAXPACKET_LEN;
+    R16_UEP5_MAX_LEN = U20_MAXPACKET_LEN;
+    R16_UEP6_MAX_LEN = U20_MAXPACKET_LEN;
+    R16_UEP7_MAX_LEN = U20_MAXPACKET_LEN;
 
-	R32_UEP0_RT_DMA = (uint32_t)(uint8_t *)endp0RTbuff;
-	R32_UEP1_TX_DMA = (uint32_t)(uint8_t *)endp1Tbuff;
-	R32_UEP1_RX_DMA = (uint32_t)(uint8_t *)endp1Rbuff;
-	R32_UEP2_TX_DMA = (uint32_t)(uint8_t *)endp2Tbuff;
-	R32_UEP2_RX_DMA = (uint32_t)(uint8_t *)endp2Rbuff;
-	R32_UEP3_TX_DMA = (uint32_t)(uint8_t *)endp3Tbuff;
-	R32_UEP3_RX_DMA = (uint32_t)(uint8_t *)endp3Rbuff;
-	R32_UEP4_TX_DMA = (uint32_t)(uint8_t *)endp4Tbuff;
-	R32_UEP4_RX_DMA = (uint32_t)(uint8_t *)endp4Rbuff;
-	R32_UEP5_TX_DMA = (uint32_t)(uint8_t *)endp5Tbuff;
-	R32_UEP5_RX_DMA = (uint32_t)(uint8_t *)endp5Rbuff;
-	R32_UEP6_TX_DMA = (uint32_t)(uint8_t *)endp6Tbuff;
-	R32_UEP6_RX_DMA = (uint32_t)(uint8_t *)endp6Rbuff;
-	R32_UEP7_TX_DMA = (uint32_t)(uint8_t *)endp7Tbuff;
-	R32_UEP7_RX_DMA = (uint32_t)(uint8_t *)endp7Rbuff;
+    R32_UEP0_RT_DMA = (uint32_t)(uint8_t *)endp0RTbuff;
+    R32_UEP1_TX_DMA = (uint32_t)(uint8_t *)endp1Tbuff;
+    R32_UEP1_RX_DMA = (uint32_t)(uint8_t *)endp1Rbuff;
+    R32_UEP2_TX_DMA = (uint32_t)(uint8_t *)endp2Tbuff;
+    R32_UEP2_RX_DMA = (uint32_t)(uint8_t *)endp2Rbuff;
+    R32_UEP3_TX_DMA = (uint32_t)(uint8_t *)endp3Tbuff;
+    R32_UEP3_RX_DMA = (uint32_t)(uint8_t *)endp3Rbuff;
+    R32_UEP4_TX_DMA = (uint32_t)(uint8_t *)endp4Tbuff;
+    R32_UEP4_RX_DMA = (uint32_t)(uint8_t *)endp4Rbuff;
+    R32_UEP5_TX_DMA = (uint32_t)(uint8_t *)endp5Tbuff;
+    R32_UEP5_RX_DMA = (uint32_t)(uint8_t *)endp5Rbuff;
+    R32_UEP6_TX_DMA = (uint32_t)(uint8_t *)endp6Tbuff;
+    R32_UEP6_RX_DMA = (uint32_t)(uint8_t *)endp6Rbuff;
+    R32_UEP7_TX_DMA = (uint32_t)(uint8_t *)endp7Tbuff;
+    R32_UEP7_RX_DMA = (uint32_t)(uint8_t *)endp7Rbuff;
 
-	R16_UEP0_T_LEN = 0;
-	R8_UEP0_TX_CTRL = 0;
-	R8_UEP0_RX_CTRL = 0;
+    R16_UEP0_T_LEN = 0;
+    R8_UEP0_TX_CTRL = 0;
+    R8_UEP0_RX_CTRL = 0;
 
     if (endpointsMask & Ep1Mask) {
         R8_UEP4_1_MOD |= RB_UEP1_RX_EN | RB_UEP1_TX_EN;
@@ -356,51 +356,50 @@ static void
 fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
     switch(descritorRequested.bw.bb0) {
-        case USB_DESCR_TYP_DEVICE:
-            *pBuffer = (uint8_t *)&stDeviceDescriptor;
-            *pSizeBuffer = stDeviceDescriptor.bLength;
+    case USB_DESCR_TYP_DEVICE:
+        *pBuffer = (uint8_t *)&stDeviceDescriptor;
+        *pSizeBuffer = stDeviceDescriptor.bLength;
+        break;
+    case USB_DESCR_TYP_CONFIG:
+        switch (cfgDescrType) {
+        case CfgDescrBase:
+            *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
+            *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
             break;
-        case USB_DESCR_TYP_CONFIG:
-            switch (cfgDescrType) {
-                case CfgDescrBase:
-                    *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
-                    *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
-                    break;
-                case CfgDescrWithHid:
-                    *pBuffer = (uint8_t *)&stConfigurationDescriptor.withHid;
-                    *pSizeBuffer = stConfigurationDescriptor.withHid.cfgDescr.wTotalLength;
-                    break;
-            }
+        case CfgDescrWithHid:
+            *pBuffer = (uint8_t *)&stConfigurationDescriptor.withHid;
+            *pSizeBuffer = stConfigurationDescriptor.withHid.cfgDescr.wTotalLength;
             break;
-        case USB_DESCR_TYP_STRING:
-            {
-                uint8_t i = descritorRequested.bw.bb1;
-                if (i >= 0 && i < array_addr_len((void **)stringDescriptors)) {
-                    *pBuffer = (uint8_t *)stringDescriptors[i];
-                    *pSizeBuffer = stringDescriptors[i][0];
-                }
-            }
-            break;
-        case USB_DESCR_TYP_INTERF:
-            *pBuffer = (uint8_t *)&stInterfaceDescriptor;
-            *pSizeBuffer = stInterfaceDescriptor.bLength;
-            break;
-        case USB_DESCR_TYP_ENDP:
-            *pBuffer = (uint8_t *)&stEndpointDescriptor;
-            *pSizeBuffer = stEndpointDescriptor.bLength;
-            break;
-        case USB_DESCR_TYP_HID:
-            *pBuffer = (uint8_t *)&stHidDescriptor;
-            *pSizeBuffer = stHidDescriptor.bLength;
-            break;
-        case USB_DESCR_TYP_REPORT:
-            *pBuffer = (uint8_t *)reportDescriptor;
-            /* TODO: support lengh of type uint16_t. */
-            *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
-            break;
-        default:
-            assert(0 && "ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
-            break;
+        }
+        break;
+    case USB_DESCR_TYP_STRING: {
+        uint8_t i = descritorRequested.bw.bb1;
+        if (i >= 0 && i < array_addr_len((void **)stringDescriptors)) {
+            *pBuffer = (uint8_t *)stringDescriptors[i];
+            *pSizeBuffer = stringDescriptors[i][0];
+        }
+    }
+    break;
+    case USB_DESCR_TYP_INTERF:
+        *pBuffer = (uint8_t *)&stInterfaceDescriptor;
+        *pSizeBuffer = stInterfaceDescriptor.bLength;
+        break;
+    case USB_DESCR_TYP_ENDP:
+        *pBuffer = (uint8_t *)&stEndpointDescriptor;
+        *pSizeBuffer = stEndpointDescriptor.bLength;
+        break;
+    case USB_DESCR_TYP_HID:
+        *pBuffer = (uint8_t *)&stHidDescriptor;
+        *pSizeBuffer = stHidDescriptor.bLength;
+        break;
+    case USB_DESCR_TYP_REPORT:
+        *pBuffer = (uint8_t *)reportDescriptor;
+        /* TODO: support lengh of type uint16_t. */
+        *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
+        break;
+    default:
+        assert(0 && "ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
+        break;
     }
 }
 
@@ -501,13 +500,13 @@ main(void)
     stringDescriptors     = keyboardStringDescriptors;
 
     switch (cfgDescrType) {
-        case CfgDescrBase:
-            // No base descritor available for now.
-            // stConfigurationDescriptor.base    = stKeyboardConfigurationDescriptor;
-            break;
-        case CfgDescrWithHid:
-            stConfigurationDescriptor.withHid = stKeyboardConfigurationDescriptor;
-            break;
+    case CfgDescrBase:
+        // No base descritor available for now.
+        // stConfigurationDescriptor.base    = stKeyboardConfigurationDescriptor;
+        break;
+    case CfgDescrWithHid:
+        stConfigurationDescriptor.withHid = stKeyboardConfigurationDescriptor;
+        break;
     }
 
     U20_init(speed);
@@ -533,16 +532,13 @@ USBHS_IRQHandler(void)
     static vuint8_t SetupReq = 0;
     static vuint16_t SetupReqLen = 0;
 
-    if (R8_USB_INT_FG & RB_USB_IF_ISOACT)
-	{
+    if (R8_USB_INT_FG & RB_USB_IF_ISOACT) {
         /* Unused. */
         R8_USB_INT_FG = RB_USB_IF_ISOACT;
-    }
-    else if (R8_USB_INT_FG & RB_USB_IF_SETUOACT) // Setup interrupt.
-	{
-		SetupReqType = UsbSetupBuf->bRequestType;
-		SetupReq = UsbSetupBuf->bRequest;
-		SetupReqLen = UsbSetupBuf->wLength;
+    } else if (R8_USB_INT_FG & RB_USB_IF_SETUOACT) { // Setup interrupt.
+        SetupReqType = UsbSetupBuf->bRequestType;
+        SetupReq = UsbSetupBuf->bRequest;
+        SetupReqLen = UsbSetupBuf->wLength;
 
         /* If bRequest != 0 it is a non standard request, thus not covered  by the spec. */
         if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD) {
@@ -577,11 +573,11 @@ USBHS_IRQHandler(void)
             switch (SetupReqType & USB_REQ_RECIP_MASK) {
             case USB_REQ_RECIP_DEVICE:
                 /* Not implemented. */
-                    assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
+                assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
                 break;
             case USB_REQ_RECIP_INTERF:
                 /* Not implemented. */
-                    assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
+                assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
                 break;
             case USB_REQ_RECIP_ENDP:
                 switch (UsbSetupBuf->wValue.w) {
@@ -606,11 +602,11 @@ USBHS_IRQHandler(void)
             fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
             break;
         case USB_SET_DESCRIPTOR:
-                /* Unused. */
+            /* Unused. */
             break;
         case USB_GET_CONFIGURATION:
             /* We have only one configuration. */
-            endp0RTbuff[0] = stConfigurationDescriptor.base.cfgDescr.bConfigurationValue; 
+            endp0RTbuff[0] = stConfigurationDescriptor.base.cfgDescr.bConfigurationValue;
             bytesToWrite = 1;
             break;
         case USB_SET_CONFIGURATION:
@@ -618,7 +614,7 @@ USBHS_IRQHandler(void)
             break;
         case USB_GET_INTERFACE:
             /* We have only one interface. */
-            endp0RTbuff[0] = stInterfaceDescriptor.bInterfaceNumber; 
+            endp0RTbuff[0] = stInterfaceDescriptor.bInterfaceNumber;
             bytesToWrite = 1;
             break;
         case USB_SET_INTERFACE:
@@ -645,18 +641,12 @@ USBHS_IRQHandler(void)
         R8_UEP0_TX_CTRL |= RB_UEP_T_TOG_1;
 
         R8_USB_INT_FG = RB_USB_IF_SETUOACT;
-    }
-    else if (R8_USB_INT_FG & RB_USB_IF_FIFOOV)
-	{
+    } else if (R8_USB_INT_FG & RB_USB_IF_FIFOOV) {
         /* Unused. */
         R8_USB_INT_FG = RB_USB_IF_FIFOOV;
-    }
-    else if (R8_USB_INT_FG & RB_USB_IF_SUSPEND)
-	{
+    } else if (R8_USB_INT_FG & RB_USB_IF_SUSPEND) {
         R8_USB_INT_FG = RB_USB_IF_SUSPEND;
-    }
-    else if (R8_USB_INT_FG & RB_USB_IF_TRANSFER)
-	{
+    } else if (R8_USB_INT_FG & RB_USB_IF_TRANSFER) {
         uint32_t endpNum = R8_USB_INT_ST & RB_DEV_ENDP_MASK;
         uint32_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
         uint16_t bytesToWriteForCurrentTransaction;
@@ -672,9 +662,9 @@ USBHS_IRQHandler(void)
                 R16_UEP0_T_LEN = 0;
                 R8_UEP0_TX_CTRL = 0;
                 R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
-                } else {
-                    ep0_transceive_and_update(rxToken, &pDataToWrite, &bytesToWrite);
-                }
+            } else {
+                ep0_transceive_and_update(rxToken, &pDataToWrite, &bytesToWrite);
+            }
             break;
         case 1:
             ep1_transmit_keyboard();
@@ -682,9 +672,7 @@ USBHS_IRQHandler(void)
         }
 
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag
-    }
-    else if (R8_USB_INT_FG & RB_USB_IF_BUSRST)
-	{
+    } else if (R8_USB_INT_FG & RB_USB_IF_BUSRST) {
         U20_init(speed);
         U20_endpoints_init(epMask);
 
@@ -703,11 +691,11 @@ USBHS_IRQHandler(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void
 HardFault_Handler(void)
 {
-	cprintf("HardFault\r\n");
-	cprintf(" SP=0x%08X\r\n", __get_SP());
-	cprintf(" MIE=0x%08X\r\n", __get_MIE());
-	cprintf(" MSTATUS=0x%08X\r\n", __get_MSTATUS());
-	cprintf(" MCAUSE=0x%08X\r\n", __get_MCAUSE());
-	bsp_wait_ms_delay(1000000);
+    cprintf("HardFault\r\n");
+    cprintf(" SP=0x%08X\r\n", __get_SP());
+    cprintf(" MIE=0x%08X\r\n", __get_MIE());
+    cprintf(" MSTATUS=0x%08X\r\n", __get_MSTATUS());
+    cprintf(" MCAUSE=0x%08X\r\n", __get_MCAUSE());
+    bsp_wait_ms_delay(1000000);
 }
 
