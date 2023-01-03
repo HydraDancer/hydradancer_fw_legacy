@@ -491,6 +491,7 @@ main(void)
     cfgDescrType = CfgDescrWithHid;
     speed = SpeedLow;
     epMask = Ep1Mask;
+    endpoint_clear(0x81);
 
     stDeviceDescriptor    = stKeyboardDeviceDescriptor;
     stInterfaceDescriptor = stKeyboardConfigurationDescriptor.itfDescr;
@@ -647,8 +648,8 @@ USBHS_IRQHandler(void)
     } else if (R8_USB_INT_FG & RB_USB_IF_SUSPEND) {
         R8_USB_INT_FG = RB_USB_IF_SUSPEND;
     } else if (R8_USB_INT_FG & RB_USB_IF_TRANSFER) {
-        uint32_t endpNum = R8_USB_INT_ST & RB_DEV_ENDP_MASK;
-        uint32_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
+        uint8_t endpNum = R8_USB_INT_ST & RB_DEV_ENDP_MASK;
+        uint8_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
         uint16_t bytesToWriteForCurrentTransaction;
 
 
