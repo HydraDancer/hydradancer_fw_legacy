@@ -536,6 +536,7 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 int
 main(void)
 {
+    bsp_gpio_init();
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
 
@@ -694,8 +695,7 @@ USBHS_IRQHandler(void)
         R8_USB_INT_FG = RB_USB_IF_SUSPEND;
     } else if (R8_USB_INT_FG & RB_USB_IF_TRANSFER) {
         uint8_t endpNum = R8_USB_INT_ST & RB_DEV_ENDP_MASK;
-        uint8_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
-        uint16_t bytesToWriteForCurrentTransaction;
+        uint8_t uisToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
 
         switch (endpNum) {
         case 0:
@@ -707,13 +707,15 @@ USBHS_IRQHandler(void)
                 R8_UEP0_TX_CTRL = 0;
                 R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
             } else {
-                ep0_transceive_and_update(rxToken, &pDataToWrite, &bytesToWrite);
+                ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
             }
             break;
         case 1:
-            static uint8_t *pEndp1LoggingBuff = endp1LoggingBuff;
-            static uint16_t *pSizeBuffer = &sizeEndp1LoggingBuff;
-            ep1_transceive_and_update(rxToken, (uint8_t **)&pEndp1LoggingBuff, pSizeBuffer);
+            {
+                static uint8_t *pEndp1LoggingBuff = endp1LoggingBuff;
+                static uint16_t *pSizeEndp1LoggingBuff = &sizeEndp1LoggingBuff;
+                ep1_transceive_and_update(uisToken, (uint8_t **)&pEndp1LoggingBuff, pSizeEndp1LoggingBuff);
+            }
             break;
         }
 
