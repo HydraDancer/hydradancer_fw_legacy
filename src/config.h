@@ -2,11 +2,11 @@
 #define CONFIG_H
 
 /* variables */
-static USB_DEV_DESCR stKeyboardDeviceDescriptor = {
+static USB_DEV_DESCR stBoardTopDeviceDescriptor = {
     .bLength = sizeof(USB_DEV_DESCR),
     .bDescriptorType = USB_DESCR_TYP_DEVICE,
     .bcdUSB = 0x0200,
-    .bDeviceClass = 0x0,    /* Defined in the interface descriptor. */
+    .bDeviceClass = 0x00,   /* Defined in the interface descriptor. */
     .bDeviceSubClass = 0x00,
     .bDeviceProtocol = 0x00,
     .bMaxPacketSize0 = 8,
@@ -19,26 +19,11 @@ static USB_DEV_DESCR stKeyboardDeviceDescriptor = {
     .bNumConfigurations = 1,
 };
 
-static uint8_t keyboardReportDescriptor[] = {
-	0x05, 0x01,		// Usage Page (Generic Desktop)
-	0x09, 0x06,		// Usage (Keyboard)
-	0xA1, 0x01,		// Collection (Application)
-	0x95, 0x04,		// Report Count (4)
-	0x75, 0x08,		// Report Size (8)
-	0x15, 0x00,		// Logical Minimum (0)
-	0x25, 0x65,		// Logical Maximum(101)
-	0x05, 0x07,		// Usage Page (Key Codes)
-	0x19, 0x00,		// Usage Minimum (0)
-	0x29, 0x65,		// Usage Maximum (101)
-	0x81, 0x00,		// Input (Data, Array)   ; Key arrays (4 bytes)
-	0xC0,		    // End Collection
-};
-
-static USB_CFG_DESCR_FULL_HID stKeyboardConfigurationDescriptor = {
+static USB_CFG_DESCR_FULL_2_ENDPOINTS stBoardTopConfigurationDescriptor = {
     .cfgDescr = {
         .bLength = sizeof(USB_CFG_DESCR),
         .bDescriptorType = USB_DESCR_TYP_CONFIG,
-        .wTotalLength = sizeof(USB_CFG_DESCR_FULL_HID),
+        .wTotalLength = sizeof(USB_CFG_DESCR_FULL_2_ENDPOINTS),
         .bNumInterfaces = 1,
         .bConfigurationValue = 1,
         .iConfiguration = 4,
@@ -50,40 +35,29 @@ static USB_CFG_DESCR_FULL_HID stKeyboardConfigurationDescriptor = {
         .bDescriptorType = USB_DESCR_TYP_INTERF,
         .bInterfaceNumber = 0,
         .bAlternateSetting = 0,
-        .bNumEndpoints = 1,
-        /* Device class is not declared in the device descriptor but should
-         * rather be declared in the interface descriptor.
-         * - .bInterfaceClass : Class code (here 3 for HID).
-         * - .bInterfaceSubClass : Does it support boot protocol ? (Here we
-         *   don't).
-         * - .bInterfaceProtocol : Keyboard, Mouse, ... (Here 1 for keyboard).
-         * More details at :
-         * https://www.usb.org/sites/default/files/hid1_11.pdf */
-        .bInterfaceClass = USB_DEV_CLASS_HID,
-        .bInterfaceSubClass = 0x00,
-        .bInterfaceProtocol = 0x01,
+        .bNumEndpoints = 2,
+        .bInterfaceClass = USB_DEV_CLASS_VEN_SPEC,
+        .bInterfaceSubClass = 0xff,
+        .bInterfaceProtocol = 0xff,
         .iInterface = 5,
     },
-    .hidDescr = {
-        /* See https://www.usb.org/sites/default/files/hid1_11.pdf (p. 22). */
-        .bLength = sizeof(USB_HID_DESCR),
-        .bDescriptorType = USB_DESCR_TYP_HID,
-        .bcdHIDL = 0x11,
-        .bcdHIDH = 0x01,
-        .bCountryCode = 8,
-        .bNumDescriptors = 1,
-        .bDescriptorTypeX = USB_DESCR_TYP_REPORT,
-        .wDescriptorLengthL = sizeof(keyboardReportDescriptor), /* TODO: Only works when size is less than 2**8 ! */
-        .wDescriptorLengthH = 0,
-    },
-    .endpDescr = {
+    .endpDescr1In = {
         .bLength = sizeof(USB_ENDP_DESCR),
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x81,               /* In endpoint (MSB set to 1). */
-        .bmAttributes = USB_ENDP_TYPE_INTER,    /* Transfer type. */
-        .wMaxPacketSizeL = 8,
+        .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type. */
+        .wMaxPacketSizeL = 8,                   /* Packet size as defined by the spec for USB LS. */
         .wMaxPacketSizeH = 0,
-        .bInterval = 1,                         /* Polling interval, 1 for isochronous, else 0. */
+        .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0. */
+    },
+    .endpDescr1Out = {
+        .bLength = sizeof(USB_ENDP_DESCR),
+        .bDescriptorType = USB_DESCR_TYP_ENDP,
+        .bEndpointAddress = 0x01,               /* In endpoint (MSB set to 1). */
+        .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type. */
+        .wMaxPacketSizeL = 8,                   /* Packet size as defined by the spec for USB LS. */
+        .wMaxPacketSizeH = 0,
+        .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0. */
     },
 };
 
@@ -113,7 +87,7 @@ static uint8_t stringDescriptorManufacturer[] = {
 };
 
 static uint8_t stringDescriptorProduct[] = {
-    18,                     /* .bLength */
+    16,                     /* .bLength */
     USB_DESCR_TYP_STRING,   /* .bDescriptorType */
     'P', 0x0,
     'r', 0x0,
@@ -121,7 +95,6 @@ static uint8_t stringDescriptorProduct[] = {
     'd', 0x0,
     'u', 0x0,
     'c', 0x0,
-    't', 0x0,
     't', 0x0,
 };
 
@@ -169,7 +142,7 @@ static uint8_t stringDescriptorInterface[] = {
     'e', 0x0,
 };
 
-static uint8_t *keyboardStringDescriptors[] = {
+static uint8_t *boardTopStringDescriptors[] = {
     stringLangID,
     stringDescriptorManufacturer,
     stringDescriptorProduct,

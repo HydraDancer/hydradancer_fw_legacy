@@ -2,6 +2,7 @@
  * Small description of the project.
  */
 #include <assert.h>
+#include <string.h>
 
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
@@ -19,6 +20,7 @@
 /* macros */
 #define U20_MAXPACKET_LEN       512
 #define U20_UEP0_MAXSIZE        8
+#define U20_UEP1_MAXSIZE        8
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
 
 /* enums */
@@ -32,7 +34,7 @@ enum Endpoint {
     Ep6Mask = 1 << 5,
     Ep7Mask = 1 << 6,
 };
-enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid };
+enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep };
 
 typedef union {
     uint16_t w;
@@ -63,9 +65,17 @@ typedef struct __PACKED _USB_CONFIG_DESCR_FULL_HID {
     USB_ENDP_DESCR endpDescr;
 } USB_CFG_DESCR_FULL_HID, *PUSB_CFG_DESCR_FULL_HID;
 
+typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS {
+    USB_CFG_DESCR  cfgDescr;
+    USB_ITF_DESCR  itfDescr;
+    USB_ENDP_DESCR endpDescr1In;
+    USB_ENDP_DESCR endpDescr1Out;
+} USB_CFG_DESCR_FULL_2_ENDPOINTS, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS;
+
 typedef union {
     USB_CFG_DESCR_FULL_BASE base;
     USB_CFG_DESCR_FULL_HID withHid;
+    USB_CFG_DESCR_FULL_2_ENDPOINTS base2Ep;
 } USB_CFG_DESCR_FULL, *PUSB_CFG_DESCR_FULL;
 
 /* function declarations */
@@ -75,7 +85,7 @@ static void U20_endpoints_init(enum Endpoint endpointsMask);
 static void endpoint_clear(uint8_t endpointToClear);
 static void endpoint_halt(uint8_t endpointToHalt);
 static void fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer);
-static uint16_t ep0_transceive_and_update(uint8_t bDirection, uint8_t **buffer, uint16_t *sizeBuffer);
+static void ep0_transceive_and_update(uint8_t bDirection, uint8_t **buffer, uint16_t *sizeBuffer);
 static void ep1_transmit_keyboard(void);
 
 /* variables */
@@ -89,6 +99,8 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
+static uint16_t sizeEndp1LoggingBuff = 0;
+__attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
 
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
 __attribute__((aligned(16))) uint8_t endp1Rbuff[4096] __attribute__((section(".DMADATA"))); // Endpoint 1 data recceiver buffer.
@@ -361,16 +373,10 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
         *pSizeBuffer = stDeviceDescriptor.bLength;
         break;
     case USB_DESCR_TYP_CONFIG:
-        switch (cfgDescrType) {
-        case CfgDescrBase:
-            *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
-            *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
-            break;
-        case CfgDescrWithHid:
-            *pBuffer = (uint8_t *)&stConfigurationDescriptor.withHid;
-            *pSizeBuffer = stConfigurationDescriptor.withHid.cfgDescr.wTotalLength;
-            break;
-        }
+        /* The .cfgDescr field is always the first, no matter the union's type.
+         */
+        *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
+        *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
         break;
     case USB_DESCR_TYP_STRING: {
         uint8_t i = descritorRequested.bw.bb1;
@@ -403,7 +409,7 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
     }
 }
 
-static uint16_t
+static void
 ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuffer)
 {
     uint16_t bytesToWriteForCurrentTransaction = 0;
@@ -475,6 +481,51 @@ ep1_transmit_keyboard(void)
     R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK ;
 }
 
+static void
+ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_OUT:
+        /* Business logic about inputs goes here. */
+        if (strncmp(endp1Rbuff, "ping!", U20_UEP1_MAXSIZE) == 0) {
+            uint8_t *bufferNextEmpty = &(*pBuffer)[*pSizeBuffer];
+            memcpy(bufferNextEmpty, "1.......2.......3.......pong.", 30);
+            *pSizeBuffer += 30;
+        }
+
+        R16_UEP1_T_LEN = 0;
+        R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
+        R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+        break;
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP1_MAXSIZE);
+            memcpy(endp1Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP1_T_LEN = sizeCurrentTransaction;
+            R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)(uint8_t **)pBuffer += U20_UEP1_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            R16_UEP1_T_LEN = 0;
+            R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
+            R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+        }
+        break;
+    }
+}
+
+
+
 /*********************************************************************
  * @fn      main
  *
@@ -488,30 +539,24 @@ main(void)
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
 
-    cfgDescrType = CfgDescrWithHid;
+    cprintf("Init ...\r\n");
+
+    cfgDescrType = CfgDescr2Ep;
     speed = SpeedLow;
     epMask = Ep1Mask;
     endpoint_clear(0x81);
+    endpoint_clear(0x01);
 
-    stDeviceDescriptor    = stKeyboardDeviceDescriptor;
-    stInterfaceDescriptor = stKeyboardConfigurationDescriptor.itfDescr;
-    stEndpointDescriptor  = stKeyboardConfigurationDescriptor.endpDescr;
-    stHidDescriptor       = stKeyboardConfigurationDescriptor.hidDescr;
-    reportDescriptor      = keyboardReportDescriptor;
-    stringDescriptors     = keyboardStringDescriptors;
+    stDeviceDescriptor                = stBoardTopDeviceDescriptor;
+    stConfigurationDescriptor.base2Ep = stBoardTopConfigurationDescriptor;
+    stInterfaceDescriptor             = stBoardTopConfigurationDescriptor.itfDescr;
+    stringDescriptors                 = boardTopStringDescriptors;
 
-    switch (cfgDescrType) {
-    case CfgDescrBase:
-        // No base descritor available for now.
-        // stConfigurationDescriptor.base    = stKeyboardConfigurationDescriptor;
-        break;
-    case CfgDescrWithHid:
-        stConfigurationDescriptor.withHid = stKeyboardConfigurationDescriptor;
-        break;
-    }
 
     U20_init(speed);
     U20_endpoints_init(epMask);
+
+    cprintf("Done!\r\n");
 
     while (1) { }
 }
@@ -652,8 +697,6 @@ USBHS_IRQHandler(void)
         uint8_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
         uint16_t bytesToWriteForCurrentTransaction;
 
-
-
         switch (endpNum) {
         case 0:
             if (SetupReq == USB_SET_ADDRESS) {
@@ -668,7 +711,9 @@ USBHS_IRQHandler(void)
             }
             break;
         case 1:
-            ep1_transmit_keyboard();
+            static uint8_t *pEndp1LoggingBuff = endp1LoggingBuff;
+            static uint16_t *pSizeBuffer = &sizeEndp1LoggingBuff;
+            ep1_transceive_and_update(rxToken, (uint8_t **)&pEndp1LoggingBuff, pSizeBuffer);
             break;
         }
 
