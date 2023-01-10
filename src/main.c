@@ -18,10 +18,14 @@
 
 
 /* macros */
-#define U20_MAXPACKET_LEN       512
-#define U20_UEP0_MAXSIZE        8
-#define U20_UEP1_MAXSIZE        8
+#define U20_MAXPACKET_LEN       (512)
+#define U20_UEP0_MAXSIZE        (8)
+#define U20_UEP1_MAXSIZE        (8)
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
+
+#define DMA_TX_LEN   (512)
+#define DMA_TX_LEN0   DMA_TX_LEN
+#define DMA_TX_LEN1   DMA_TX_LEN
 
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };
@@ -89,6 +93,7 @@ static void ep0_transceive_and_update(uint8_t bDirection, uint8_t **buffer, uint
 static void ep1_transmit_keyboard(void);
 
 /* variables */
+static bool isHost = false;
 static enum ConfigurationDescriptorType cfgDescrType = CfgDescrBase;
 static enum Speed speed = SpeedLow;
 static enum Endpoint epMask = 0;
@@ -99,6 +104,8 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
+#define TX_DMA_ADDR0 (0x20020000)
+#define TX_DMA_ADDR1 (0x20020000 + DMA_TX_LEN0)
 static uint16_t sizeEndp1LoggingBuff = 0;
 __attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
 
@@ -494,8 +501,13 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
         /* Business logic about inputs goes here. */
         if (strncmp(endp1Rbuff, "ping!", U20_UEP1_MAXSIZE) == 0) {
             uint8_t *bufferNextEmpty = &(*pBuffer)[*pSizeBuffer];
-            memcpy(bufferNextEmpty, "1.......2.......3.......pong.", 30);
-            *pSizeBuffer += 30;
+            memcpy(bufferNextEmpty, "pong.", 6);
+            *pSizeBuffer += 6;
+        } else if (strncmp(endp1Rbuff, "debug", U20_UEP1_MAXSIZE) == 0) {
+            uint8_t *bufferNextEmpty = &(*pBuffer)[*pSizeBuffer];
+            memcpy(bufferNextEmpty, (void *)TX_DMA_ADDR0, 64);
+            bufferNextEmpty[64] = 0;
+            *pSizeBuffer += 65;
         }
 
         R16_UEP1_T_LEN = 0;
@@ -512,7 +524,7 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
             R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK;
 
             *pSizeBuffer -= sizeCurrentTransaction;
-            *(uint32_t *)(uint8_t **)pBuffer += U20_UEP1_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
+            *(uint32_t *)pBuffer += U20_UEP1_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
         } else {
             *pBuffer = bufferResetValue;
 
@@ -554,13 +566,95 @@ main(void)
     stringDescriptors                 = boardTopStringDescriptors;
 
 
+    /* USB Init. */
     U20_init(speed);
     U20_endpoints_init(epMask);
 
-    cprintf("Done!\r\n");
+    /* HSPI Init. */
+    if (bsp_switch()) {
+        isHost = true;
+        cprintf("[TOP BOARD] Hello!\r\n");
+    } else {
+        isHost = false;
+        cprintf("[BOTTOM BOARD] Hello!\r\n");
+    }
+
+
+    PFIC_EnableIRQ(HSPI_IRQn);
+    bsp_sync2boards(PA14, PA12, BSP_HOST);
+    cprintf("Synchronisation done\r\n");
+
+    memset((void *)TX_DMA_ADDR0, 0, 32768);
+    if (isHost) {
+        HSPI_INTCfg(ENABLE, RB_HSPI_IE_B_DONE);
+        HSPI_INTCfg(DISABLE, RB_HSPI_IE_T_DONE | RB_HSPI_IE_R_DONE | RB_HSPI_IE_FIFO_OV);
+        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT32_MOD, TX_DMA_ADDR0, TX_DMA_ADDR1, DMA_TX_LEN);
+    } else {
+        HSPI_INTCfg(ENABLE, RB_HSPI_IE_T_DONE);
+        HSPI_INTCfg(DISABLE, RB_HSPI_IE_R_DONE | RB_HSPI_IE_FIFO_OV | RB_HSPI_IE_B_DONE);
+        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT32_MOD, TX_DMA_ADDR0, TX_DMA_ADDR1, 0);
+    }
+    cprintf("Double DMA init done\r\n");
+
+    /* SerDes Init. */
+
+    cprintf("SerDes init done\r\n");
+
+    cprintf("Init all done!\r\n");
+
+
+
+    if (isHost) {
+        /* Init data to transmit. */
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                cprintf("%x\r\n", ((char *)TX_DMA_ADDR0)[i*8+j]);
+                ((char *)TX_DMA_ADDR0)[i*8+j] = '0' + i;
+                cprintf("%x\r\n", ((char *)TX_DMA_ADDR0)[i*8+j]);
+            }
+        }
+
+        HSPI_DMA_Tx();
+    }
 
     while (1) { }
 }
+
+
+/*******************************************************************************
+ * @fn     HSPI_IRQHandler
+ *
+ * @brief  HSPI Interrupt Handler.
+ *
+ * @return None
+ */
+__attribute__((interrupt("WCH-Interrupt-fast"))) void
+HSPI_IRQHandler(void)
+{
+    cprintf("Inside HSPI_IRQHandler!\r\n");
+    switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
+    case RB_HSPI_IF_T_DONE:
+        cprintf("RB_HSPI_IF_T_DONE\r\n");
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
+        break;
+    case RB_HSPI_IF_R_DONE:
+        cprintf("RB_HSPI_IF_R_DONE\r\n");
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
+        break;
+    case RB_HSPI_IF_FIFO_OV:
+        cprintf("RB_HSPI_IF_FIFO_OV\r\n");
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_FIFO_OV;
+        break;
+    case RB_HSPI_IF_B_DONE:
+        cprintf("RB_HSPI_IF_B_DONE\r\n");
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_B_DONE;
+        break;
+    default:
+        cprintf("default\r\n");
+        break;
+    }
+}
+
 
 /*******************************************************************************
  * @fn     USBHS_IRQHandler

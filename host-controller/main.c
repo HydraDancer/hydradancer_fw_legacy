@@ -25,7 +25,8 @@ main(int argc, char *argv[])
 {
     struct libusb_device_handle *device_handle = NULL;
     int retCode;
-    char ping[] = "ping!";
+    //char ping[] = "ping!";
+    char ping[] = "debug";
     char buffer[1024];
     int szBuffer = 0;
 
@@ -76,7 +77,7 @@ main(int argc, char *argv[])
     if (retCode == 0) {
         printf("[INFO]\tData received successfully: %s\n", buffer);
     } else {
-        printf("[ERROR]\tData NOT received successfully: %d\n", retCode);
+        printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
     }
 
 
