@@ -585,19 +585,24 @@ main(void)
     U20_endpoints_init(epMask);
 
     /* HSPI Init. */
-    if (bsp_switch()) {
+    int retCode;
+    // TODO: Top and bottom switched for testing purposes, need to switch them back.
+    if (!bsp_switch()) {
         isHost = true;
         cprintf("[TOP BOARD] Hello!\r\n");
+        retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
     } else {
         isHost = false;
         cprintf("[BOTTOM BOARD] Hello!\r\n");
+        retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
+    }
+    if (retCode) {
+        cprintf("Synchronisation done (success)\r\n");
+    } else {
+        cprintf("Synchronisation error(timeout)\r\n");
     }
 
-
     PFIC_EnableIRQ(HSPI_IRQn);
-    bsp_sync2boards(PA14, PA12, BSP_HOST);
-    cprintf("Synchronisation done\r\n");
-
     memset((void *)TX_DMA_ADDR0, 0, 32768);
     if (isHost) {
         HSPI_INTCfg(ENABLE, RB_HSPI_IE_B_DONE);
@@ -653,6 +658,7 @@ HSPI_IRQHandler(void)
         break;
     case RB_HSPI_IF_R_DONE:
         cprintf("RB_HSPI_IF_R_DONE\r\n");
+        cprintf("Received: %s\r\n", TX_DMA_ADDR0);
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
