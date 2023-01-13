@@ -452,14 +452,16 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
         *buffer = NULL;
 
         R16_UEP0_T_LEN = 0;
-        R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
-        R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+        R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        R8_UEP0_RX_CTRL ^= RB_UEP_R_TOG_1;
+        R8_UEP0_RX_CTRL = (R8_UEP0_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
     } else {
         *buffer += bytesToWriteForCurrentTransaction;
 
         R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
         R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
-        R8_UEP0_TX_CTRL = ( R8_UEP0_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK;
+        R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
     }
 }
 
@@ -485,9 +487,13 @@ ep1_transmit_keyboard(void)
     memcpy(endp1Tbuff, output, sizeof(output));
     R16_UEP1_T_LEN = sizeof(output);
     R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-    R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK ;
+    R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
 }
 
+// TODOO: If things to log are added while transmitting them, the new things
+// will overwrite the end of the not yet transmitted datas.
+// Quoi uqe peut etre pas, pBuffer avance au fur et a mesur, il est remis a zero
+// que lorsque tout est transmit.
 static void
 ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
@@ -499,29 +505,33 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
     switch (uisToken) {
     case UIS_TOKEN_OUT:
         /* Business logic about inputs goes here. */
-        if (strncmp(endp1Rbuff, "ping!", U20_UEP1_MAXSIZE) == 0) {
-            uint8_t *bufferNextEmpty = &(*pBuffer)[*pSizeBuffer];
-            memcpy(bufferNextEmpty, "pong.", 6);
-            *pSizeBuffer += 6;
-        } else if (strncmp(endp1Rbuff, "debug", U20_UEP1_MAXSIZE) == 0) {
-            uint8_t *bufferNextEmpty = &(*pBuffer)[*pSizeBuffer];
-            memcpy(bufferNextEmpty, (void *)TX_DMA_ADDR0, 64);
-            bufferNextEmpty[64] = 0;
-            *pSizeBuffer += 65;
+        if (strncmp(endp1Rbuff, "debug", U20_UEP1_MAXSIZE) == 0) {
+            // TODO: Clean up this safety check.
+            if (*pSizeBuffer >= 4096) {
+                cprintf("[ERROR] Debordement pSizeBuffer >= 4096\r\n");
+                return;
+            }
+            uint8_t *bufferNextEmpty = (*pBuffer) + (*pSizeBuffer);
+            memcpy(bufferNextEmpty, "123456789ABCDEF", 16);
+            bufferNextEmpty[15] = 0;
+            *pSizeBuffer = 16;
         }
 
+        // TODOOO: Handle transfer where there is more than one transaction.
         R16_UEP1_T_LEN = 0;
-        R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
-        R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+        R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        R8_UEP1_RX_CTRL ^= RB_UEP_R_TOG_1;
+        R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
         break;
     case UIS_TOKEN_IN:
-        if (*pSizeBuffer) {
+        if (*pSizeBuffer != 0x0000) {
             uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP1_MAXSIZE);
             memcpy(endp1Tbuff, *pBuffer, sizeCurrentTransaction);
 
             R16_UEP1_T_LEN = sizeCurrentTransaction;
             R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-            R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK;
+            R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
 
             *pSizeBuffer -= sizeCurrentTransaction;
             *(uint32_t *)pBuffer += U20_UEP1_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
@@ -529,11 +539,15 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
             *pBuffer = bufferResetValue;
 
             R16_UEP1_T_LEN = 0;
-            R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
-            R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+            R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
         }
         break;
+        default:
+            cprintf("[ERROR] ep1_transceive_and_update default!\r\n");
+            break;
     }
+    return;
 }
 
 
