@@ -1,4 +1,5 @@
 #include <libusb-1.0/libusb.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -39,7 +40,7 @@ main(int argc, char *argv[])
     }
 
     device_handle = libusb_open_device_with_vid_pid(NULL, ID_VENDOR, ID_PRODUCT);
-    if (device_handle == 0) {
+    if (device_handle == NULL) {
         printf("Error finding USB device\n");
         libusb_exit(NULL);
         return -2;
@@ -60,7 +61,7 @@ main(int argc, char *argv[])
 	}
     /* end of prolog. */
 
-    szBuffer = strlen(ping) + 1; /* Do not forget the null terminator. */
+    szBuffer = strnlen(ping, 1023) + 1; /* Do not forget the null terminator. */
     memcpy(buffer, ping, szBuffer);
     retCode = libusb_bulk_transfer(device_handle, EP1OUT, (unsigned char *)buffer, szBuffer, NULL, 0);
     if (retCode == 0) {
@@ -69,17 +70,31 @@ main(int argc, char *argv[])
         printf("[ERROR]\tData NOT send successfully\n");
     }
 
+    memset(buffer, 0x30, 1023);
+
     // printf("Sleeping a bit before receiving data...\n");
     // usleep(100000);
     // printf("Waking up!\n");
 
     retCode = libusb_bulk_transfer(device_handle, EP1IN, (unsigned char *)buffer, 1024, NULL, 0);
+    buffer[1023] = 0;
     if (retCode == 0) {
         printf("[INFO]\tData received successfully: %s\n", buffer);
     } else {
         printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
     }
 
+    for (int i = 0; i < 128; ++i) {
+        if (isprint(buffer[i])) {
+            putchar(buffer[i]);
+        } else {
+            putchar('.');
+        }
+
+        if ((i%8) == 7) {
+            putchar('\n');
+        }
+    }
 
     /* Epilog. */
     libusb_release_interface(device_handle, INTERFACE);
