@@ -9,7 +9,7 @@ static USB_DEV_DESCR stBoardTopDeviceDescriptor = {
     .bDeviceClass = 0x00,   /* Defined in the interface descriptor. */
     .bDeviceSubClass = 0x00,
     .bDeviceProtocol = 0x00,
-    .bMaxPacketSize0 = 8,
+    .bMaxPacketSize0 = U20_UEP0_MAXSIZE,
     .idVendor = 0x1337,
     .idProduct = 0x1337,
     .bcdDevice = 0x4200,
@@ -46,8 +46,9 @@ static USB_CFG_DESCR_FULL_2_ENDPOINTS stBoardTopConfigurationDescriptor = {
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x81,               /* In endpoint (MSB set to 1). */
         .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type. */
-        .wMaxPacketSizeL = 8,                   /* Packet size as defined by the spec for USB LS. */
-        .wMaxPacketSizeH = 0,
+        // TODOO: Handle asignment with value >255.
+        .wMaxPacketSizeL = 0,                   /* Packet size as defined by the spec for USB HS. */
+        .wMaxPacketSizeH = 0x02,
         .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0. */
     },
     .endpDescr1Out = {
@@ -55,8 +56,9 @@ static USB_CFG_DESCR_FULL_2_ENDPOINTS stBoardTopConfigurationDescriptor = {
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x01,               /* In endpoint (MSB set to 1). */
         .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type. */
-        .wMaxPacketSizeL = 8,                   /* Packet size as defined by the spec for USB LS. */
-        .wMaxPacketSizeH = 0,
+        // TODOO: Handle asignment with value >255.
+        .wMaxPacketSizeL = 0,                   /* Packet size as defined by the spec for USB HS. */
+        .wMaxPacketSizeH = 0x02,
         .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0. */
     },
 };

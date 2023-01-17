@@ -19,8 +19,8 @@
 
 /* macros */
 #define U20_MAXPACKET_LEN       (512)
-#define U20_UEP0_MAXSIZE        (8)
-#define U20_UEP1_MAXSIZE        (8)
+#define U20_UEP0_MAXSIZE        (64)    // Change accordingly to USB mode (Here HS).
+#define U20_UEP1_MAXSIZE        (512)    // Change accordingly to USB mode (Here HS).
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
 
 #define DMA_TX_LEN   (512)
@@ -104,8 +104,8 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
-__attribute__((aligned(128))) vuint8_t TX_DMA_ADDR0[512] __attribute__((section(".DMADATA"))); // HSPI 0
-__attribute__((aligned(128))) vuint8_t TX_DMA_ADDR1[512] __attribute__((section(".DMADATA"))); // HSPI 1
+__attribute__((aligned(16))) vuint8_t TX_DMA_ADDR0[512] __attribute__((section(".DMADATA"))); // HSPI 0
+__attribute__((aligned(16))) vuint8_t TX_DMA_ADDR1[512] __attribute__((section(".DMADATA"))); // HSPI 1
 static uint16_t sizeEndp1LoggingBuff = 0;
 __attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
 
@@ -512,9 +512,10 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
                 return;
             }
             uint8_t *bufferNextEmpty = (*pBuffer) + (*pSizeBuffer);
-            memcpy(bufferNextEmpty, "123456789ABCDEF", 16);
-            bufferNextEmpty[15] = 0;
-            *pSizeBuffer = 16;
+            memset(bufferNextEmpty, 'a', 900);
+            memcpy(bufferNextEmpty, "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF", 128);
+            bufferNextEmpty[899] = 0;
+            *pSizeBuffer = 900;
         }
 
         // TODOOO: Handle transfer where there is more than one transaction.
@@ -569,7 +570,7 @@ main(void)
     cprintf("Init ...\r\n");
 
     cfgDescrType = CfgDescr2Ep;
-    speed = SpeedLow;
+    speed = SpeedHigh;
     epMask = Ep1Mask;
     endpoint_clear(0x81);
     endpoint_clear(0x01);
@@ -607,9 +608,9 @@ main(void)
     memset((void *)TX_DMA_ADDR1, '.', DMA_TX_LEN1);
     TX_DMA_ADDR1[DMA_TX_LEN1-1] = 0;
     if (isHost) {
-        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT16_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, DMA_TX_LEN);
+        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, DMA_TX_LEN);
     } else {
-        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT16_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, 0);
+        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, 0);
     }
     cprintf("Double DMA init done\r\n");
 
@@ -637,24 +638,20 @@ main(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void
 HSPI_IRQHandler(void)
 {
-    cprintf("Inside HSPI_IRQHandler!\r\n");
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
-        cprintf("RB_HSPI_IF_T_DONE\r\n");
+        HSPIDone = true;
+        // TODOOO: Check RB_HSPI_NUM_MIS & RB_HSPI_CRC_ERR.
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
-        cprintf("RB_HSPI_IF_R_DONE\r\n");
-        cprintf("Received: %s\r\n", TX_DMA_ADDR0);
-        cprintf("Received: %s\r\n", TX_DMA_ADDR1);
+        // TODOOO: Check RB_HSPI_NUM_MIS & RB_HSPI_CRC_ERR.
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
-        cprintf("RB_HSPI_IF_FIFO_OV\r\n");
         R8_HSPI_INT_FLAG = RB_HSPI_IF_FIFO_OV;
         break;
     case RB_HSPI_IF_B_DONE:
-        cprintf("RB_HSPI_IF_B_DONE\r\n");
         R8_HSPI_INT_FLAG = RB_HSPI_IF_B_DONE;
         break;
     default:

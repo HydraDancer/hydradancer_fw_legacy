@@ -11,7 +11,7 @@
 #define ID_VENDOR  0x1337
 #define ID_PRODUCT 0x1337
 
-#define TRANSFER_SIZE 8 /* Currently doing USB LS. */
+#define TRANSFER_SIZE 64 /* Currently doing USB LS. */
 
 #define INTERFACE 1
 
@@ -84,7 +84,7 @@ main(int argc, char *argv[])
         printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
     }
 
-    for (int i = 0; i < 128; ++i) {
+    for (int i = 0; i < 1024; ++i) {
         if (isprint(buffer[i])) {
             putchar(buffer[i]);
         } else {
