@@ -2,6 +2,7 @@
  * Small description of the project.
  */
 #include <assert.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include "CH56xSFR.h"
@@ -89,8 +90,10 @@ static void U20_endpoints_init(enum Endpoint endpointsMask);
 static void endpoint_clear(uint8_t endpointToClear);
 static void endpoint_halt(uint8_t endpointToHalt);
 static void fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer);
-static void ep0_transceive_and_update(uint8_t bDirection, uint8_t **buffer, uint16_t *sizeBuffer);
+static void ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 static void ep1_transmit_keyboard(void);
+static void ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+void ep1_log(const char *fmt, ...);
 
 /* variables */
 static bool isHost = false;
@@ -107,7 +110,9 @@ static uint8_t **stringDescriptors;
 __attribute__((aligned(16))) vuint8_t TX_DMA_ADDR0[512] __attribute__((section(".DMADATA"))); // HSPI 0
 __attribute__((aligned(16))) vuint8_t TX_DMA_ADDR1[512] __attribute__((section(".DMADATA"))); // HSPI 1
 static uint16_t sizeEndp1LoggingBuff = 0;
+static const uint16_t capacityEndp1LoggingBuff = 4096;
 __attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
+static uint8_t *pEndp1LoggingBuff = endp1LoggingBuff;
 
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
 __attribute__((aligned(16))) uint8_t endp1Rbuff[4096] __attribute__((section(".DMADATA"))); // Endpoint 1 data recceiver buffer.
@@ -417,7 +422,7 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
 }
 
 static void
-ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuffer)
+ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
     uint16_t bytesToWriteForCurrentTransaction = 0;
 
@@ -429,13 +434,13 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
         /* Not implemented. */
         break;
     case UIS_TOKEN_IN:
-        bytesToWriteForCurrentTransaction = *sizeBuffer;
+        bytesToWriteForCurrentTransaction = *pSizeBuffer;
         if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
             bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
         }
 
-        if (*buffer && bytesToWriteForCurrentTransaction > 0) {
-            memcpy(endp0RTbuff, *buffer, bytesToWriteForCurrentTransaction);
+        if (*pBuffer && bytesToWriteForCurrentTransaction > 0) {
+            memcpy(endp0RTbuff, *pBuffer, bytesToWriteForCurrentTransaction);
         }
         break;
     case UIS_TOKEN_SETUP:
@@ -446,10 +451,10 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
         break;
     }
 
-    *sizeBuffer -= bytesToWriteForCurrentTransaction;
+    *pSizeBuffer -= bytesToWriteForCurrentTransaction;
 
     if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction. */
-        *buffer = NULL;
+        *pBuffer = NULL;
 
         R16_UEP0_T_LEN = 0;
         R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
@@ -457,7 +462,7 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
         R8_UEP0_RX_CTRL ^= RB_UEP_R_TOG_1;
         R8_UEP0_RX_CTRL = (R8_UEP0_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
     } else {
-        *buffer += bytesToWriteForCurrentTransaction;
+        *pBuffer += bytesToWriteForCurrentTransaction;
 
         R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
         R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
@@ -548,9 +553,18 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
             cprintf("[ERROR] ep1_transceive_and_update default!\r\n");
             break;
     }
-    return;
 }
 
+void
+ep1_log(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    uint16_t sizeLeft = capacityEndp1LoggingBuff - sizeEndp1LoggingBuff;
+
+    int bytesWritten = vsnprintf(pEndp1LoggingBuff + sizeEndp1LoggingBuff, sizeLeft, fmt, ap);
+    sizeEndp1LoggingBuff += bytesWritten;
+}
 
 
 /*********************************************************************
@@ -611,6 +625,7 @@ main(void)
         HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, DMA_TX_LEN);
     } else {
         HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, 0);
+        ep1_log("Init HSPI Device %d\r\n", 1337);
     }
     cprintf("Double DMA init done\r\n");
 
@@ -619,6 +634,9 @@ main(void)
     cprintf("SerDes init done\r\n");
 
     cprintf("Init all done!\r\n");
+    ep1_log("Init all done %d\r\n", 42);
+
+    while (1) {  }
 
 }
 
@@ -805,9 +823,7 @@ USBHS_IRQHandler(void)
             break;
         case 1:
             {
-                static uint8_t *pEndp1LoggingBuff = endp1LoggingBuff;
-                static uint16_t *pSizeEndp1LoggingBuff = &sizeEndp1LoggingBuff;
-                ep1_transceive_and_update(uisToken, (uint8_t **)&pEndp1LoggingBuff, pSizeEndp1LoggingBuff);
+                ep1_transceive_and_update(uisToken, (uint8_t **)&pEndp1LoggingBuff, &sizeEndp1LoggingBuff);
             }
             break;
         }
