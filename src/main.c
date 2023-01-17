@@ -620,11 +620,6 @@ main(void)
 
     cprintf("Init all done!\r\n");
 
-
-
-            }
-
-
 }
 
 
@@ -640,7 +635,6 @@ HSPI_IRQHandler(void)
 {
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
-        HSPIDone = true;
         // TODOOO: Check RB_HSPI_NUM_MIS & RB_HSPI_CRC_ERR.
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
