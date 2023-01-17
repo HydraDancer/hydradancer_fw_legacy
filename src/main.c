@@ -104,8 +104,8 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
-#define TX_DMA_ADDR0 (0x20020000)
-#define TX_DMA_ADDR1 (0x20020000 + DMA_TX_LEN0)
+__attribute__((aligned(128))) vuint8_t TX_DMA_ADDR0[512] __attribute__((section(".DMADATA"))); // HSPI 0
+__attribute__((aligned(128))) vuint8_t TX_DMA_ADDR1[512] __attribute__((section(".DMADATA"))); // HSPI 1
 static uint16_t sizeEndp1LoggingBuff = 0;
 __attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
 
@@ -602,16 +602,14 @@ main(void)
         cprintf("Synchronisation error(timeout)\r\n");
     }
 
-    PFIC_EnableIRQ(HSPI_IRQn);
-    memset((void *)TX_DMA_ADDR0, 0, 32768);
+    memset((void *)TX_DMA_ADDR0, '.', DMA_TX_LEN0);
+    TX_DMA_ADDR0[DMA_TX_LEN0-1] = 0;
+    memset((void *)TX_DMA_ADDR1, '.', DMA_TX_LEN1);
+    TX_DMA_ADDR1[DMA_TX_LEN1-1] = 0;
     if (isHost) {
-        HSPI_INTCfg(ENABLE, RB_HSPI_IE_B_DONE);
-        HSPI_INTCfg(DISABLE, RB_HSPI_IE_T_DONE | RB_HSPI_IE_R_DONE | RB_HSPI_IE_FIFO_OV);
-        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT32_MOD, TX_DMA_ADDR0, TX_DMA_ADDR1, DMA_TX_LEN);
+        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT16_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, DMA_TX_LEN);
     } else {
-        HSPI_INTCfg(ENABLE, RB_HSPI_IE_T_DONE);
-        HSPI_INTCfg(DISABLE, RB_HSPI_IE_R_DONE | RB_HSPI_IE_FIFO_OV | RB_HSPI_IE_B_DONE);
-        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT32_MOD, TX_DMA_ADDR0, TX_DMA_ADDR1, 0);
+        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT16_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, 0);
     }
     cprintf("Double DMA init done\r\n");
 
@@ -623,20 +621,9 @@ main(void)
 
 
 
-    if (isHost) {
-        /* Init data to transmit. */
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                cprintf("%x\r\n", ((char *)TX_DMA_ADDR0)[i*8+j]);
-                ((char *)TX_DMA_ADDR0)[i*8+j] = '0' + i;
-                cprintf("%x\r\n", ((char *)TX_DMA_ADDR0)[i*8+j]);
             }
-        }
 
-        HSPI_DMA_Tx();
-    }
 
-    while (1) { }
 }
 
 
@@ -659,6 +646,7 @@ HSPI_IRQHandler(void)
     case RB_HSPI_IF_R_DONE:
         cprintf("RB_HSPI_IF_R_DONE\r\n");
         cprintf("Received: %s\r\n", TX_DMA_ADDR0);
+        cprintf("Received: %s\r\n", TX_DMA_ADDR1);
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
