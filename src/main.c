@@ -2,6 +2,8 @@
  * Small description of the project.
  */
 #include <assert.h>
+#include <stdarg.h>
+#include <string.h>
 
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
@@ -10,6 +12,7 @@
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
 // TODOO: Add debgu over UART.
+// TODOO: Add doxygen for every function.
 // TODO: Homogenize var name to camelCase.
 // TODO: Homogenize var comments.
 // TODO: Add defaults to switches.
@@ -17,9 +20,14 @@
 
 
 /* macros */
-#define U20_MAXPACKET_LEN       512
-#define U20_UEP0_MAXSIZE        8
+#define U20_MAXPACKET_LEN       (512)
+#define U20_UEP0_MAXSIZE        (64)    // Change accordingly to USB mode (Here HS).
+#define U20_UEP1_MAXSIZE        (512)    // Change accordingly to USB mode (Here HS).
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
+
+#define DMA_TX_LEN   (512)
+#define DMA_TX_LEN0   DMA_TX_LEN
+#define DMA_TX_LEN1   DMA_TX_LEN
 
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };
@@ -32,7 +40,7 @@ enum Endpoint {
     Ep6Mask = 1 << 5,
     Ep7Mask = 1 << 6,
 };
-enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid };
+enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep };
 
 typedef union {
     uint16_t w;
@@ -63,9 +71,17 @@ typedef struct __PACKED _USB_CONFIG_DESCR_FULL_HID {
     USB_ENDP_DESCR endpDescr;
 } USB_CFG_DESCR_FULL_HID, *PUSB_CFG_DESCR_FULL_HID;
 
+typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS {
+    USB_CFG_DESCR  cfgDescr;
+    USB_ITF_DESCR  itfDescr;
+    USB_ENDP_DESCR endpDescr1In;
+    USB_ENDP_DESCR endpDescr1Out;
+} USB_CFG_DESCR_FULL_2_ENDPOINTS, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS;
+
 typedef union {
     USB_CFG_DESCR_FULL_BASE base;
     USB_CFG_DESCR_FULL_HID withHid;
+    USB_CFG_DESCR_FULL_2_ENDPOINTS base2Ep;
 } USB_CFG_DESCR_FULL, *PUSB_CFG_DESCR_FULL;
 
 /* function declarations */
@@ -75,10 +91,13 @@ static void U20_endpoints_init(enum Endpoint endpointsMask);
 static void endpoint_clear(uint8_t endpointToClear);
 static void endpoint_halt(uint8_t endpointToHalt);
 static void fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer);
-static uint16_t ep0_transceive_and_update(uint8_t bDirection, uint8_t **buffer, uint16_t *sizeBuffer);
+static void ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 static void ep1_transmit_keyboard(void);
+static void ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+void ep1_log(const char *fmt, ...);
 
 /* variables */
+static bool isHost = false;
 static enum ConfigurationDescriptorType cfgDescrType = CfgDescrBase;
 static enum Speed speed = SpeedLow;
 static enum Endpoint epMask = 0;
@@ -89,6 +108,12 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
+__attribute__((aligned(16))) uint8_t TX_DMA_ADDR0[4096] __attribute__((section(".DMADATA"))); // HSPI 0
+__attribute__((aligned(16))) uint8_t TX_DMA_ADDR1[4096] __attribute__((section(".DMADATA"))); // HSPI 1
+static uint16_t sizeEndp1LoggingBuff = 0;
+static const uint16_t capacityEndp1LoggingBuff = 4096;
+__attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
+static uint8_t *pEndp1LoggingBuff = endp1LoggingBuff;
 
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
 __attribute__((aligned(16))) uint8_t endp1Rbuff[4096] __attribute__((section(".DMADATA"))); // Endpoint 1 data recceiver buffer.
@@ -110,6 +135,13 @@ __attribute__((aligned(16))) uint8_t endp7Tbuff[4096] __attribute__((section(".D
 #include "config.h"
 
 /* function implemtations */
+
+/* @fn      array_addr_len
+ *
+ * @brief   Get the length of an array of pointers.
+ *
+ * @return  Return the length of an array of pointers.
+ */
 static uint8_t
 array_addr_len(void **array)
 {
@@ -118,6 +150,94 @@ array_addr_len(void **array)
             return i;
         }
     }
+}
+
+/* @fn      HSPI_get_rtx_status
+ *
+ * @brief   Get the status of the transmission/reception of the HSPI Transaction.
+ *
+ * @return  Return 0b0010 if CRC_ERR, 0b0100 if NUM_MIS, 0 else.
+ */
+static uint8_t
+HSPI_get_rtx_status(void)
+{
+    return R8_HSPI_RTX_STATUS & (RB_HSPI_CRC_ERR | RB_HSPI_NUM_MIS);
+}
+
+/* @fn      HSPI_get_buffer_next_tx
+ *
+ * @brief   Get the buffer that will be used for the next transmission over
+ *          HSPI.
+ *
+ * @return  Return the buffer that will be used for the next transmission over
+ *          HSPI.
+ */
+static uint8_t *
+HSPI_get_buffer_next_tx(void)
+{
+    uint8_t *bufferTx = TX_DMA_ADDR0;
+    if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
+        bufferTx = TX_DMA_ADDR1;
+    }
+
+    return bufferTx;
+}
+
+/* @fn      HSPI_get_buffer_tx
+ *
+ * @brief   Get the buffer that was used for the previous transmission over
+ *          HSPI.
+ *
+ * @return  Return the buffer that was used for the previous transmission over
+ *          HSPI. */
+static uint8_t *
+HSPI_get_buffer_tx(void)
+{
+    // R8_HSPI_TX_SC stores the buffer that will be used for the next
+    // transmission, thus we need to inverse the buffers.
+    uint8_t *bufferTx = TX_DMA_ADDR1;
+    if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
+        bufferTx = TX_DMA_ADDR0;
+    }
+
+    return bufferTx;
+}
+
+/* @fn      HSPI_get_buffer_next_rx
+ *
+ * @brief   Get the buffer that will be used for the next reception over HSPI.
+ *
+ * @return  Return the buffer that will be used for the next reception over
+ *          HSPI.
+ */
+static uint8_t *
+HSPI_get_buffer_next_rx(void)
+{
+    uint8_t *bufferRx = TX_DMA_ADDR0;
+    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+        bufferRx = TX_DMA_ADDR1;
+    }
+
+    return bufferRx;
+}
+
+/* @fn      HSPI_get_buffer_rx
+ *
+ * @brief   Get the buffer that was used for the previous reception over HSPI.
+ *
+ * @return  Return the buffer that was used for the previous reception over
+ *          HSPI. */
+static uint8_t *
+HSPI_get_buffer_rx(void)
+{
+    // R8_HSPI_RX_SC stores the buffer that will be used for the next
+    // reception, thus we need to inverse the buffers.
+    uint8_t *bufferRx = TX_DMA_ADDR1;
+    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+        bufferRx = TX_DMA_ADDR0;
+    }
+
+    return bufferRx;
 }
 
 static void
@@ -361,16 +481,10 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
         *pSizeBuffer = stDeviceDescriptor.bLength;
         break;
     case USB_DESCR_TYP_CONFIG:
-        switch (cfgDescrType) {
-        case CfgDescrBase:
-            *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
-            *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
-            break;
-        case CfgDescrWithHid:
-            *pBuffer = (uint8_t *)&stConfigurationDescriptor.withHid;
-            *pSizeBuffer = stConfigurationDescriptor.withHid.cfgDescr.wTotalLength;
-            break;
-        }
+        /* The .cfgDescr field is always the first, no matter the union's type.
+         */
+        *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
+        *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
         break;
     case USB_DESCR_TYP_STRING: {
         uint8_t i = descritorRequested.bw.bb1;
@@ -403,8 +517,8 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
     }
 }
 
-static uint16_t
-ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuffer)
+static void
+ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
     uint16_t bytesToWriteForCurrentTransaction = 0;
 
@@ -416,13 +530,13 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
         /* Not implemented. */
         break;
     case UIS_TOKEN_IN:
-        bytesToWriteForCurrentTransaction = *sizeBuffer;
+        bytesToWriteForCurrentTransaction = *pSizeBuffer;
         if (bytesToWriteForCurrentTransaction >= U20_UEP0_MAXSIZE) {
             bytesToWriteForCurrentTransaction = U20_UEP0_MAXSIZE;
         }
 
-        if (*buffer && bytesToWriteForCurrentTransaction > 0) {
-            memcpy(endp0RTbuff, *buffer, bytesToWriteForCurrentTransaction);
+        if (*pBuffer && bytesToWriteForCurrentTransaction > 0) {
+            memcpy(endp0RTbuff, *pBuffer, bytesToWriteForCurrentTransaction);
         }
         break;
     case UIS_TOKEN_SETUP:
@@ -433,20 +547,22 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **buffer, uint16_t *sizeBuff
         break;
     }
 
-    *sizeBuffer -= bytesToWriteForCurrentTransaction;
+    *pSizeBuffer -= bytesToWriteForCurrentTransaction;
 
     if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction. */
-        *buffer = NULL;
+        *pBuffer = NULL;
 
         R16_UEP0_T_LEN = 0;
-        R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
-        R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+        R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        R8_UEP0_RX_CTRL ^= RB_UEP_R_TOG_1;
+        R8_UEP0_RX_CTRL = (R8_UEP0_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
     } else {
-        *buffer += bytesToWriteForCurrentTransaction;
+        *pBuffer += bytesToWriteForCurrentTransaction;
 
         R16_UEP0_T_LEN = bytesToWriteForCurrentTransaction;
         R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
-        R8_UEP0_TX_CTRL = ( R8_UEP0_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK;
+        R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
     }
 }
 
@@ -472,8 +588,90 @@ ep1_transmit_keyboard(void)
     memcpy(endp1Tbuff, output, sizeof(output));
     R16_UEP1_T_LEN = sizeof(output);
     R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-    R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL &~RB_UEP_TRES_MASK )| UEP_T_RES_ACK ;
+    R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
 }
+
+// TODOO: If things to log are added while transmitting them, the new things
+// will overwrite the end of the not yet transmitted datas.
+// Quoi uqe peut etre pas, pBuffer avance au fur et a mesur, il est remis a zero
+// que lorsque tout est transmit.
+static void
+ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_OUT:
+        /* Business logic about inputs goes here. */
+        if (strncmp(endp1Rbuff, "debug", U20_UEP1_MAXSIZE) == 0) {
+            // TODO: Clean up this safety check.
+            if (*pSizeBuffer >= 4096) {
+                cprintf("[ERROR] Debordement pSizeBuffer >= 4096\r\n");
+                return;
+            }
+            uint8_t *bufferNextEmpty = (*pBuffer) + (*pSizeBuffer);
+            memset(bufferNextEmpty, 'a', 900);
+            memcpy(bufferNextEmpty, "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF", 128);
+            bufferNextEmpty[899] = 0;
+            *pSizeBuffer = 900;
+        }
+
+        // TODOOO: Handle transfer where there is more than one transaction.
+        R16_UEP1_T_LEN = 0;
+        R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        R8_UEP1_RX_CTRL ^= RB_UEP_R_TOG_1;
+        R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+        break;
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer != 0x0000) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP1_MAXSIZE);
+            memcpy(endp1Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP1_T_LEN = sizeCurrentTransaction;
+            R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)pBuffer += U20_UEP1_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            R16_UEP1_T_LEN = 0;
+            R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        }
+        break;
+        default:
+            cprintf("[ERROR] ep1_transceive_and_update default!\r\n");
+            break;
+    }
+}
+
+void
+ep1_log(const char *fmt, ...)
+{
+    // Critical section, if we print something (outside of an interrrupt) and an
+    // interrupt is called and do a print, then the first print is partially
+    // overwritten.
+    va_list ap;
+    bsp_disable_interrupt();
+    va_start(ap, fmt);
+    uint16_t sizeLeft = capacityEndp1LoggingBuff - sizeEndp1LoggingBuff;
+
+    if (sizeEndp1LoggingBuff >= capacityEndp1LoggingBuff) {
+        cprintf("Buffer already filled!\r\n");
+        sizeLeft = 0;
+    }
+
+    int bytesWritten = vsnprintf(pEndp1LoggingBuff + sizeEndp1LoggingBuff, sizeLeft, fmt, ap);
+    sizeEndp1LoggingBuff += bytesWritten;
+    bsp_enable_interrupt();
+}
+
 
 /*********************************************************************
  * @fn      main
@@ -482,39 +680,150 @@ ep1_transmit_keyboard(void)
  *
  * @return  none
  */
+uint8_t WORKARROUND = true;
 int
 main(void)
 {
+    bsp_gpio_init();
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
+    cprintf("Init\r\n");
 
-    cfgDescrType = CfgDescrWithHid;
-    speed = SpeedLow;
+    cfgDescrType = CfgDescr2Ep;
+    speed = SpeedHigh;
     epMask = Ep1Mask;
     endpoint_clear(0x81);
+    endpoint_clear(0x01);
 
-    stDeviceDescriptor    = stKeyboardDeviceDescriptor;
-    stInterfaceDescriptor = stKeyboardConfigurationDescriptor.itfDescr;
-    stEndpointDescriptor  = stKeyboardConfigurationDescriptor.endpDescr;
-    stHidDescriptor       = stKeyboardConfigurationDescriptor.hidDescr;
-    reportDescriptor      = keyboardReportDescriptor;
-    stringDescriptors     = keyboardStringDescriptors;
+    stDeviceDescriptor                = stBoardTopDeviceDescriptor;
+    stConfigurationDescriptor.base2Ep = stBoardTopConfigurationDescriptor;
+    stInterfaceDescriptor             = stBoardTopConfigurationDescriptor.itfDescr;
+    stringDescriptors                 = boardTopStringDescriptors;
 
-    switch (cfgDescrType) {
-    case CfgDescrBase:
-        // No base descritor available for now.
-        // stConfigurationDescriptor.base    = stKeyboardConfigurationDescriptor;
-        break;
-    case CfgDescrWithHid:
-        stConfigurationDescriptor.withHid = stKeyboardConfigurationDescriptor;
-        break;
-    }
 
+    /* USB Init. */
     U20_init(speed);
     U20_endpoints_init(epMask);
 
-    while (1) { }
+    ep1_log("USB init done\r\n");
+
+    /* HSPI Init. */
+    int retCode;
+    // TODO: Top and bottom switched for testing purposes, need to switch them back.
+    if (!bsp_switch()) {
+        isHost = true;
+        ep1_log("[TOP BOARD] Hello!\r\n");
+        retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
+    } else {
+        isHost = false;
+        ep1_log("[BOTTOM BOARD] Hello!\r\n");
+        retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
+    }
+    if (retCode) {
+        ep1_log("Synchronisation done (success)\r\n");
+    } else {
+        ep1_log("Synchronisation error(timeout)\r\n");
+    }
+
+    memset((void *)TX_DMA_ADDR0, '.', DMA_TX_LEN0);
+    TX_DMA_ADDR0[DMA_TX_LEN0-1] = 0;
+    memset((void *)TX_DMA_ADDR1, '.', DMA_TX_LEN1);
+    TX_DMA_ADDR1[DMA_TX_LEN1-1] = 0;
+    if (isHost) {
+        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, DMA_TX_LEN);
+    } else {
+        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, 0);
+    }
+    ep1_log("HSPI init done\r\n");
+
+    /* SerDes Init. */
+    ep1_log("SerDes init done\r\n");
+
+    ep1_log("Init all done!\r\n");
+
+
+    // TODO: Move the business logic to appropriate place (IRQHandler ?).
+    // This is just an example.
+    if (isHost) {
+        uint8_t c = 'A';
+        while ( 'A' <= c && c <= 'Z') {
+            // Prepare buffer.
+            uint8_t *hspiBufferTx = HSPI_get_buffer_next_tx();
+            memset(hspiBufferTx, c, 16);
+
+            // Transmit.
+            WORKARROUND = false;
+            HSPI_DMA_Tx();
+
+            // Wait for completion.
+            ep1_log("Transmitting ... (c=%c on %p)\r\n", c, hspiBufferTx);
+            while (!WORKARROUND) {  }
+            // HSPI_Wait_Txdone();
+            ep1_log("Transmitting done!\r\n");
+
+            // Check for Error.
+            uint8_t hspiRtxStatus = HSPI_get_rtx_status();
+            if (hspiRtxStatus) {
+                ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            }
+
+            // Prepare next transaction.
+            ++c;
+        }
+    }
+
+    while (1) {  }
+
 }
+
+
+/*******************************************************************************
+ * @fn     HSPI_IRQHandler
+ *
+ * @brief  HSPI Interrupt Handler.
+ *
+ * @return None
+ */
+__attribute__((interrupt("WCH-Interrupt-fast"))) void
+HSPI_IRQHandler(void)
+{
+    switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
+    uint8_t hspiRtxStatus;
+    uint8_t *hspiBufferRx;
+    case RB_HSPI_IF_T_DONE:
+        ep1_log("Transmition interrupt\r\n");
+        hspiRtxStatus = HSPI_get_rtx_status();
+        if (hspiRtxStatus) {
+            ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+        }
+
+        // Find a cleaner solution for "acknowledgement" of the T_DONE.
+        WORKARROUND = true;
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
+        break;
+    case RB_HSPI_IF_R_DONE:
+        hspiRtxStatus = HSPI_get_rtx_status();
+        if (hspiRtxStatus) {
+            ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+        }
+
+        hspiBufferRx = HSPI_get_buffer_rx();
+
+        ep1_log("HSPI interrupt received %c\r\n", hspiBufferRx[0]);
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
+        break;
+    case RB_HSPI_IF_FIFO_OV:
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_FIFO_OV;
+        break;
+    case RB_HSPI_IF_B_DONE:
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_B_DONE;
+        break;
+    default:
+        cprintf("default\r\n");
+        break;
+    }
+}
+
 
 /*******************************************************************************
  * @fn     USBHS_IRQHandler
@@ -649,10 +958,7 @@ USBHS_IRQHandler(void)
         R8_USB_INT_FG = RB_USB_IF_SUSPEND;
     } else if (R8_USB_INT_FG & RB_USB_IF_TRANSFER) {
         uint8_t endpNum = R8_USB_INT_ST & RB_DEV_ENDP_MASK;
-        uint8_t rxToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
-        uint16_t bytesToWriteForCurrentTransaction;
-
-
+        uint8_t uisToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
 
         switch (endpNum) {
         case 0:
@@ -664,11 +970,13 @@ USBHS_IRQHandler(void)
                 R8_UEP0_TX_CTRL = 0;
                 R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
             } else {
-                ep0_transceive_and_update(rxToken, &pDataToWrite, &bytesToWrite);
+                ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
             }
             break;
         case 1:
-            ep1_transmit_keyboard();
+            {
+                ep1_transceive_and_update(uisToken, (uint8_t **)&pEndp1LoggingBuff, &sizeEndp1LoggingBuff);
+            }
             break;
         }
 
