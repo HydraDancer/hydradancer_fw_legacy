@@ -12,6 +12,7 @@
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
 // TODOO: Add debgu over UART.
+// TODOO: Add doxygen for every function.
 // TODO: Homogenize var name to camelCase.
 // TODO: Homogenize var comments.
 // TODO: Add defaults to switches.
@@ -134,6 +135,13 @@ __attribute__((aligned(16))) uint8_t endp7Tbuff[4096] __attribute__((section(".D
 #include "config.h"
 
 /* function implemtations */
+
+/* @fn      array_addr_len
+ *
+ * @brief   Get the length of an array of pointers.
+ *
+ * @return  Return the length of an array of pointers.
+ */
 static uint8_t
 array_addr_len(void **array)
 {
@@ -144,10 +152,53 @@ array_addr_len(void **array)
     }
 }
 
+/* @fn      HSPI_get_rtx_status
+ *
+ * @brief   Get the status of the transmission/reception of the HSPI Transaction.
+ *
+ * @return  Return 0b0010 if CRC_ERR, 0b0100 if NUM_MIS, 0 else.
+ */
 static uint8_t
-get_HSPI_RTX_status(void)
+HSPI_get_rtx_status(void)
 {
     return R8_HSPI_RTX_STATUS & (RB_HSPI_CRC_ERR | RB_HSPI_NUM_MIS);
+}
+
+/* @fn      HSPI_get_buffer_next_tx
+ *
+ * @brief   Get the buffer that will be used for the next transaction over HSPI.
+ *
+ * @return  Return the buffer that will be used for the next transaction over
+ *          HSPI.
+ */
+static uint8_t *
+HSPI_get_buffer_next_tx(void)
+{
+    uint8_t *bufferTx = TX_DMA_ADDR0;
+    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+        bufferTx = TX_DMA_ADDR1;
+    }
+
+    return bufferTx;
+}
+
+/* @fn      HSPI_get_buffer_tx
+ *
+ * @brief   Get the buffer that was used for the previous transaction over HSPI.
+ *
+ * @return  Return the buffer that was used for the previous transaction over
+ *          HSPI. */
+static uint8_t *
+HSPI_get_buffer_tx(void)
+{
+    // R8_HSPI_RX_SC stores the buffer that will be used for the next
+    // transaction, thus we need to inverse the buffers.
+    uint8_t *bufferTx = TX_DMA_ADDR1;
+    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+        bufferTx = TX_DMA_ADDR0;
+    }
+
+    return bufferTx;
 }
 
 static void
@@ -671,7 +722,7 @@ main(void)
             ep1_log("Transmitting done!\r\n");
 
             // Check for Error.
-            uint8_t hspiRtxStatus = get_HSPI_RTX_status();
+            uint8_t hspiRtxStatus = HSPI_get_rtx_status();
             if (hspiRtxStatus) {
                 ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
             }
@@ -697,16 +748,28 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void
 HSPI_IRQHandler(void)
 {
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
+    uint8_t hspiRtxStatus;
+    uint8_t *hspiBufferTx;
     case RB_HSPI_IF_T_DONE:
         ep1_log("Transmition interrupt\r\n");
-        // TODOOO: Check RB_HSPI_NUM_MIS & RB_HSPI_CRC_ERR.
-        // Not clearing the interrupt because it will be cleared by HSPI_Wait_Txdone().
+        hspiRtxStatus = HSPI_get_rtx_status();
+        if (hspiRtxStatus) {
+            ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+        }
+
+        // Find a cleaner solution for "acknowledgement" of the T_DONE.
         WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
-        // TODOOO: Check RB_HSPI_NUM_MIS & RB_HSPI_CRC_ERR.
-        ep1_log("HSPI interrupt received %c %c\r\n", TX_DMA_ADDR0[0], TX_DMA_ADDR1[0]);
+        hspiRtxStatus = HSPI_get_rtx_status();
+        if (hspiRtxStatus) {
+            ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+        }
+
+        hspiBufferTx = HSPI_get_buffer_tx();
+
+        ep1_log("HSPI interrupt received %c\r\n", hspiBufferTx[0]);
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
