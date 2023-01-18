@@ -144,6 +144,12 @@ array_addr_len(void **array)
     }
 }
 
+static uint8_t
+get_HSPI_RTX_status(void)
+{
+    return R8_HSPI_RTX_STATUS & (RB_HSPI_CRC_ERR | RB_HSPI_NUM_MIS);
+}
+
 static void
 U20_init(enum Speed sp)
 {
@@ -644,6 +650,9 @@ main(void)
 
     ep1_log("Init all done!\r\n");
 
+
+    // TODO: Move the business logic to appropriate place (IRQHandler ?).
+    // This is just an example.
     if (isHost) {
         uint8_t c = 'A';
         while ( 'A' <= c && c <= 'Z') {
@@ -662,8 +671,12 @@ main(void)
             ep1_log("Transmitting done!\r\n");
 
             // Check for Error.
+            uint8_t hspiRtxStatus = get_HSPI_RTX_status();
+            if (hspiRtxStatus) {
+                ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            }
 
-            // Prepare next loop.
+            // Prepare next transaction.
             ++c;
         }
     }
