@@ -108,8 +108,8 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
-__attribute__((aligned(16))) uint8_t TX_DMA_ADDR0[512] __attribute__((section(".DMADATA"))); // HSPI 0
-__attribute__((aligned(16))) uint8_t TX_DMA_ADDR1[512] __attribute__((section(".DMADATA"))); // HSPI 1
+__attribute__((aligned(16))) uint8_t TX_DMA_ADDR0[4096] __attribute__((section(".DMADATA"))); // HSPI 0
+__attribute__((aligned(16))) uint8_t TX_DMA_ADDR1[4096] __attribute__((section(".DMADATA"))); // HSPI 1
 static uint16_t sizeEndp1LoggingBuff = 0;
 static const uint16_t capacityEndp1LoggingBuff = 4096;
 __attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
