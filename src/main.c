@@ -166,16 +166,17 @@ HSPI_get_rtx_status(void)
 
 /* @fn      HSPI_get_buffer_next_tx
  *
- * @brief   Get the buffer that will be used for the next transaction over HSPI.
+ * @brief   Get the buffer that will be used for the next transmission over
+ *          HSPI.
  *
- * @return  Return the buffer that will be used for the next transaction over
+ * @return  Return the buffer that will be used for the next transmission over
  *          HSPI.
  */
 static uint8_t *
 HSPI_get_buffer_next_tx(void)
 {
     uint8_t *bufferTx = TX_DMA_ADDR0;
-    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+    if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
         bufferTx = TX_DMA_ADDR1;
     }
 
@@ -184,21 +185,59 @@ HSPI_get_buffer_next_tx(void)
 
 /* @fn      HSPI_get_buffer_tx
  *
- * @brief   Get the buffer that was used for the previous transaction over HSPI.
+ * @brief   Get the buffer that was used for the previous transmission over
+ *          HSPI.
  *
- * @return  Return the buffer that was used for the previous transaction over
+ * @return  Return the buffer that was used for the previous transmission over
  *          HSPI. */
 static uint8_t *
 HSPI_get_buffer_tx(void)
 {
-    // R8_HSPI_RX_SC stores the buffer that will be used for the next
-    // transaction, thus we need to inverse the buffers.
+    // R8_HSPI_TX_SC stores the buffer that will be used for the next
+    // transmission, thus we need to inverse the buffers.
     uint8_t *bufferTx = TX_DMA_ADDR1;
-    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+    if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
         bufferTx = TX_DMA_ADDR0;
     }
 
     return bufferTx;
+}
+
+/* @fn      HSPI_get_buffer_next_rx
+ *
+ * @brief   Get the buffer that will be used for the next reception over HSPI.
+ *
+ * @return  Return the buffer that will be used for the next reception over
+ *          HSPI.
+ */
+static uint8_t *
+HSPI_get_buffer_next_rx(void)
+{
+    uint8_t *bufferRx = TX_DMA_ADDR0;
+    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+        bufferRx = TX_DMA_ADDR1;
+    }
+
+    return bufferRx;
+}
+
+/* @fn      HSPI_get_buffer_rx
+ *
+ * @brief   Get the buffer that was used for the previous reception over HSPI.
+ *
+ * @return  Return the buffer that was used for the previous reception over
+ *          HSPI. */
+static uint8_t *
+HSPI_get_buffer_rx(void)
+{
+    // R8_HSPI_RX_SC stores the buffer that will be used for the next
+    // reception, thus we need to inverse the buffers.
+    uint8_t *bufferRx = TX_DMA_ADDR1;
+    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
+        bufferRx = TX_DMA_ADDR0;
+    }
+
+    return bufferRx;
 }
 
 static void
@@ -648,6 +687,7 @@ main(void)
     bsp_gpio_init();
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
+    cprintf("Init\r\n");
 
     cfgDescrType = CfgDescr2Ep;
     speed = SpeedHigh;
@@ -708,15 +748,15 @@ main(void)
         uint8_t c = 'A';
         while ( 'A' <= c && c <= 'Z') {
             // Prepare buffer.
-            memset(TX_DMA_ADDR0, c, 16);
-            memset(TX_DMA_ADDR1, 'a'-'A' + c, 16);
+            uint8_t *hspiBufferTx = HSPI_get_buffer_next_tx();
+            memset(hspiBufferTx, c, 16);
 
             // Transmit.
             WORKARROUND = false;
             HSPI_DMA_Tx();
 
             // Wait for completion.
-            ep1_log("Transmitting ... (c=%d)\r\n", c-'A');
+            ep1_log("Transmitting ... (c=%c on %p)\r\n", c, hspiBufferTx);
             while (!WORKARROUND) {  }
             // HSPI_Wait_Txdone();
             ep1_log("Transmitting done!\r\n");
@@ -749,7 +789,7 @@ HSPI_IRQHandler(void)
 {
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     uint8_t hspiRtxStatus;
-    uint8_t *hspiBufferTx;
+    uint8_t *hspiBufferRx;
     case RB_HSPI_IF_T_DONE:
         ep1_log("Transmition interrupt\r\n");
         hspiRtxStatus = HSPI_get_rtx_status();
@@ -767,9 +807,9 @@ HSPI_IRQHandler(void)
             ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
-        hspiBufferTx = HSPI_get_buffer_tx();
+        hspiBufferRx = HSPI_get_buffer_rx();
 
-        ep1_log("HSPI interrupt received %c\r\n", hspiBufferTx[0]);
+        ep1_log("HSPI interrupt received %c\r\n", hspiBufferRx[0]);
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
