@@ -107,8 +107,8 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
-__attribute__((aligned(16))) vuint8_t TX_DMA_ADDR0[512] __attribute__((section(".DMADATA"))); // HSPI 0
-__attribute__((aligned(16))) vuint8_t TX_DMA_ADDR1[512] __attribute__((section(".DMADATA"))); // HSPI 1
+__attribute__((aligned(16))) uint8_t TX_DMA_ADDR0[512] __attribute__((section(".DMADATA"))); // HSPI 0
+__attribute__((aligned(16))) uint8_t TX_DMA_ADDR1[512] __attribute__((section(".DMADATA"))); // HSPI 1
 static uint16_t sizeEndp1LoggingBuff = 0;
 static const uint16_t capacityEndp1LoggingBuff = 4096;
 __attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
@@ -558,12 +558,22 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 void
 ep1_log(const char *fmt, ...)
 {
+    // Critical section, if we print something (outside of an interrrupt) and an
+    // interrupt is called and do a print, then the first print is partially
+    // overwritten.
     va_list ap;
+    bsp_disable_interrupt();
     va_start(ap, fmt);
     uint16_t sizeLeft = capacityEndp1LoggingBuff - sizeEndp1LoggingBuff;
 
+    if (sizeEndp1LoggingBuff >= capacityEndp1LoggingBuff) {
+        cprintf("Buffer already filled!\r\n");
+        sizeLeft = 0;
+    }
+
     int bytesWritten = vsnprintf(pEndp1LoggingBuff + sizeEndp1LoggingBuff, sizeLeft, fmt, ap);
     sizeEndp1LoggingBuff += bytesWritten;
+    bsp_enable_interrupt();
 }
 
 
@@ -574,14 +584,13 @@ ep1_log(const char *fmt, ...)
  *
  * @return  none
  */
+uint8_t WORKARROUND = true;
 int
 main(void)
 {
     bsp_gpio_init();
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
-
-    cprintf("Init ...\r\n");
 
     cfgDescrType = CfgDescr2Ep;
     speed = SpeedHigh;
@@ -599,22 +608,24 @@ main(void)
     U20_init(speed);
     U20_endpoints_init(epMask);
 
+    ep1_log("USB init done\r\n");
+
     /* HSPI Init. */
     int retCode;
     // TODO: Top and bottom switched for testing purposes, need to switch them back.
     if (!bsp_switch()) {
         isHost = true;
-        cprintf("[TOP BOARD] Hello!\r\n");
+        ep1_log("[TOP BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
     } else {
         isHost = false;
-        cprintf("[BOTTOM BOARD] Hello!\r\n");
+        ep1_log("[BOTTOM BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
     }
     if (retCode) {
-        cprintf("Synchronisation done (success)\r\n");
+        ep1_log("Synchronisation done (success)\r\n");
     } else {
-        cprintf("Synchronisation error(timeout)\r\n");
+        ep1_log("Synchronisation error(timeout)\r\n");
     }
 
     memset((void *)TX_DMA_ADDR0, '.', DMA_TX_LEN0);
@@ -625,16 +636,37 @@ main(void)
         HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, DMA_TX_LEN);
     } else {
         HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, 0);
-        ep1_log("Init HSPI Device %d\r\n", 1337);
     }
-    cprintf("Double DMA init done\r\n");
+    ep1_log("HSPI init done\r\n");
 
     /* SerDes Init. */
+    ep1_log("SerDes init done\r\n");
 
-    cprintf("SerDes init done\r\n");
+    ep1_log("Init all done!\r\n");
 
-    cprintf("Init all done!\r\n");
-    ep1_log("Init all done %d\r\n", 42);
+    if (isHost) {
+        uint8_t c = 'A';
+        while ( 'A' <= c && c <= 'Z') {
+            // Prepare buffer.
+            memset(TX_DMA_ADDR0, c, 16);
+            memset(TX_DMA_ADDR1, 'a'-'A' + c, 16);
+
+            // Transmit.
+            WORKARROUND = false;
+            HSPI_DMA_Tx();
+
+            // Wait for completion.
+            ep1_log("Transmitting ... (c=%d)\r\n", c-'A');
+            while (!WORKARROUND) {  }
+            // HSPI_Wait_Txdone();
+            ep1_log("Transmitting done!\r\n");
+
+            // Check for Error.
+
+            // Prepare next loop.
+            ++c;
+        }
+    }
 
     while (1) {  }
 
@@ -653,11 +685,15 @@ HSPI_IRQHandler(void)
 {
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
+        ep1_log("Transmition interrupt\r\n");
         // TODOOO: Check RB_HSPI_NUM_MIS & RB_HSPI_CRC_ERR.
+        // Not clearing the interrupt because it will be cleared by HSPI_Wait_Txdone().
+        WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
         // TODOOO: Check RB_HSPI_NUM_MIS & RB_HSPI_CRC_ERR.
+        ep1_log("HSPI interrupt received %c %c\r\n", TX_DMA_ADDR0[0], TX_DMA_ADDR1[0]);
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
