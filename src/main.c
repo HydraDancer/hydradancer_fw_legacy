@@ -737,7 +737,6 @@ main(void)
     bsp_gpio_init();
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
-    cprintf("Init\r\n");
 
     cfgDescrType = CfgDescr2Ep;
     speed = SpeedHigh;
@@ -804,7 +803,7 @@ main(void)
     ep1_log("Init all done!\r\n");
 
     // TODO: Move the business logic to appropriate place (IRQHandler ?).
-    // This is just an example.
+    // SerDes example.
     if (isHost) {
         uint8_t c = 'A';
         while ( 'A' <= c && c <= 'Z') {
@@ -830,7 +829,7 @@ main(void)
 
 
     // TODO: Move the business logic to appropriate place (IRQHandler ?).
-    // This is just an example.
+    // HSPI example.
     if (isHost) {
         uint8_t c = 'A';
         while ( 'A' <= c && c <= 'Z') {
