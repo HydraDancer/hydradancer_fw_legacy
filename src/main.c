@@ -26,9 +26,10 @@
 #define U20_UEP1_MAXSIZE        (512)    // Change accordingly to USB mode (Here HS).
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
 
-#define DMA_TX_LEN   (512)
-#define DMA_TX_LEN0   DMA_TX_LEN
-#define DMA_TX_LEN1   DMA_TX_LEN
+#define HSPI_DMA_LEN    (512)
+#define HSPI_DMA_LEN0   HSPI_DMA_LEN
+#define HSPI_DMA_LEN1   HSPI_DMA_LEN
+#define SERDES_DMA_LEN  (512)
 
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };
@@ -682,7 +683,7 @@ ep1_log(const char *fmt, ...)
  *
  * @return  none
  */
-uint8_t WORKARROUND = true;
+uint8_t HSPI_WORKARROUND = true;
 int
 main(void)
 {
@@ -702,16 +703,8 @@ main(void)
     stInterfaceDescriptor             = stBoardTopConfigurationDescriptor.itfDescr;
     stringDescriptors                 = boardTopStringDescriptors;
 
-
-    /* USB Init. */
-    U20_init(speed);
-    U20_endpoints_init(epMask);
-
-    ep1_log("USB init done\r\n");
-
-    /* HSPI Init. */
+    /* Board sync. */
     int retCode;
-    // TODO: Top and bottom switched for testing purposes, need to switch them back.
     if (!bsp_switch()) {
         isHost = true;
         ep1_log("[TOP BOARD] Hello!\r\n");
@@ -727,6 +720,14 @@ main(void)
         ep1_log("Synchronisation error(timeout)\r\n");
     }
 
+
+    /* USB Init. */
+    U20_init(speed);
+    U20_endpoints_init(epMask);
+
+    ep1_log("USB init done\r\n");
+
+    /* HSPI Init. */
     memset((void *)hspiDmaAddr0, '.', HSPI_DMA_LEN0);
     hspiDmaAddr0[HSPI_DMA_LEN0-1] = 0;
     memset((void *)hspiDmaAddr1, '.', HSPI_DMA_LEN1);
@@ -754,14 +755,13 @@ main(void)
             memset(hspiBufferTx, c, 16);
 
             // Transmit.
-            WORKARROUND = false;
+            HSPI_WORKARROUND = false;
             HSPI_DMA_Tx();
 
             // Wait for completion.
-            ep1_log("Transmitting ... (c=%c on %p)\r\n", c, hspiBufferTx);
-            while (!WORKARROUND) {  }
+            ep1_log("[HSPI]   Transmitting %c\r\n", c);
+            while (!HSPI_WORKARROUND) {  }
             // HSPI_Wait_Txdone();
-            ep1_log("Transmitting done!\r\n");
 
             // Check for Error.
             uint8_t hspiRtxStatus = HSPI_get_rtx_status();
@@ -794,25 +794,24 @@ HSPI_IRQHandler(void)
 
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
-        ep1_log("Transmition interrupt\r\n");
         hspiRtxStatus = HSPI_get_rtx_status();
         if (hspiRtxStatus) {
-            ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            ep1_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
         // Find a cleaner solution for "acknowledgement" of the T_DONE.
-        WORKARROUND = true;
+        HSPI_WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
         hspiRtxStatus = HSPI_get_rtx_status();
         if (hspiRtxStatus) {
-            ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            ep1_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
         hspiBufferRx = HSPI_get_buffer_rx();
 
-        ep1_log("HSPI interrupt received %c\r\n", hspiBufferRx[0]);
+        ep1_log("[Interrupt HSPI]   Received %c\r\n", hspiBufferRx[0]);
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
