@@ -10,8 +10,9 @@
 #include "CH56x_debug_log.h"
 
 // TODOOO: Add Halt support for endpoints (get_status()).
+// TODOOO: Prefix all global Variables with g_
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
-// TODOO: Add debgu over UART.
+// TODOO: Add debgu over UART. Still useful ?
 // TODOO: Add doxygen for every function.
 // TODO: Homogenize var name to camelCase.
 // TODO: Homogenize var comments.
@@ -108,10 +109,11 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
-__attribute__((aligned(16))) uint8_t TX_DMA_ADDR0[4096] __attribute__((section(".DMADATA"))); // HSPI 0
-__attribute__((aligned(16))) uint8_t TX_DMA_ADDR1[4096] __attribute__((section(".DMADATA"))); // HSPI 1
+__attribute__((aligned(16))) uint8_t hspiDmaAddr0[4096] __attribute__((section(".DMADATA"))); // HSPI 0
+__attribute__((aligned(16))) uint8_t hspiDmaAddr1[4096] __attribute__((section(".DMADATA"))); // HSPI 1
 static uint16_t sizeEndp1LoggingBuff = 0;
 static const uint16_t capacityEndp1LoggingBuff = 4096;
+// TODO: Rename endp1LoggingBuff to rawEp1... and pEndp1LoggingBuff to endp1LoggingBuff.
 __attribute__((aligned(16))) static uint8_t endp1LoggingBuff[4096];
 static uint8_t *pEndp1LoggingBuff = endp1LoggingBuff;
 
@@ -175,9 +177,9 @@ HSPI_get_rtx_status(void)
 static uint8_t *
 HSPI_get_buffer_next_tx(void)
 {
-    uint8_t *bufferTx = TX_DMA_ADDR0;
+    uint8_t *bufferTx = hspiDmaAddr0;
     if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
-        bufferTx = TX_DMA_ADDR1;
+        bufferTx = hspiDmaAddr1;
     }
 
     return bufferTx;
@@ -195,9 +197,9 @@ HSPI_get_buffer_tx(void)
 {
     // R8_HSPI_TX_SC stores the buffer that will be used for the next
     // transmission, thus we need to inverse the buffers.
-    uint8_t *bufferTx = TX_DMA_ADDR1;
+    uint8_t *bufferTx = hspiDmaAddr1;
     if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
-        bufferTx = TX_DMA_ADDR0;
+        bufferTx = hspiDmaAddr0;
     }
 
     return bufferTx;
@@ -213,9 +215,9 @@ HSPI_get_buffer_tx(void)
 static uint8_t *
 HSPI_get_buffer_next_rx(void)
 {
-    uint8_t *bufferRx = TX_DMA_ADDR0;
+    uint8_t *bufferRx = hspiDmaAddr0;
     if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
-        bufferRx = TX_DMA_ADDR1;
+        bufferRx = hspiDmaAddr1;
     }
 
     return bufferRx;
@@ -232,9 +234,9 @@ HSPI_get_buffer_rx(void)
 {
     // R8_HSPI_RX_SC stores the buffer that will be used for the next
     // reception, thus we need to inverse the buffers.
-    uint8_t *bufferRx = TX_DMA_ADDR1;
+    uint8_t *bufferRx = hspiDmaAddr1;
     if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
-        bufferRx = TX_DMA_ADDR0;
+        bufferRx = hspiDmaAddr0;
     }
 
     return bufferRx;
@@ -725,14 +727,14 @@ main(void)
         ep1_log("Synchronisation error(timeout)\r\n");
     }
 
-    memset((void *)TX_DMA_ADDR0, '.', DMA_TX_LEN0);
-    TX_DMA_ADDR0[DMA_TX_LEN0-1] = 0;
-    memset((void *)TX_DMA_ADDR1, '.', DMA_TX_LEN1);
-    TX_DMA_ADDR1[DMA_TX_LEN1-1] = 0;
+    memset((void *)hspiDmaAddr0, '.', HSPI_DMA_LEN0);
+    hspiDmaAddr0[HSPI_DMA_LEN0-1] = 0;
+    memset((void *)hspiDmaAddr1, '.', HSPI_DMA_LEN1);
+    hspiDmaAddr1[HSPI_DMA_LEN1-1] = 0;
     if (isHost) {
-        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, DMA_TX_LEN);
+        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, HSPI_DMA_LEN);
     } else {
-        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)TX_DMA_ADDR0, (uint32_t)TX_DMA_ADDR1, 0);
+        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, 0);
     }
     ep1_log("HSPI init done\r\n");
 
