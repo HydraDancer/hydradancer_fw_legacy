@@ -789,9 +789,10 @@ main(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void
 HSPI_IRQHandler(void)
 {
-    switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     uint8_t hspiRtxStatus;
     uint8_t *hspiBufferRx;
+
+    switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
         ep1_log("Transmition interrupt\r\n");
         hspiRtxStatus = HSPI_get_rtx_status();
