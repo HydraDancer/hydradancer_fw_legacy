@@ -184,7 +184,23 @@ serdes_wait_for_tx(uint16_t sizeTransmission)
     bsp_wait_us_delay((sizeTransmission*20)/1200 + 20);
 }
 
-
+/* @fn      hspi_wait_for_tx
+ *
+ * @brief   Wait the amount of time required to ensure the transmission is
+ *          completed and that we can safely send the next one.
+ *
+ * @warning This function assumes the transfer speed is 1.2Gbps.
+ *
+ * @return  Nothing.
+ */
+static void
+hspi_wait_for_tx(uint16_t sizeTransmission)
+{
+    // Same as above, we need to wait a bit, sending 2 transmission "back to
+    // back" would make the second transaction not being received.
+    // Here it is an arbitrary number.
+    bsp_wait_us_delay(5);
+}
 
 /* @fn      HSPI_get_rtx_status
  *
@@ -839,6 +855,7 @@ main(void)
 
             // Prepare next transaction.
             ++c;
+            hspi_wait_for_tx(HSPI_DMA_LEN);
         }
     }
 
