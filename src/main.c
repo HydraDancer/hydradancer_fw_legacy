@@ -112,6 +112,8 @@ static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
 __attribute__((aligned(16))) uint8_t hspiDmaAddr0[4096] __attribute__((section(".DMADATA"))); // HSPI 0
 __attribute__((aligned(16))) uint8_t hspiDmaAddr1[4096] __attribute__((section(".DMADATA"))); // HSPI 1
+static uint32_t serdesCustomNumber = 0x05555555;
+__attribute__((aligned(16))) uint8_t serdesDmaAddr[4096] __attribute__((section(".DMADATA"))); // SerDes
 static uint16_t sizeEndp1LoggingBuff = 0;
 static const uint16_t capacityEndp1LoggingBuff = 4096;
 // TODO: Rename endp1LoggingBuff to rawEp1... and pEndp1LoggingBuff to endp1LoggingBuff.
@@ -154,6 +156,35 @@ array_addr_len(void **array)
         }
     }
 }
+
+/* @fn      serdes_wait_for_tx
+ *
+ * @brief   Wait the amount of time required to ensure the transmission is
+ *          completed and that we can safely send the next one.
+ *
+ * @warning This function assumes the transfer speed is 1.2Gbps.
+ *
+ * @return  Nothing.
+ */
+static void
+serdes_wait_for_tx(uint16_t sizeTransmission)
+{
+    // NOTE: A delay is required to ensure SerDes transmission completed and not
+    // sending an other one too quickly. Here (2023-01-29)
+    // https://github.com/hydrausb3/hydrausb3_fw/blob/main/HydraUSB3_DualBoard_SerDes/User/Main.c#L360
+    // we can see the following line :
+    // @code
+    // bsp_wait_us_delay(100); /* Wait 100us (about 80us to transmit
+    // 2x*4096bytes @1.2Gbps) */
+    // @endcode
+    // Thus we get the following formula for our transmission delay (assuming 2x
+    // refers to e_sds_pll_freq):
+    // (sizeTransmission*20) / 1200 = delay in us.
+    // Additionally we add a 20us security delay.
+    bsp_wait_us_delay((sizeTransmission*20)/1200 + 20);
+}
+
+
 
 /* @fn      HSPI_get_rtx_status
  *
@@ -740,9 +771,46 @@ main(void)
     ep1_log("HSPI init done\r\n");
 
     /* SerDes Init. */
+    PFIC_EnableIRQ(SERDES_IRQn);
+    SerDes_EnableIT(ALL_INT_TYPE);
+    if (isHost) {
+        // SDS_TX_INT_FLG should not trigger an interrupt, it is handled by
+        // SerDes_Wait_Txdone()
+        SerDes_EnableIT(ALL_INT_TYPE & ~SDS_TX_INT_FLG);
+        SerDes_Tx_Init(SDS_PLL_FREQ_1_20G);
+        SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, serdesCustomNumber);
+    } else {
+        SerDes_Rx_Init(SDS_PLL_FREQ_1_20G);
+        SerDes_DMA_Rx_CFG((uint32_t)serdesDmaAddr);
+    }
     ep1_log("SerDes init done\r\n");
 
     ep1_log("Init all done!\r\n");
+
+    // TODO: Move the business logic to appropriate place (IRQHandler ?).
+    // This is just an example.
+    if (isHost) {
+        uint8_t c = 'A';
+        while ( 'A' <= c && c <= 'Z') {
+            // Prepare buffer.
+            memset(serdesDmaAddr, c, 16);
+
+            // Transmit.
+            SerDes_DMA_Tx();
+
+            // Wait for completion.
+            ep1_log("[SerDes] Transmitting %c\r\n", c);
+            SerDes_Wait_Txdone();
+            serdes_wait_for_tx(SERDES_DMA_LEN);
+
+            // Check for Error.
+            // Not implemented for SerDes ?
+
+            // Prepare next transaction.
+            ++c;
+        }
+    }
+
 
 
     // TODO: Move the business logic to appropriate place (IRQHandler ?).
@@ -774,8 +842,54 @@ main(void)
         }
     }
 
+
     while (1) {  }
 
+}
+
+
+/*******************************************************************************
+ * @fn     SERDES_IRQHandler
+ *
+ * @brief  SERDES Interrupt Handler.
+ *
+ * @return None
+ */
+__attribute__((interrupt("WCH-Interrupt-fast"))) void 
+SERDES_IRQHandler(void)
+{
+    switch (SerDes_StatusIT() & ALL_INT_TYPE) {
+    case SDS_PHY_RDY_FLG:
+        SerDes_ClearIT(SDS_PHY_RDY_FLG);
+        break;
+    // SDS_TX_INT_FLG == SDS_RX_ERR_FLG, depend if it is Tx or Rx.
+    case SDS_TX_INT_FLG:
+        if (isHost) {
+            ep1_log("SDS_TX_INT_FLG\r\n");
+        } else {
+            ep1_log("SDS_RX_ERR_FLG\r\n");
+        }
+        SerDes_ClearIT(SDS_TX_INT_FLG);
+        break;
+    case SDS_RX_INT_FLG:
+        ep1_log("[Interrupt SerDes] Received %c\r\n", serdesDmaAddr[0]);
+        SerDes_ClearIT(SDS_RX_INT_FLG);
+        break;
+    case SDS_RX_ERR_FLG | SDS_RX_INT_FLG:
+        ep1_log("SDS_RX_ERR_FLG | SDS_RX_INT_FLG\r\n");
+        ep1_log("[Interrupt SerDes] Received %c\r\n", serdesDmaAddr[0]);
+        SerDes_ClearIT(SDS_RX_ERR_FLG | SDS_RX_INT_FLG);
+        break;
+    case SDS_FIFO_OV_FLG:
+        SerDes_ClearIT(SDS_FIFO_OV_FLG);
+        break;
+    case SDS_COMMA_INT_FLG:
+        SerDes_ClearIT(SDS_COMMA_INT_FLG);
+        break;
+    default:
+        SerDes_ClearIT(ALL_INT_FLG);
+        break;
+    }
 }
 
 
