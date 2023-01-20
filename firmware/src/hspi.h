@@ -1,6 +1,10 @@
 #ifndef HSPI_H
 #define HSPI_H
 
+#include <stdint.h>
+
+#include "CH56xSFR.h"
+#include "CH56x_common.h"
 
 /* macros */
 #define HSPI_DMA_LEN    (512)

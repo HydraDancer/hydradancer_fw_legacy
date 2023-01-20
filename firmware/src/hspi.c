@@ -1,6 +1,3 @@
-#include "CH56xSFR.h"
-#include "CH56x_common.h"
-
 #include "hspi.h"
 
 /* variables */
