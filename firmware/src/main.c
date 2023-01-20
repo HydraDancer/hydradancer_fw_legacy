@@ -10,6 +10,7 @@
 #include "CH56x_debug_log.h"
 
 #include "hspi.h"
+#include "serdes.h"
 
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOOO: Prefix all global Variables with g_
@@ -27,8 +28,6 @@
 #define U20_UEP0_MAXSIZE        (64)    // Change accordingly to USB mode (Here HS).
 #define U20_UEP1_MAXSIZE        (512)    // Change accordingly to USB mode (Here HS).
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
-
-#define SERDES_DMA_LEN  (512)
 
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };
@@ -109,8 +108,6 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
-static uint32_t serdesCustomNumber = 0x05555555;
-__attribute__((aligned(16))) uint8_t serdesDmaAddr[4096] __attribute__((section(".DMADATA"))); // SerDes
 static uint16_t sizeEndp1LoggingBuff = 0;
 static const uint16_t capacityEndp1LoggingBuff = 4096;
 // TODO: Rename endp1LoggingBuff to rawEp1... and pEndp1LoggingBuff to endp1LoggingBuff.
@@ -152,33 +149,6 @@ array_addr_len(void **array)
             return i;
         }
     }
-}
-
-/* @fn      serdes_wait_for_tx
- *
- * @brief   Wait the amount of time required to ensure the transmission is
- *          completed and that we can safely send the next one.
- *
- * @warning This function assumes the transfer speed is 1.2Gbps.
- *
- * @return  Nothing.
- */
-static void
-serdes_wait_for_tx(uint16_t sizeTransmission)
-{
-    // NOTE: A delay is required to ensure SerDes transmission completed and not
-    // sending an other one too quickly. Here (2023-01-29)
-    // https://github.com/hydrausb3/hydrausb3_fw/blob/main/HydraUSB3_DualBoard_SerDes/User/Main.c#L360
-    // we can see the following line :
-    // @code
-    // bsp_wait_us_delay(100); /* Wait 100us (about 80us to transmit
-    // 2x*4096bytes @1.2Gbps) */
-    // @endcode
-    // Thus we get the following formula for our transmission delay (assuming 2x
-    // refers to e_sds_pll_freq):
-    // (sizeTransmission*20) / 1200 = delay in us.
-    // Additionally we add a 20us security delay.
-    bsp_wait_us_delay((sizeTransmission*20)/1200 + 20);
 }
 
 static void
