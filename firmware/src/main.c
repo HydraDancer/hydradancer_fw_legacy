@@ -9,6 +9,8 @@
 #include "CH56x_common.h"
 #include "CH56x_debug_log.h"
 
+#include "hspi.h"
+
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOOO: Prefix all global Variables with g_
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
@@ -26,9 +28,6 @@
 #define U20_UEP1_MAXSIZE        (512)    // Change accordingly to USB mode (Here HS).
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
 
-#define HSPI_DMA_LEN    (512)
-#define HSPI_DMA_LEN0   HSPI_DMA_LEN
-#define HSPI_DMA_LEN1   HSPI_DMA_LEN
 #define SERDES_DMA_LEN  (512)
 
 /* enums */
@@ -110,8 +109,6 @@ static USB_ENDP_DESCR stEndpointDescriptor;
 static USB_HID_DESCR stHidDescriptor;
 static uint8_t *reportDescriptor;
 static uint8_t **stringDescriptors;
-__attribute__((aligned(16))) uint8_t hspiDmaAddr0[4096] __attribute__((section(".DMADATA"))); // HSPI 0
-__attribute__((aligned(16))) uint8_t hspiDmaAddr1[4096] __attribute__((section(".DMADATA"))); // HSPI 1
 static uint32_t serdesCustomNumber = 0x05555555;
 __attribute__((aligned(16))) uint8_t serdesDmaAddr[4096] __attribute__((section(".DMADATA"))); // SerDes
 static uint16_t sizeEndp1LoggingBuff = 0;
@@ -139,7 +136,7 @@ __attribute__((aligned(16))) uint8_t endp7Tbuff[4096] __attribute__((section(".D
 /* configuration, allows nested code to access above variables */
 #include "config.h"
 
-/* function implemtations */
+/* functions implementation */
 
 /* @fn      array_addr_len
  *
@@ -182,112 +179,6 @@ serdes_wait_for_tx(uint16_t sizeTransmission)
     // (sizeTransmission*20) / 1200 = delay in us.
     // Additionally we add a 20us security delay.
     bsp_wait_us_delay((sizeTransmission*20)/1200 + 20);
-}
-
-/* @fn      hspi_wait_for_tx
- *
- * @brief   Wait the amount of time required to ensure the transmission is
- *          completed and that we can safely send the next one.
- *
- * @warning This function assumes the transfer speed is 1.2Gbps.
- *
- * @return  Nothing.
- */
-static void
-hspi_wait_for_tx(uint16_t sizeTransmission)
-{
-    // Same as above, we need to wait a bit, sending 2 transmission "back to
-    // back" would make the second transaction not being received.
-    // Here it is an arbitrary number.
-    bsp_wait_us_delay(5);
-}
-
-/* @fn      HSPI_get_rtx_status
- *
- * @brief   Get the status of the transmission/reception of the HSPI Transaction.
- *
- * @return  Return 0b0010 if CRC_ERR, 0b0100 if NUM_MIS, 0 else.
- */
-static uint8_t
-HSPI_get_rtx_status(void)
-{
-    return R8_HSPI_RTX_STATUS & (RB_HSPI_CRC_ERR | RB_HSPI_NUM_MIS);
-}
-
-/* @fn      HSPI_get_buffer_next_tx
- *
- * @brief   Get the buffer that will be used for the next transmission over
- *          HSPI.
- *
- * @return  Return the buffer that will be used for the next transmission over
- *          HSPI.
- */
-static uint8_t *
-HSPI_get_buffer_next_tx(void)
-{
-    uint8_t *bufferTx = hspiDmaAddr0;
-    if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
-        bufferTx = hspiDmaAddr1;
-    }
-
-    return bufferTx;
-}
-
-/* @fn      HSPI_get_buffer_tx
- *
- * @brief   Get the buffer that was used for the previous transmission over
- *          HSPI.
- *
- * @return  Return the buffer that was used for the previous transmission over
- *          HSPI. */
-static uint8_t *
-HSPI_get_buffer_tx(void)
-{
-    // R8_HSPI_TX_SC stores the buffer that will be used for the next
-    // transmission, thus we need to inverse the buffers.
-    uint8_t *bufferTx = hspiDmaAddr1;
-    if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
-        bufferTx = hspiDmaAddr0;
-    }
-
-    return bufferTx;
-}
-
-/* @fn      HSPI_get_buffer_next_rx
- *
- * @brief   Get the buffer that will be used for the next reception over HSPI.
- *
- * @return  Return the buffer that will be used for the next reception over
- *          HSPI.
- */
-static uint8_t *
-HSPI_get_buffer_next_rx(void)
-{
-    uint8_t *bufferRx = hspiDmaAddr0;
-    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
-        bufferRx = hspiDmaAddr1;
-    }
-
-    return bufferRx;
-}
-
-/* @fn      HSPI_get_buffer_rx
- *
- * @brief   Get the buffer that was used for the previous reception over HSPI.
- *
- * @return  Return the buffer that was used for the previous reception over
- *          HSPI. */
-static uint8_t *
-HSPI_get_buffer_rx(void)
-{
-    // R8_HSPI_RX_SC stores the buffer that will be used for the next
-    // reception, thus we need to inverse the buffers.
-    uint8_t *bufferRx = hspiDmaAddr1;
-    if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
-        bufferRx = hspiDmaAddr0;
-    }
-
-    return bufferRx;
 }
 
 static void
@@ -834,7 +725,7 @@ main(void)
         uint8_t c = 'A';
         while ( 'A' <= c && c <= 'Z') {
             // Prepare buffer.
-            uint8_t *hspiBufferTx = HSPI_get_buffer_next_tx();
+            uint8_t *hspiBufferTx = hspi_get_buffer_next_tx();
             memset(hspiBufferTx, c, 16);
 
             // Transmit.
@@ -847,7 +738,7 @@ main(void)
             // HSPI_Wait_Txdone();
 
             // Check for Error.
-            uint8_t hspiRtxStatus = HSPI_get_rtx_status();
+            uint8_t hspiRtxStatus = hspi_get_rtx_status();
             if (hspiRtxStatus) {
                 ep1_log("HSPI Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
             }
@@ -924,7 +815,7 @@ HSPI_IRQHandler(void)
 
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
-        hspiRtxStatus = HSPI_get_rtx_status();
+        hspiRtxStatus = hspi_get_rtx_status();
         if (hspiRtxStatus) {
             ep1_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
@@ -934,12 +825,12 @@ HSPI_IRQHandler(void)
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
-        hspiRtxStatus = HSPI_get_rtx_status();
+        hspiRtxStatus = hspi_get_rtx_status();
         if (hspiRtxStatus) {
             ep1_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
-        hspiBufferRx = HSPI_get_buffer_rx();
+        hspiBufferRx = hspi_get_buffer_rx();
 
         ep1_log("[Interrupt HSPI]   Received %c\r\n", hspiBufferRx[0]);
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
