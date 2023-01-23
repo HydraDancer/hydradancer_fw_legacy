@@ -42,7 +42,7 @@ main(int argc, char *argv[])
 {
     int retCode;
     //char ping[] = "ping!";
-    char ping[] = "TEST TEST TEST TEST. BITE\r\n";
+    char ping[] = "Hello, World!\r\n";
     char buffer[4096];
     const int capBuffer = 4096;
     int szBuffer = 0;
