@@ -120,21 +120,21 @@ main(void)
 
     usb_log("Init all done!\r\n");
 
-    // Host sends message over USB to top board
-    // Top board transmits that message to bottom board via HSPI
-    // Second board cypher the message received
-    // Second board sends the ciphered message back to top board via SerDes
-    // Top board sends the ciphered message back to host via USB
+    // HOW THIS EXAMLE WORKS :
+    // - Host sends message over USB to top board
+    // - Top board transmits that message to bottom board via HSPI
+    // - Second board cypher the message received (with rot13 encryption)
+    // - Second board sends the cyphered message back to top board via SerDes
+    // - Top board sends the cyphered message back to host via USB
 
     if (g_isHost) {
         while (1) {
             // Wait to receive the message to cypher
             // See ep1_transceive_and_update() for how it is done
-            usb_log("[HOST]   Waiting for USB Request\r\n");
+            usb_log("[HOST]   Waiting for the message from host (USB)\r\n");
             while (!g_top_receivedUsbPacket) { bsp_wait_ms_delay(10); }
             g_top_receivedUsbPacket = false;
-            usb_log("[HOST]   USB Request received\r\n");
-            usb_log("[HOST]   Transmitting via HSPI\r\n");
+            usb_log("[HOST]   Message received, transmitting via HSPI\r\n");
 
             // Fill and transmit data to second board via HSPI
             uint8_t *hspiBufferTx = hspi_get_buffer_next_tx();
@@ -146,39 +146,35 @@ main(void)
             usb_log("[HOST]   Waiting for SerDes response\r\n");
             while (!g_top_receivedSerdes) { bsp_wait_ms_delay(10); }
             g_top_receivedSerdes = false;
-            usb_log("[HOST]   SerDes received\r\n");
+            usb_log("[HOST]   SerDes received, transmitting back to Host\r\n");
 
             // Prepare buffer to send back to host
             memcpy(endp1Buff, serdesDmaAddr, min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN));
             sizeEndp1Buff = min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN);
             g_top_readyToTransmitUsbPacket = true;
-            usb_log("[HOST]   Transmitting back to Host\r\n");
 
             // Wait for transmission over USB to be completede before being able
             // to cypher an other message
             while (g_top_readyToTransmitUsbPacket) { bsp_wait_ms_delay(10); }
-            usb_log("[HOST]   Sent back to host successfully\r\n");
+            usb_log("[HOST]   Cyphered message sent back to host successfully\r\n");
         }
     } else {
         while (1) {
             // Wait to receive data from top board over HSPI
-            usb_log("[DEVICE] Waiting for HSPI Request\r\n");
+            usb_log("[DEVICE] Waiting for the message Host top board (HSPI)\r\n");
             while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
             g_bottom_receivedHspiPacket = false;
-            usb_log("[DEVICE] HSPI Request received\r\n");
-            usb_log("[DEVICE] Cyphering\r\n");
+            usb_log("[DEVICE] HSPI Request received, cyphering\r\n");
 
             memcpy(serdesDmaAddr, hspi_get_buffer_rx(), min(SERDES_DMA_LEN, HSPI_DMA_LEN));
             // Apply ROT13 encryption over the received data
-            // TODO: ROT13
             rot13(serdesDmaAddr, SERDES_DMA_LEN);
-            usb_log("[DEVICE] Cyphering done\r\n");
-            usb_log("[DEVICE] Sending back data to Host board via SerDes\r\n");
+            usb_log("[DEVICE] Cyphering done, sending back data to Host board via SerDes\r\n");
 
             // Send the cyphered data back to top board
             SerDes_DMA_Tx();
             SerDes_Wait_Txdone();
-            usb_log("[DEVICE] Data successfully sent to Host board\r\n");
+            usb_log("[HOST]   Cyphered message sent back to Host board successfully\r\n");
         }
     }
 
@@ -202,11 +198,6 @@ SERDES_IRQHandler(void)
         break;
     // SDS_TX_INT_FLG == SDS_RX_ERR_FLG, depend if it is Tx or Rx.
     case SDS_TX_INT_FLG:
-        // if (g_isHost) {
-        //     usb_log("SDS_TX_INT_FLG\r\n");
-        // } else {
-        //     usb_log("SDS_RX_ERR_FLG\r\n");
-        // }
         SerDes_ClearIT(SDS_TX_INT_FLG);
         break;
     case SDS_RX_INT_FLG:
@@ -250,7 +241,7 @@ HSPI_IRQHandler(void)
             usb_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
-        // Find a cleaner solution for "acknowledgement" of the T_DONE.
+        // TODO: Find a cleaner solution for "acknowledgement" of the T_DONE.
         HSPI_WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
