@@ -42,7 +42,7 @@ main(int argc, char *argv[])
 {
     int retCode;
     //char ping[] = "ping!";
-    char ping[] = "TEST TEST TEST TEST. BITE";
+    char ping[] = "TEST TEST TEST TEST. BITE\r\n";
     char buffer[4096];
     const int capBuffer = 4096;
     int szBuffer = 0;
@@ -78,16 +78,6 @@ main(int argc, char *argv[])
 	}
     /* end of prolog. */
 
-    retCode = libusb_bulk_transfer(gDeviceHandle, EP_DEBUG_IN, (unsigned char *)buffer, capBuffer, NULL, 0);
-    buffer[capBuffer-1] = 0;
-    if (retCode == 0) {
-        printf("%s", buffer);
-    } else {
-        printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
-    }
-    memset(buffer, 0, capBuffer);
-    usleep(10000);
-
     szBuffer = strnlen(ping, 1023) + 1; /* Do not forget the null terminator. */
     memcpy(buffer, ping, szBuffer);
     retCode = libusb_bulk_transfer(gDeviceHandle, EP1OUT, (unsigned char *)buffer, szBuffer, NULL, 0);
@@ -104,10 +94,23 @@ main(int argc, char *argv[])
     // printf("Waking up!\n");
 
     while (1) {
-        retCode = libusb_bulk_transfer(gDeviceHandle, EP_DEBUG_IN, (unsigned char *)buffer, capBuffer, NULL, 0);
+        retCode = libusb_bulk_transfer(gDeviceHandle, EP1IN, (unsigned char *)buffer, capBuffer, NULL, 0);
         buffer[capBuffer-1] = 0;
         if (retCode == 0) {
             printf("%s", buffer);
+        } else {
+            printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
+        }
+        memset(buffer, 0, capBuffer);
+        usleep(10000);
+
+        retCode = libusb_bulk_transfer(gDeviceHandle, EP_DEBUG_IN, (unsigned char *)buffer, capBuffer, NULL, 0);
+        buffer[capBuffer-1] = 0;
+        if (retCode == 0) {
+            // If we received something
+            if (buffer[0] != 0) {
+                printf("[DEBUG]\t%s", buffer);
+            }
         } else {
             printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
         }

@@ -14,7 +14,8 @@
 #include "usb20.h"
 
 // TODOOOOO: move logging to ep7
-//
+// TODOOOO: Add prefix for logging with usb_log()
+
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOOO: Prefix all global Variables with g_
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
@@ -33,8 +34,10 @@ static bool bottom_receivedHspiPacket = false;
 static bool top_receivedSerdes = false;
 static bool top_readyToTransmitUsbPacket = false;
 
-static uint8_t HSPI_WORKARROUND = true;
-
+uint16_t sizeEndp1Buff = 0;
+const uint16_t capacityEndp1Buff = 4096;
+__attribute__((aligned(16))) uint8_t endp1BuffRaw[4096];
+uint8_t *endp1Buff = endp1BuffRaw;
 
 /*********************************************************************
  * @fn      main
@@ -69,6 +72,7 @@ main(void)
         usb_log("[TOP BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
     } else {
+        stDeviceDescriptor.idProduct = 0x1338;
         g_isHost = false;
         usb_log("[BOTTOM BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
@@ -125,55 +129,55 @@ main(void)
         while (1) {
             // Wait to receive the message to cypher
             // See ep1_transceive_and_update() for how it is done
-            usb_log("1\r\n");
+            usb_log("[HOST]   Waiting for USB Request\r\n");
             while (!g_top_receivedUsbPacket) { bsp_wait_ms_delay(10); }
             g_top_receivedUsbPacket = false;
-            usb_log("2\r\n");
+            usb_log("[HOST]   USB Request received\r\n");
+            usb_log("[HOST]   Transmitting via HSPI\r\n");
 
             // Fill and transmit data to second board via HSPI
             uint8_t *hspiBufferTx = hspi_get_buffer_next_tx();
             memcpy(hspiBufferTx, endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
 
-            usb_log("3\r\n");
             HSPI_DMA_Tx();
 
-            usb_log("4\r\n");
             // Wait to receive the anwser over SerDes
+            usb_log("[HOST]   Waiting for SerDes response\r\n");
             while (!g_top_receivedSerdes) { bsp_wait_ms_delay(10); }
             g_top_receivedSerdes = false;
+            usb_log("[HOST]   SerDes received\r\n");
 
-            usb_log("5\r\n");
             // Prepare buffer to send back to host
-            memcpy(endp7LoggingBuff, serdesDmaAddr, min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN));
-            sizeEndp7LoggingBuff = min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN);
+            memcpy(endp1Buff, serdesDmaAddr, min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN));
+            sizeEndp1Buff = min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN);
             g_top_readyToTransmitUsbPacket = true;
+            usb_log("[HOST]   Transmitting back to Host\r\n");
 
-            usb_log("6\r\n");
             // Wait for transmission over USB to be completede before being able
             // to cypher an other message
             while (g_top_readyToTransmitUsbPacket) { bsp_wait_ms_delay(10); }
-            usb_log("7\r\n");
+            usb_log("[HOST]   Sent back to host successfully\r\n");
         }
     } else {
         while (1) {
-            usb_log("1\r\n");
             // Wait to receive data from top board over HSPI
+            usb_log("[DEVICE] Waiting for HSPI Request\r\n");
             while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
             g_bottom_receivedHspiPacket = false;
+            usb_log("[DEVICE] HSPI Request received\r\n");
+            usb_log("[DEVICE] Cyphering\r\n");
 
-            usb_log("2\r\n");
             memcpy(serdesDmaAddr, hspi_get_buffer_rx(), min(SERDES_DMA_LEN, HSPI_DMA_LEN));
             // Apply ROT13 encryption over the received data
             // TODO: ROT13
-            usb_log("3\r\n");
-            for (uint16_t i = 0; i < min(SERDES_DMA_LEN, HSPI_DMA_LEN); ++i) {
-                serdesDmaAddr[i] += 'a' - 'A';
-            }
+            rot13(serdesDmaAddr, SERDES_DMA_LEN);
+            usb_log("[DEVICE] Cyphering done\r\n");
+            usb_log("[DEVICE] Sending back data to Host board via SerDes\r\n");
 
-            usb_log("4\r\n");
             // Send the cyphered data back to top board
             SerDes_DMA_Tx();
-            usb_log("5\r\n");
+            SerDes_Wait_Txdone();
+            usb_log("[DEVICE] Data successfully sent to Host board\r\n");
         }
     }
 
@@ -190,6 +194,7 @@ main(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void 
 SERDES_IRQHandler(void)
 {
+    usb_log("SERDES IRQ Handler\r\n");
     switch (SerDes_StatusIT() & ALL_INT_TYPE) {
     case SDS_PHY_RDY_FLG:
         SerDes_ClearIT(SDS_PHY_RDY_FLG);
@@ -248,7 +253,7 @@ HSPI_IRQHandler(void)
         }
 
         // Find a cleaner solution for "acknowledgement" of the T_DONE.
-        HSPI_WORKARROUND = true;
+        // HSPI_WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
@@ -426,7 +431,7 @@ USBHS_IRQHandler(void)
             }
             break;
         case 1:
-            ep1_transceive_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
+            ep1_transceive_and_update(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
             break;
         case 7:
             ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
