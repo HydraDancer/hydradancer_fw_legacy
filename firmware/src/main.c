@@ -13,7 +13,6 @@
 #include "serdes.h"
 #include "usb20.h"
 
-// TODOOOOO: move logging to ep7
 // TODOOOO: Add prefix for logging with usb_log()
 
 // TODOOO: Add Halt support for endpoints (get_status()).
