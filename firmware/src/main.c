@@ -28,6 +28,7 @@
 
 /* variables */
 static bool g_isHost = false;
+uint8_t HSPI_WORKARROUND = false;
 
 static bool top_receivedUsbPacket = false;
 static bool bottom_receivedHspiPacket = false;
@@ -201,21 +202,19 @@ SERDES_IRQHandler(void)
         break;
     // SDS_TX_INT_FLG == SDS_RX_ERR_FLG, depend if it is Tx or Rx.
     case SDS_TX_INT_FLG:
-        if (g_isHost) {
-            usb_log("SDS_TX_INT_FLG\r\n");
-        } else {
-            usb_log("SDS_RX_ERR_FLG\r\n");
-        }
+        // if (g_isHost) {
+        //     usb_log("SDS_TX_INT_FLG\r\n");
+        // } else {
+        //     usb_log("SDS_RX_ERR_FLG\r\n");
+        // }
         SerDes_ClearIT(SDS_TX_INT_FLG);
         break;
     case SDS_RX_INT_FLG:
-        usb_log("[Interrupt SerDes] Received %c\r\n", serdesDmaAddr[0]);
         g_top_receivedSerdes = true;
         SerDes_ClearIT(SDS_RX_INT_FLG);
         break;
     case SDS_RX_ERR_FLG | SDS_RX_INT_FLG:
         usb_log("SDS_RX_ERR_FLG | SDS_RX_INT_FLG\r\n");
-        usb_log("[Interrupt SerDes] Received %c\r\n", serdesDmaAddr[0]);
         g_top_receivedSerdes = true;
         SerDes_ClearIT(SDS_RX_ERR_FLG | SDS_RX_INT_FLG);
         break;
@@ -243,7 +242,6 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void
 HSPI_IRQHandler(void)
 {
     uint8_t hspiRtxStatus;
-    uint8_t *hspiBufferRx;
 
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
@@ -253,7 +251,7 @@ HSPI_IRQHandler(void)
         }
 
         // Find a cleaner solution for "acknowledgement" of the T_DONE.
-        // HSPI_WORKARROUND = true;
+        HSPI_WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
@@ -261,10 +259,6 @@ HSPI_IRQHandler(void)
         if (hspiRtxStatus) {
             usb_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
-
-        hspiBufferRx = hspi_get_buffer_rx();
-
-        usb_log("[Interrupt HSPI]   Received %c\r\n", hspiBufferRx[0]);
 
         g_bottom_receivedHspiPacket = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
