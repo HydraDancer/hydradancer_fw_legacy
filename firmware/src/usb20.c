@@ -5,10 +5,10 @@
 #include "usb20.h"
 
 /* variables */
-uint16_t sizeEndp1LoggingBuff = 0;
-const uint16_t capacityEndp1LoggingBuff = 4096;
-__attribute__((aligned(16))) uint8_t endp1LoggingBuffRaw[4096];
-uint8_t *endp1LoggingBuff = endp1LoggingBuffRaw;
+uint16_t sizeEndp7LoggingBuff = 0;
+const uint16_t capacityEndp7LoggingBuff = 4096;
+__attribute__((aligned(16))) uint8_t endp7LoggingBuffRaw[4096];
+uint8_t *endp7LoggingBuff = endp7LoggingBuffRaw;
 
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
 __attribute__((aligned(16))) uint8_t endp1Rbuff[4096] __attribute__((section(".DMADATA"))); // Endpoint 1 data recceiver buffer.
@@ -464,19 +464,7 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 
     switch (uisToken) {
     case UIS_TOKEN_OUT:
-        /* Business logic about inputs goes here. */
-        if (strncmp(endp1Rbuff, "debug", U20_UEP1_MAXSIZE) == 0) {
-            // TODO: Clean up this safety check.
-            if (*pSizeBuffer >= 4096) {
-                assert(0 && "ERROR: Debordement pSizeBuffer >= 4096");
-                return;
-            }
-            uint8_t *bufferNextEmpty = (*pBuffer) + (*pSizeBuffer);
-            memset(bufferNextEmpty, 'a', 900);
-            memcpy(bufferNextEmpty, "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF", 128);
-            bufferNextEmpty[899] = 0;
-            *pSizeBuffer = 900;
-        }
+        g_top_receivedUsbPacket = true;
 
         // TODOOO: Handle transfer where there is more than one transaction.
         R16_UEP1_T_LEN = 0;
@@ -499,6 +487,8 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
         } else {
             *pBuffer = bufferResetValue;
 
+            g_top_readyToTransmitUsbPacket = false;
+
             R16_UEP1_T_LEN = 0;
             R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
             R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
@@ -510,14 +500,57 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
     }
 }
 
-/* @fn      ep1_log
+/* @fn      ep7_transmit_and_update
+ *
+ * @brief   Handle the "command" on endpoint 7 (transmit debug) and update the
+ *          buffer accordingly
+ *
+ * @return  None
+ */
+void
+ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer != 0x0000) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP7_MAXSIZE);
+            memcpy(endp7Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP7_T_LEN = sizeCurrentTransaction;
+            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)pBuffer += U20_UEP7_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            g_top_readyToTransmitUsbPacket = false;
+
+            R16_UEP7_T_LEN = 0;
+            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        }
+        break;
+        default:
+            assert("0 && ERROR: ep7_transmit_and_update default!");
+            break;
+    }
+}
+
+/* @fn      usb_log
  *
  * @brief   Function used to log data to the Host computer over USB
  *
  * @return  None
  */
 void
-ep1_log(const char *fmt, ...)
+usb_log(const char *fmt, ...)
 {
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
@@ -525,15 +558,15 @@ ep1_log(const char *fmt, ...)
     va_list ap;
     bsp_disable_interrupt();
     va_start(ap, fmt);
-    uint16_t sizeLeft = capacityEndp1LoggingBuff - sizeEndp1LoggingBuff;
-
-    if (sizeEndp1LoggingBuff >= capacityEndp1LoggingBuff) {
+    uint16_t sizeLeft = capacityEndp7LoggingBuff - sizeEndp7LoggingBuff;
+    
+    if (sizeEndp7LoggingBuff >= capacityEndp7LoggingBuff) {
         assert(0 && "ERROR: Buffer already filled!");
         sizeLeft = 0;
     }
-
-    int bytesWritten = vsnprintf(endp1LoggingBuff + sizeEndp1LoggingBuff, sizeLeft, fmt, ap);
-    sizeEndp1LoggingBuff += bytesWritten;
+    
+    int bytesWritten = vsnprintf(endp7LoggingBuff + sizeEndp7LoggingBuff, sizeLeft, fmt, ap);
+    sizeEndp7LoggingBuff += bytesWritten;
     bsp_enable_interrupt();
 }
 

@@ -19,11 +19,11 @@ static USB_DEV_DESCR stBoardTopDeviceDescriptor = {
     .bNumConfigurations = 1,
 };
 
-static USB_CFG_DESCR_FULL_2_ENDPOINTS stBoardTopConfigurationDescriptor = {
+static USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG stBoardTopConfigurationDescriptor = {
     .cfgDescr = {
         .bLength = sizeof(USB_CFG_DESCR),
         .bDescriptorType = USB_DESCR_TYP_CONFIG,
-        .wTotalLength = sizeof(USB_CFG_DESCR_FULL_2_ENDPOINTS),
+        .wTotalLength = sizeof(USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG),
         .bNumInterfaces = 1,
         .bConfigurationValue = 1,
         .iConfiguration = 4,
@@ -35,7 +35,7 @@ static USB_CFG_DESCR_FULL_2_ENDPOINTS stBoardTopConfigurationDescriptor = {
         .bDescriptorType = USB_DESCR_TYP_INTERF,
         .bInterfaceNumber = 0,
         .bAlternateSetting = 0,
-        .bNumEndpoints = 2,
+        .bNumEndpoints = 3,
         .bInterfaceClass = USB_DEV_CLASS_VEN_SPEC,
         .bInterfaceSubClass = 0xff,
         .bInterfaceProtocol = 0xff,
@@ -55,6 +55,16 @@ static USB_CFG_DESCR_FULL_2_ENDPOINTS stBoardTopConfigurationDescriptor = {
         .bLength = sizeof(USB_ENDP_DESCR),
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x01,               /* In endpoint (MSB set to 1). */
+        .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type. */
+        // TODOO: Handle asignment with value >255.
+        .wMaxPacketSizeL = 0,                   /* Packet size as defined by the spec for USB HS. */
+        .wMaxPacketSizeH = 0x02,
+        .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0. */
+    },
+    .endpDescr7Out = {
+        .bLength = sizeof(USB_ENDP_DESCR),
+        .bDescriptorType = USB_DESCR_TYP_ENDP,
+        .bEndpointAddress = 0x87,               /* In endpoint (MSB set to 1). */
         .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type. */
         // TODOO: Handle asignment with value >255.
         .wMaxPacketSizeL = 0,                   /* Packet size as defined by the spec for USB HS. */

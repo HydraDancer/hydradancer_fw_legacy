@@ -19,6 +19,7 @@
 
 #define EP1OUT 0x01
 #define EP1IN  0x81
+#define EP_DEBUG_IN  0x87
 
 
 struct libusb_device_handle *gDeviceHandle = NULL;
@@ -41,7 +42,7 @@ main(int argc, char *argv[])
 {
     int retCode;
     //char ping[] = "ping!";
-    char ping[] = "debug";
+    char ping[] = "TEST TEST TEST TEST. BITE";
     char buffer[4096];
     const int capBuffer = 4096;
     int szBuffer = 0;
@@ -77,14 +78,24 @@ main(int argc, char *argv[])
 	}
     /* end of prolog. */
 
-    // szBuffer = strnlen(ping, 1023) + 1; /* Do not forget the null terminator. */
-    // memcpy(buffer, ping, szBuffer);
-    // retCode = libusb_bulk_transfer(device_handle, EP1OUT, (unsigned char *)buffer, szBuffer, NULL, 0);
-    // if (retCode == 0) {
-    //     printf("[INFO]\tData send successfully\n");
-    // } else {
-    //     printf("[ERROR]\tData NOT send successfully\n");
-    // }
+    retCode = libusb_bulk_transfer(gDeviceHandle, EP_DEBUG_IN, (unsigned char *)buffer, capBuffer, NULL, 0);
+    buffer[capBuffer-1] = 0;
+    if (retCode == 0) {
+        printf("%s", buffer);
+    } else {
+        printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
+    }
+    memset(buffer, 0, capBuffer);
+    usleep(10000);
+
+    szBuffer = strnlen(ping, 1023) + 1; /* Do not forget the null terminator. */
+    memcpy(buffer, ping, szBuffer);
+    retCode = libusb_bulk_transfer(gDeviceHandle, EP1OUT, (unsigned char *)buffer, szBuffer, NULL, 0);
+    if (retCode == 0) {
+        printf("[INFO]\tData send successfully\n");
+    } else {
+        printf("[ERROR]\tData NOT send successfully\n");
+    }
 
     memset(buffer, 0, capBuffer-1);
 
@@ -93,7 +104,7 @@ main(int argc, char *argv[])
     // printf("Waking up!\n");
 
     while (1) {
-        retCode = libusb_bulk_transfer(gDeviceHandle, EP1IN, (unsigned char *)buffer, capBuffer, NULL, 0);
+        retCode = libusb_bulk_transfer(gDeviceHandle, EP_DEBUG_IN, (unsigned char *)buffer, capBuffer, NULL, 0);
         buffer[capBuffer-1] = 0;
         if (retCode == 0) {
             printf("%s", buffer);
