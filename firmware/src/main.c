@@ -29,11 +29,6 @@
 static bool g_isHost = false;
 uint8_t HSPI_WORKARROUND = false;
 
-static bool top_receivedUsbPacket = false;
-static bool bottom_receivedHspiPacket = false;
-static bool top_receivedSerdes = false;
-static bool top_readyToTransmitUsbPacket = false;
-
 uint16_t sizeEndp1Buff = 0;
 const uint16_t capacityEndp1Buff = 4096;
 __attribute__((aligned(16))) uint8_t endp1BuffRaw[4096];
