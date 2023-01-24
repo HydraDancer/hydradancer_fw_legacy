@@ -6,10 +6,13 @@
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
 
+#include "rot13_example.h"  // Added for the example only !
+
 /* macros */
 #define U20_MAXPACKET_LEN (512)                                                                     
 #define U20_UEP0_MAXSIZE  (64)  // Change accordingly to USB mode (Here HS).
 #define U20_UEP1_MAXSIZE  (512) // Change accordingly to USB mode (Here HS).
+#define U20_UEP7_MAXSIZE  (512) // Change accordingly to USB mode (Here HS).
 #define UsbSetupBuf       ((PUSB_SETUP)endp0RTbuff)                                                 
 
 /* enums */
@@ -23,7 +26,7 @@ enum Endpoint {
     Ep6Mask = 1 << 5,
     Ep7Mask = 1 << 6,
 };
-enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep };
+enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep, CfgDescr2EpDebug};
 
 typedef union {
     uint16_t w;
@@ -61,10 +64,19 @@ typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS {
     USB_ENDP_DESCR endpDescr1Out;
 } USB_CFG_DESCR_FULL_2_ENDPOINTS, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS;
 
+typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG {
+    USB_CFG_DESCR  cfgDescr;
+    USB_ITF_DESCR  itfDescr;
+    USB_ENDP_DESCR endpDescr1In;
+    USB_ENDP_DESCR endpDescr1Out;
+    USB_ENDP_DESCR endpDescr7Out;
+} USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG;
+
 typedef union {
     USB_CFG_DESCR_FULL_BASE base;
     USB_CFG_DESCR_FULL_HID withHid;
     USB_CFG_DESCR_FULL_2_ENDPOINTS base2Ep;
+    USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG base2EpDebug;
 } USB_CFG_DESCR_FULL, *PUSB_CFG_DESCR_FULL;
 
 /* variables */
@@ -80,9 +92,9 @@ USB_HID_DESCR stHidDescriptor;
 uint8_t *reportDescriptor;
 uint8_t **stringDescriptors;
 
-extern uint16_t sizeEndp1LoggingBuff;
-extern const uint16_t capacityEndp1LoggingBuff;
-extern uint8_t *endp1LoggingBuff;
+extern uint16_t sizeEndp7LoggingBuff;
+extern const uint16_t capacityEndp7LoggingBuff;
+extern uint8_t *endp7LoggingBuff;
 
 extern uint8_t endp0RTbuff[]; // Endpoint 0 data transceiver buffer.
 extern uint8_t endp1Rbuff[];  // Endpoint 1 data receiver buffer.
@@ -183,13 +195,24 @@ void ep1_transmit_keyboard(void);
 void ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep1_log
+ * Function Name  : ep7_transmit_and_update
+ * Description    : Handle the "command" on endpoint 7 (transmit debug) and
+ *                  update the buffer accordingly
+ * Input          : - uisToken is the bmRequestType field of the Setup Packet
+ *                  - pBuffer and pSizeBuffer are the buffer to transceive and
+ *                    the associated size
+ * Return         : None
+ *******************************************************************************/
+void ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+
+/*******************************************************************************
+ * Function Name  : usb_log
  * Description    : Function used to log data to the Host computer over USB
  * Input          : Variadic function, same arguments as you would give to
  *                  printf()
  * Return         : None
  *******************************************************************************/
-void ep1_log(const char *fmt, ...);
+void usb_log(const char *fmt, ...);
 
 
 #endif /* USB20_H */
