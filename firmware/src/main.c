@@ -1,6 +1,6 @@
 /*
  * This firmware aims to provide a bridge for enumeration and fuzzing of
- * usbstack.
+ * usb stack.
  * Part of the logic is abstracted in other files, everything related to
  * interrupt handling and USB endpoint behaviour is done in this file.
  *
