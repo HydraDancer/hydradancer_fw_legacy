@@ -464,7 +464,7 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 
     switch (uisToken) {
     case UIS_TOKEN_OUT:
-        g_top_receivedUsbPacket = true;
+        g_top_receivedUsbPacket = true; // Added for the example only !
 
         // TODOOO: Handle transfer where there is more than one transaction.
         R16_UEP1_T_LEN = 0;
@@ -487,7 +487,7 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
         } else {
             *pBuffer = bufferResetValue;
 
-            g_top_readyToTransmitUsbPacket = false;
+            g_top_readyToTransmitUsbPacket = false; // Added for the example only !
 
             R16_UEP1_T_LEN = 0;
             R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
@@ -529,8 +529,6 @@ ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuff
             *(uint32_t *)pBuffer += U20_UEP7_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
         } else {
             *pBuffer = bufferResetValue;
-
-            g_top_readyToTransmitUsbPacket = false;
 
             R16_UEP7_T_LEN = 0;
             R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
