@@ -6,8 +6,6 @@
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
 
-#include "rot13_example.h"  // Added for the example only !
-
 /* macros */
 #define U20_MAXPACKET_LEN (512)                                                                     
 #define U20_UEP0_MAXSIZE  (64)  // Change accordingly to USB mode (Here HS).
@@ -172,27 +170,6 @@ void fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuf
  * Return         : None
  *******************************************************************************/
 void ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
-
-/*******************************************************************************
- * Function Name  : ep1_transmit_keyboard
- * Description    : Handle the "command" on endpoint 1 when behaving as a
- *                  keyboard Here it means anwsering to interrupt request with
- *                  the appropriate key sequence
- * Input          : None
- * Return         : None
- *******************************************************************************/
-void ep1_transmit_keyboard(void);
-
-/*******************************************************************************
- * Function Name  : ep1_transceive_and_update
- * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
- *                  and update the buffer accordingly
- * Input          : - uisToken is the bmRequestType field of the Setup Packet
- *                  - pBuffer and pSizeBuffer are the buffer to transceive and
- *                    the associated size
- * Return         : None
- *******************************************************************************/
-void ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
  * Function Name  : ep7_transmit_and_update

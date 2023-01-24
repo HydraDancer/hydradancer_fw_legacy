@@ -1,5 +1,12 @@
 /*
- * Small description of the project.
+ * This firmware aims to provide a bridge for enumeration and fuzzing of
+ * usbstack.
+ * Part of the logic is abstracted in other files, everything related to
+ * interrupt handling and USB endpoint behaviour is done in this file.
+ *
+ * - For Interrupt handling see the associated handler. For example the handler
+ * related to HSPI is HSPI_IRQHandler().
+ * - For USB endpoint behaviour see epX_transceive_and_update().
  */
 #include <assert.h>
 #include <stdbool.h>
@@ -13,6 +20,8 @@
 #include "serdes.h"
 #include "usb20.h"
 
+#include "rot13_example.h"  // Added for the example only !
+//
 // TODOOOO: Add prefix for logging with usb_log()
 
 // TODOOO: Add Halt support for endpoints (get_status()).
@@ -33,6 +42,10 @@ uint16_t sizeEndp1Buff = 0;
 const uint16_t capacityEndp1Buff = 4096;
 __attribute__((aligned(16))) uint8_t endp1BuffRaw[4096];
 uint8_t *endp1Buff = endp1BuffRaw;
+
+/* functions declaration */
+void epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+void ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*********************************************************************
  * @fn      main
@@ -55,6 +68,7 @@ main(void)
     endpoint_clear(0x01);
     endpoint_clear(0x87);
 
+    // Filling structures "describing" our USB peripheral.
     stDeviceDescriptor                     = stBoardTopDeviceDescriptor;
     stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
     stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
@@ -242,7 +256,7 @@ HSPI_IRQHandler(void)
     case RB_HSPI_IF_R_DONE:
         hspiRtxStatus = hspi_get_rtx_status();
         if (hspiRtxStatus) {
-            usb_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            usb_log("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
         g_bottom_receivedHspiPacket = true;
@@ -423,6 +437,174 @@ USBHS_IRQHandler(void)
         U20_endpoints_init(epMask);
 
         R8_USB_INT_FG = RB_USB_IF_BUSRST;
+    }
+}
+
+/*******************************************************************************
+/* @fn      epX_transceive_and_update
+ *
+ * @brief   Template for endpoint handler.
+ *          To use copy and paste it bellow, rename the following "variables":
+ *          - R16_UEP0_T_LEN to R16_UEPx_T_LEN where x = desired endpoint
+ *          - R8_UEP0_TX_CTRL to R8_UEPx_TX_CTRL where x = desired endpoint
+ *          - R8_UEP0_RX_CTRL to R8_UEPx_RX_CTRL where x = desired endpoint
+ *          - U20_UEP0_MAXSIZE to a variable corresponding the the maximum size
+ *            for a packet on this endpoint
+ *          You also need to rename this function (replace X with the endpoint
+ *          number desired) and add it to USBHS_IRQHandler in IF_TRANSFER (see
+ *          ep1_transceive_and_update() as an example).
+ *
+ *          The parameters can be changed, but using a temporary buffer with a
+ *          "cursor" can be useful when dealing with a message longer than one
+ *          transaction.
+ *
+ * @warning Handlers for endpoint 0 and 7 are already defined
+ *          - Ep0 is used for initialising USB device
+ *          - ep7 is dedicated to logging
+ *
+ * @input   - uisToken is the bmRequestType field of the Setup Packet
+ *          - pBuffer and pSizeBuffer are the buffer to transceive and the
+ *            associated size
+
+ * @return  None
+ */
+void
+epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_OUT:
+        // TODOOO: Handle transfer where there is more than one transaction.
+        R16_UEP0_T_LEN = 0;
+        R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        R8_UEP0_RX_CTRL ^= RB_UEP_R_TOG_1;
+        R8_UEP0_RX_CTRL = (R8_UEP0_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+        break;
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP0_MAXSIZE);
+            memcpy(endp1Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP0_T_LEN = sizeCurrentTransaction;
+            R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)pBuffer += U20_UEP0_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            g_top_readyToTransmitUsbPacket = false; // Part of the rot13 example
+
+            R16_UEP0_T_LEN = 0;
+            R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        }
+        break;
+    case UIS_TOKEN_SOF:
+        break;
+    case UIS_TOKEN_SETUP:
+        /* Only used with ep0, should not trigger here */
+        break;
+        default:
+            assert("0 && ERROR: epX_transceive_and_update default!");
+            break;
+    }
+}
+
+
+/*******************************************************************************
+/* @fn      ep1_transmit_keyboard
+ *
+ * @brief   Handle the "command" on endpoint 1 when behaving as a keyboard
+ *          Here it means anwsering to interrupt request with the appropriate
+ *          key sequence
+ *          Not used, only given as a reference
+ *
+ * @return  None
+ */
+void
+ep1_transmit_keyboard(void)
+{
+    /* Link to USB HID Keyboard scan codes :
+     * https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2 */
+    static uint8_t keyboard_payload[] = { 0x17, 0x08, 0x16, 0x17, 0x28 };
+    static uint8_t i = 0;
+    uint8_t modulus = 4;
+
+    /* Keyboard input crafting. */
+    uint8_t output[] = { 0x00, 0x00, 0x00, 0x00 };
+    if (i%modulus == 0) {
+        output[0] = keyboard_payload[i/modulus];
+    }
+    i++;
+    if (i == (modulus*sizeof(keyboard_payload))-1) {
+        i = 0;
+    }
+
+    memcpy(endp1Tbuff, output, sizeof(output));
+    R16_UEP1_T_LEN = sizeof(output);
+    R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+    R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+}
+
+
+/*******************************************************************************
+/* @fn      ep1_transceive_and_update
+ *
+ * @brief   Handle the "command" on endpoint 1 (mainly receive/transmit) and 
+ *          update the buffer accordingly
+ *
+ * @return  None
+ */
+void
+ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_OUT:
+        g_top_receivedUsbPacket = true; // Part of the rot13 example
+
+        // TODOOO: Handle transfer where there is more than one transaction.
+        R16_UEP1_T_LEN = 0;
+        R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        R8_UEP1_RX_CTRL ^= RB_UEP_R_TOG_1;
+        R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+        break;
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP1_MAXSIZE);
+            memcpy(endp1Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP1_T_LEN = sizeCurrentTransaction;
+            R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)pBuffer += U20_UEP1_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            g_top_readyToTransmitUsbPacket = false; // Part of the rot13 example
+
+            R16_UEP1_T_LEN = 0;
+            R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        }
+        break;
+        default:
+            assert("0 && ERROR: ep1_transceive_and_update default!");
+            break;
     }
 }
 
