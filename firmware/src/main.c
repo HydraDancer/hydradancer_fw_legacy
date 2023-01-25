@@ -182,7 +182,7 @@ main(void)
             // Send the cyphered data back to top board
             SerDes_DMA_Tx();
             SerDes_Wait_Txdone();
-            usb_log("[HOST]   Cyphered message sent back to Host board successfully\r\n");
+            usb_log("[DEVICE] Cyphered message sent back to Host board successfully\r\n");
         }
     }
 
@@ -199,7 +199,6 @@ main(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void 
 SERDES_IRQHandler(void)
 {
-    usb_log("SERDES IRQ Handler\r\n");
     switch (SerDes_StatusIT() & ALL_INT_TYPE) {
     case SDS_PHY_RDY_FLG:
         SerDes_ClearIT(SDS_PHY_RDY_FLG);
