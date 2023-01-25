@@ -254,6 +254,14 @@ main(int argc, char *argv[])
             fgets(buffer, 512, stdin);
             usb_bulk_rot13(buffer, 512);
             break;
+        // - Behave as a keyboard
+        case 4:
+            // Fill Device Descriptor
+            // Fill Configuration Descriptor
+            // Fill Interace Descriptor
+            // Fill Endpoint Descriptor
+            // Connect to the target
+            break;
         // - exit
         case 9:
             exit = true;
