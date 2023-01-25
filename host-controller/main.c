@@ -28,6 +28,10 @@ struct libusb_device_handle *g_deviceHandle = NULL;
 void handler_sigint(int sig);
 int usb_init_verbose(void);
 void usb_close(void);
+void menu_print(void);
+int menu_get_input(void);
+void usb_log_print(unsigned char *buffer, int capBuffer);
+void usb_bulk_rot13(unsigned char *buffer, int capBuffer);
 
 
 /* functions implementation */
