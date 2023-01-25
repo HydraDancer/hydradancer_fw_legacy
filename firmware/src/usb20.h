@@ -6,6 +6,8 @@
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
 
+#include "usb20-endpoints.h"
+
 /* macros */
 #define U20_MAXPACKET_LEN (512)                                                                     
 #define U20_UEP0_MAXSIZE  (64)  // Change accordingly to USB mode (Here HS).

@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef USB20_CONFIG_H
+#define USB20_CONFIG_H
 
 /* variables */
 static USB_DEV_DESCR stBoardTopDeviceDescriptor = {
@@ -164,5 +164,5 @@ static uint8_t *boardTopStringDescriptors[] = {
     NULL /* Must be NULL-terminated as we need to determine its length. */
 };
 
-#endif /* CONFIG_H */
+#endif /* USB20_CONFIG_H */
 
