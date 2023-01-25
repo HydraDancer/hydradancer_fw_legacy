@@ -62,7 +62,7 @@ Note: HydraUSB3 fuzzing mode USB Host is not supported and requires some reverse
 
     - ### 2.2.1.1 HydraUSB3 USB Device fuzzing mode USB device descriptors configurations tree
 
-      ![USB_DeviceDescriptor_Tree V1 board](USB_DeviceDescriptor_Tree.jpg)
+      ![USB Device Descriptor Tree](USB_DeviceDescriptor_Tree.png)
 	  - Reference https://www.beyondlogic.org/usbnutshell/usb5.shtml
 
     - ### 2.2.1.2 BBIO Sub Commands (8 bits in binary)
