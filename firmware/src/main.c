@@ -8,7 +8,6 @@
  * related to HSPI is HSPI_IRQHandler().
  * - For USB endpoint behaviour see epX_transceive_and_update().
  */
-#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -324,7 +323,7 @@ USBHS_IRQHandler(void)
                 endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
                 break;
             default:
-                assert(0 && "ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
+                usb_log("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
                 break;
             }
             break;
@@ -332,11 +331,11 @@ USBHS_IRQHandler(void)
             switch (SetupReqType & USB_REQ_RECIP_MASK) {
             case USB_REQ_RECIP_DEVICE:
                 /* Not implemented. */
-                assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
+                usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
                 break;
             case USB_REQ_RECIP_INTERF:
                 /* Not implemented. */
-                assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
+                usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
                 break;
             case USB_REQ_RECIP_ENDP:
                 switch (UsbSetupBuf->wValue.w) {
@@ -344,12 +343,12 @@ USBHS_IRQHandler(void)
                     endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
                     break;
                 default:
-                    assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
+                    usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
                     break;
                 }
                 break;
             default:
-                assert(0 && "ERROR: SETUP Interrupt USB_SET_FEATURE invalid recipient");
+                usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE invalid recipient");
                 break;
             }
             break;
