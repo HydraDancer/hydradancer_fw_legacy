@@ -20,7 +20,7 @@
 #include "serdes.h"
 #include "usb20.h"
 
-#include "rot13_example.h"  // Added for the example only !
+#include "rot13-example.h"  // Added for the example only !
 //
 // TODOOOO: Add prefix for logging with usb_log()
 
