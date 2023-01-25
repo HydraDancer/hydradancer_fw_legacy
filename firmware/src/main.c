@@ -61,19 +61,6 @@ main(void)
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
 
-    cfgDescrType = CfgDescr2EpDebug;
-    speed = SpeedHigh;
-    epMask = Ep1Mask | Ep7Mask;
-    endpoint_clear(0x81);
-    endpoint_clear(0x01);
-    endpoint_clear(0x87);
-
-    // Filling structures "describing" our USB peripheral.
-    stDeviceDescriptor                     = stBoardTopDeviceDescriptor;
-    stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
-    stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
-    stringDescriptors                      = boardTopStringDescriptors;
-
     /* Board sync. */
     int retCode;
     if (bsp_switch()) {
@@ -94,8 +81,23 @@ main(void)
 
 
     /* USB Init. */
-    U20_registers_init(speed);
-    U20_endpoints_init(epMask);
+    if (g_isHost) {
+        cfgDescrType = CfgDescr2EpDebug;
+        speed = SpeedHigh;
+        epMask = Ep1Mask | Ep7Mask;
+        endpoint_clear(0x81);
+        endpoint_clear(0x01);
+        endpoint_clear(0x87);
+
+        // Filling structures "describing" our USB peripheral.
+        stDeviceDescriptor                     = stBoardTopDeviceDescriptor;
+        stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
+        stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
+        stringDescriptors                      = boardTopStringDescriptors;
+
+        U20_registers_init(speed);
+        U20_endpoints_init(epMask);
+    }
 
     usb_log("USB init done\r\n");
 
@@ -137,6 +139,13 @@ main(void)
 
     if (g_isHost) {
         while (1) {
+            // BBIO commands are passed directly to the bottm board,
+            // There is no logic in the top board.
+
+
+
+
+
             // Wait to receive the message to cypher
             // See ep1_transceive_and_update() for how it is done
             usb_log("[HOST]   Waiting for the message from host (USB)\r\n");
@@ -161,7 +170,7 @@ main(void)
             sizeEndp1Buff = min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN);
             g_top_readyToTransmitUsbPacket = true;
 
-            // Wait for transmission over USB to be completede before being able
+            // Wait for transmission over USB to be completed before being able
             // to cypher an other message
             while (g_top_readyToTransmitUsbPacket) { bsp_wait_ms_delay(10); }
             usb_log("[HOST]   Cyphered message sent back to host successfully\r\n");
