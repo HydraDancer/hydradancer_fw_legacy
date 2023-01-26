@@ -28,10 +28,10 @@ DualBoard Firmware (same binary firmware for both boards)
 
 ## 1.3 HydraDancer communication
 
-|    Computer     | HydraUSB3 Board1 Top  | Inter-board | HydraUSB3 Board2 Bottom  | Target of Evaluation(ToE)    |
-|:---------------:|:---------------------:|:-----------:|:------------------------:|:----------------------------:|
-| PC Host Attacker| <= Control Board =>   |  HSPI =>    |<= Emulation Board  =>    | Target Host / Target Device  |
-|                 |                       |  <= SerDes  |                          |                              |
+| Evaluator PC    | HydraUSB3 Board1 Top | Inter-board | HydraUSB3 Board2 Bottom | Target of Evaluation(ToE)   |
+|:---------------:|:--------------------:|:-----------:|:-----------------------:|:---------------------------:|
+| Evaluator Host  | <= Control Board =>  | HSPI =>     | <= Emulation Board  =>  | Target Host / Target Device |
+|                 |                      | <= SerDes   |                         |                             |
 
 - "Emulation board" is emulating a Device when auditing a Target Host, and is emulating a Host when auditing a Target Device.
 "Emulation board" emulating a Device to audit a Target Host" is the priority.
