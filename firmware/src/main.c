@@ -66,22 +66,22 @@ main(void)
         g_isHost = true;
         usb_log("[TOP BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
+
+        if (retCode) {
+            usb_log("Synchronisation done (success)\r\n");
+        } else {
+            usb_log("Synchronisation error(timeout)\r\n");
+        }
     } else {
         stDeviceDescriptor.idProduct = 0x1338;
         g_isHost = false;
-        usb_log("[BOTTOM BOARD] Hello!\r\n");
+        // usb_log("[BOTTOM BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
-    }
-    if (retCode) {
-        usb_log("Synchronisation done (success)\r\n");
-    } else {
-        usb_log("Synchronisation error(timeout)\r\n");
     }
 
 
     /* USB Init. */
-    // if (g_isHost) {
-    if (1) {
+    if (g_isHost) {
         cfgDescrType = CfgDescr2EpDebug;
         speed = SpeedHigh;
         epMask = Ep1Mask | Ep7Mask;
@@ -95,26 +95,23 @@ main(void)
         stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
         stringDescriptors                      = boardTopStringDescriptors;
 
-        if (!g_isHost) stDeviceDescriptor.idProduct = 0x1338;
-
+        // TODO: REMOVE
+        // if (!g_isHost) stDeviceDescriptor.idProduct = 0x1338;
 
         U20_registers_init(speed);
         U20_endpoints_init(epMask);
     }
 
-    usb_log("USB init done\r\n");
-
     /* HSPI Init. */
-    memset((void *)hspiDmaAddr0, '.', HSPI_DMA_LEN0);
+    memset((void *)hspiDmaAddr0, 0, HSPI_DMA_LEN0);
     hspiDmaAddr0[HSPI_DMA_LEN0-1] = 0;
-    memset((void *)hspiDmaAddr1, '.', HSPI_DMA_LEN1);
+    memset((void *)hspiDmaAddr1, 0, HSPI_DMA_LEN1);
     hspiDmaAddr1[HSPI_DMA_LEN1-1] = 0;
     if (g_isHost) {
         HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, HSPI_DMA_LEN);
     } else {
         HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, 0);
     }
-    usb_log("HSPI init done\r\n");
 
     /* SerDes Init. */
     PFIC_EnableIRQ(SERDES_IRQn);
@@ -129,70 +126,18 @@ main(void)
         SerDes_Tx_Init(SDS_PLL_FREQ_1_20G);
         SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, serdesCustomNumber);
     }
-    usb_log("SerDes init done\r\n");
 
-    usb_log("Init all done!\r\n");
-
-    // HOW THIS EXAMLE WORKS :
-    // - Host sends message over USB to top board
-    // - Top board transmits that message to bottom board via HSPI
-    // - Second board cypher the message received (with rot13 encryption)
-    // - Second board sends the cyphered message back to top board via SerDes
-    // - Top board sends the cyphered message back to host via USB
 
     if (g_isHost) {
+        usb_log("[HOST]   Init all done!\r\n");
         while (1) {
             // BBIO commands are passed directly to the bottom board,
             // There is no logic in the top board.
-
-
-            // Wait to receive the anwser over SerDes
-            usb_log("[HOST]   Waiting for SerDes response\r\n");
-            while (!g_top_receivedSerdes) { bsp_wait_ms_delay(10); }
-            g_top_receivedSerdes = false;
-            usb_log("[HOST]   Got something on SerDes!\r\n");
+            // See ep1_transceive_and_update_host()
         }
     } else {
+        serdes_log("[DEVICE] Init all done!\r\n");
         while (1) {
-            // Wait to receive data from top board over HSPI
-            while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
-            g_bottom_receivedHspiPacket = false;
-
-            usb_log("[DEVICE] Received something over HSPI\r\n");
-            usb_log("%s\r\n", hspi_get_buffer_rx());
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[0] );
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[1] );
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[2] );
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[3] );
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[4] );
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[5] );
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[6] );
-            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[7] );
-
-
-            // memcpy(serdesDmaAddr, hspi_get_buffer_rx(), 512);
-            // SerDes_DMA_Tx();
-            // SerDes_Wait_Txdone();
-            // serdes_wait_for_tx(SDS_PLL_FREQ_1_20G);
-
-            // Decoding BBIO
-            // switch (hspi_get_buffer_rx()[0]) {
-            //     case BbioSetDescrDevice:
-            //         // Should trigger twice
-            //         // TODO: retrieve the said descriptor
-            //         memcpy(serdesDmaAddr, "Device descriptor set successfully\r\n", 37);
-            //         SerDes_DMA_Tx();
-            //         SerDes_Wait_Txdone();
-            //         break;
-            //     case BbioSetDescrConfig:
-            //         break;
-            //     case BbioSetDescrInterface:
-            //         break;
-            //     case BbioSetDescrEndpoint:
-            //         break;
-            //     default:
-            //         break;
-            // }
         }
     }
 
@@ -209,6 +154,7 @@ main(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void 
 SERDES_IRQHandler(void)
 {
+    uint16_t logLen;
     switch (SerDes_StatusIT() & ALL_INT_TYPE) {
     case SDS_PHY_RDY_FLG:
         SerDes_ClearIT(SDS_PHY_RDY_FLG);
@@ -219,11 +165,21 @@ SERDES_IRQHandler(void)
         break;
     case SDS_RX_INT_FLG:
         g_top_receivedSerdes = true;
+        // Handle log received from bottom board
+        logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
+        memcpy(endp7LoggingBuff + sizeEndp7LoggingBuff, serdesDmaAddr, logLen);
+        sizeEndp7LoggingBuff += logLen;
+
         SerDes_ClearIT(SDS_RX_INT_FLG);
         break;
     case SDS_RX_ERR_FLG | SDS_RX_INT_FLG:
         usb_log("SDS_RX_ERR_FLG | SDS_RX_INT_FLG\r\n");
         g_top_receivedSerdes = true;
+        // Handle log received from bottom board
+        logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
+        memcpy(endp7LoggingBuff + sizeEndp7LoggingBuff, serdesDmaAddr, logLen);
+        sizeEndp7LoggingBuff += logLen;
+
         SerDes_ClearIT(SDS_RX_ERR_FLG | SDS_RX_INT_FLG);
         break;
     case SDS_FIFO_OV_FLG:
@@ -265,8 +221,9 @@ HSPI_IRQHandler(void)
     case RB_HSPI_IF_R_DONE:
         hspiRtxStatus = hspi_get_rtx_status();
         if (hspiRtxStatus) {
-            usb_log("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            serdes_log("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
+        serdes_log("[DEVICE] Received something over HSPI\r\n");
 
         g_bottom_receivedHspiPacket = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;

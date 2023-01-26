@@ -55,7 +55,7 @@ serdes_log(const char *fmt, ...)
 
     SerDes_DMA_Tx();
     SerDes_Wait_Txdone();
-    serdes_wait_for_tx(SDS_PLL_FREQ_1_20G); // TODO: Check if can be removed
+    // serdes_wait_for_tx(SDS_PLL_FREQ_1_20G); // TODO: Check if can be removed
     // bsp_enable_interrupt();
 }
 
