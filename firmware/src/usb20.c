@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -242,7 +241,7 @@ endpoint_clear(uint8_t endpointToClear)
         R8_UEP7_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
     default:
-        assert(0 && "ERROR: endpoint_clear() invalid argument");
+        usb_log("ERROR: endpoint_clear() invalid argument");
         break;
     }
 }
@@ -302,7 +301,7 @@ endpoint_halt(uint8_t endpointToHalt)
         R8_UEP7_RX_CTRL = (R8_UEP7_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
     default:
-        assert(0 && "ERROR: endpoint_halt() invalid argument");
+        usb_log("ERROR: endpoint_halt() invalid argument");
         break;
     }
 }
@@ -353,7 +352,7 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
         *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
         break;
     default:
-        assert(0 && "ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
+        usb_log("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
         break;
     }
 }
@@ -391,7 +390,7 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
         /* Not implemented. */
         break;
     default:
-        assert(0 && "ERROR: ep0_transceive_and_update() invalid uisToken");
+        usb_log("ERROR: ep0_transceive_and_update() invalid uisToken");
         break;
     }
 
@@ -450,7 +449,7 @@ ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuff
         }
         break;
         default:
-            assert("0 && ERROR: ep7_transmit_and_update default!");
+            usb_log("ERROR: ep7_transmit_and_update default!");
             break;
     }
 }
@@ -473,7 +472,7 @@ usb_log(const char *fmt, ...)
     uint16_t sizeLeft = capacityEndp7LoggingBuff - sizeEndp7LoggingBuff;
     
     if (sizeEndp7LoggingBuff >= capacityEndp7LoggingBuff) {
-        assert(0 && "ERROR: Buffer already filled!");
+        usb_log("ERROR: Buffer already filled!");
         sizeLeft = 0;
     }
     
