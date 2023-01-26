@@ -16,6 +16,7 @@
 #include "CH56x_common.h"
 #include "CH56x_debug_log.h"
 
+#include "bbio.h"
 #include "hspi.h"
 #include "serdes.h"
 #include "usb20-endpoints.h"
@@ -79,7 +80,8 @@ main(void)
 
 
     /* USB Init. */
-    if (g_isHost) {
+    // if (g_isHost) {
+    if (1) {
         cfgDescrType = CfgDescr2EpDebug;
         speed = SpeedHigh;
         epMask = Ep1Mask | Ep7Mask;
@@ -92,6 +94,9 @@ main(void)
         stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
         stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
         stringDescriptors                      = boardTopStringDescriptors;
+
+        if (!g_isHost) stDeviceDescriptor.idProduct = 0x1338;
+
 
         U20_registers_init(speed);
         U20_endpoints_init(epMask);
@@ -137,59 +142,57 @@ main(void)
 
     if (g_isHost) {
         while (1) {
-            // BBIO commands are passed directly to the bottm board,
+            // BBIO commands are passed directly to the bottom board,
             // There is no logic in the top board.
 
-
-
-
-
-            // Wait to receive the message to cypher
-            // See ep1_transceive_and_update() for how it is done
-            usb_log("[HOST]   Waiting for the message from host (USB)\r\n");
-            while (!g_top_receivedUsbPacket) { bsp_wait_ms_delay(10); }
-            g_top_receivedUsbPacket = false;
-            usb_log("[HOST]   Message received, transmitting via HSPI\r\n");
-
-            // Fill and transmit data to second board via HSPI
-            uint8_t *hspiBufferTx = hspi_get_buffer_next_tx();
-            memcpy(hspiBufferTx, endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
-
-            HSPI_DMA_Tx();
 
             // Wait to receive the anwser over SerDes
             usb_log("[HOST]   Waiting for SerDes response\r\n");
             while (!g_top_receivedSerdes) { bsp_wait_ms_delay(10); }
             g_top_receivedSerdes = false;
-            usb_log("[HOST]   SerDes received, transmitting back to Host\r\n");
-
-            // Prepare buffer to send back to host
-            memcpy(endp1Buff, serdesDmaAddr, min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN));
-            sizeEndp1Buff = min(U20_UEP1_MAXSIZE, SERDES_DMA_LEN);
-            g_top_readyToTransmitUsbPacket = true;
-
-            // Wait for transmission over USB to be completed before being able
-            // to cypher an other message
-            while (g_top_readyToTransmitUsbPacket) { bsp_wait_ms_delay(10); }
-            usb_log("[HOST]   Cyphered message sent back to host successfully\r\n");
+            usb_log("[HOST]   Got something on SerDes!\r\n");
         }
     } else {
         while (1) {
             // Wait to receive data from top board over HSPI
-            usb_log("[DEVICE] Waiting for the message Host top board (HSPI)\r\n");
             while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
             g_bottom_receivedHspiPacket = false;
-            usb_log("[DEVICE] HSPI Request received, cyphering\r\n");
 
-            memcpy(serdesDmaAddr, hspi_get_buffer_rx(), min(SERDES_DMA_LEN, HSPI_DMA_LEN));
-            // Apply ROT13 encryption over the received data
-            rot13(serdesDmaAddr, SERDES_DMA_LEN);
-            usb_log("[DEVICE] Cyphering done, sending back data to Host board via SerDes\r\n");
+            usb_log("[DEVICE] Received something over HSPI\r\n");
+            usb_log("%s\r\n", hspi_get_buffer_rx());
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[0] );
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[1] );
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[2] );
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[3] );
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[4] );
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[5] );
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[6] );
+            usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_rx() )[7] );
 
-            // Send the cyphered data back to top board
-            SerDes_DMA_Tx();
-            SerDes_Wait_Txdone();
-            usb_log("[DEVICE] Cyphered message sent back to Host board successfully\r\n");
+
+            // memcpy(serdesDmaAddr, hspi_get_buffer_rx(), 512);
+            // SerDes_DMA_Tx();
+            // SerDes_Wait_Txdone();
+            // serdes_wait_for_tx(SDS_PLL_FREQ_1_20G);
+
+            // Decoding BBIO
+            // switch (hspi_get_buffer_rx()[0]) {
+            //     case BbioSetDescrDevice:
+            //         // Should trigger twice
+            //         // TODO: retrieve the said descriptor
+            //         memcpy(serdesDmaAddr, "Device descriptor set successfully\r\n", 37);
+            //         SerDes_DMA_Tx();
+            //         SerDes_Wait_Txdone();
+            //         break;
+            //     case BbioSetDescrConfig:
+            //         break;
+            //     case BbioSetDescrInterface:
+            //         break;
+            //     case BbioSetDescrEndpoint:
+            //         break;
+            //     default:
+            //         break;
+            // }
         }
     }
 
@@ -430,7 +433,11 @@ USBHS_IRQHandler(void)
             }
             break;
         case 1:
-            ep1_transceive_and_update(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
+            if (g_isHost) {
+                ep1_transceive_and_update_host(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
+            } else {
+                ep1_transceive_and_update_target(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
+            }
             break;
         case 7:
             ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);

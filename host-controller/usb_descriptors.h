@@ -2,7 +2,7 @@
 #define USB_DESCRIPTORS_H
 
 unsigned char g_descriptorDevice[] = {
-    34,     // bLength
+    18,     // bLength
     1,      // bDescriptorType
     0x00,   // bcdUSB (low)
     0x20,   // bcdUSB (high)

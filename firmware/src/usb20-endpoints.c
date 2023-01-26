@@ -125,7 +125,7 @@ ep1_transmit_keyboard(void)
  * @return  None
  */
 void
-ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
     static uint8_t *bufferResetValue = NULL;
     if (bufferResetValue == NULL) {
@@ -134,9 +134,59 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 
     switch (uisToken) {
     case UIS_TOKEN_OUT:
-        g_top_receivedUsbPacket = true; // Part of the rot13 example
+        // Transmit data to second board via HSPI
+        memcpy(hspi_get_buffer_next_tx(), endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
+        HSPI_DMA_Tx();
 
-        // TODOOO: Handle transfer where there is more than one transaction.
+        usb_log("[HOST]   USB Handler, transmitted to bottom board via HSPI\n");
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[0] );
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[1] );
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[2] );
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[3] );
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[4] );
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[5] );
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[6] );
+        usb_log("%d\r\n", ( (uint8_t *)hspi_get_buffer_next_tx() )[7] );
+
+        R16_UEP1_T_LEN = 0;
+        R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+        R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        R8_UEP1_RX_CTRL ^= RB_UEP_R_TOG_1;
+        R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+        break;
+    case UIS_TOKEN_IN:
+        // Not used, only transmitting from host to device board
+        break;
+    default:
+        usb_log("ERROR: ep1_transceive_and_update default!");
+        break;
+    }
+}
+
+
+/*******************************************************************************
+/* @fn      ep1_transceive_and_update
+ *
+ * @brief   Handle the "command" on endpoint 1 (mainly receive/transmit) and 
+ *          update the buffer accordingly
+ *
+ * @return  None
+ */
+void
+ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_OUT:
+        // Transmit data to second board via HSPI
+        memcpy(hspi_get_buffer_next_tx(), endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
+
+        HSPI_DMA_Tx();
+
         R16_UEP1_T_LEN = 0;
         R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
         R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
@@ -164,9 +214,9 @@ ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
             R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
         }
         break;
-        default:
-            usb_log("ERROR: ep1_transceive_and_update default!");
-            break;
+    default:
+        usb_log("ERROR: ep1_transceive_and_update default!");
+        break;
     }
 }
 

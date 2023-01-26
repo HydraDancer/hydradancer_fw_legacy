@@ -7,6 +7,7 @@
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
 
+#include "hspi.h"
 #include "usb20.h"
 
 #include "rot13-example.h" // Included only for the example, used in ep1_transceive_and_update()
@@ -48,7 +49,18 @@ void epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
  *                    the associated size
  * Return         : None
  *******************************************************************************/
-void ep1_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+void ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+
+/*******************************************************************************
+ * Function Name  : ep1_transceive_and_update
+ * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
+ *                  and update the buffer accordingly
+ * Input          : - uisToken is the bmRequestType field of the Setup Packet
+ *                  - pBuffer and pSizeBuffer are the buffer to transceive and
+ *                    the associated size
+ * Return         : None
+ *******************************************************************************/
+void ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
  * Function Name  : ep1_transmit_keyboard

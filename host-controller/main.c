@@ -309,13 +309,14 @@ main(int argc, char *argv[])
         // - Behave as a keyboard
         case 4:
             // Fill Device Descriptor
+            printf("Sending descriptor (%d bytes)\n", sizeof(g_descriptorDevice));
             usb_descriptor_set(SetDescrDevice, g_descriptorDevice, sizeof(g_descriptorDevice));
-            // Fill Configuration Descriptor
-            usb_descriptor_set(SetDescrConfig, g_descriptorDevice, sizeof(g_descriptorDevice));
-            // Fill Interace Descriptor
-            usb_descriptor_set(SetDescrInterface, g_descriptorDevice, sizeof(g_descriptorDevice));
-            // Fill Endpoint Descriptor
-            usb_descriptor_set(SetDescrEndpoint, g_descriptorDevice, sizeof(g_descriptorDevice));
+            // // Fill Configuration Descriptor
+            // usb_descriptor_set(SetDescrConfig, g_descriptorDevice, sizeof(g_descriptorDevice));
+            // // Fill Interace Descriptor
+            // usb_descriptor_set(SetDescrInterface, g_descriptorDevice, sizeof(g_descriptorDevice));
+            // // Fill Endpoint Descriptor
+            // usb_descriptor_set(SetDescrEndpoint, g_descriptorDevice, sizeof(g_descriptorDevice));
             // Connect to the target
             break;
         // - exit
