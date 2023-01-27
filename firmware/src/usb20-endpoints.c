@@ -135,12 +135,10 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
     switch (uisToken) {
     case UIS_TOKEN_OUT:
         // Transmit data to second board via HSPI
-        
-        // Just clean the interrupt
-        // memcpy(hspi_get_buffer_next_tx(), endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
-        // HSPI_DMA_Tx();
+        memcpy(hspi_get_buffer_next_tx(), endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
+        HSPI_DMA_Tx();
 
-        // usb_log("[HOST]   Received over USB: 0x%lx\r\n", ( (uint32_t *)hspi_get_buffer_next_tx() )[0] );
+        usb_log("[HOST]   Received over USB: 0x%lx\r\n", ( (uint32_t *)hspi_get_buffer_next_tx() )[0] );
 
         R16_UEP1_T_LEN = 0;
         R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;

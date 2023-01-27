@@ -67,39 +67,19 @@ main(void)
         usb_log("[TOP BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
 
-        if (retCode) {
-            usb_log("Synchronisation done (success)\r\n");
-        } else {
-            usb_log("Synchronisation error(timeout)\r\n");
-        }
+        // TODO: Investigate
+        // If uncommented this create a "desync" between the board and the
+        // bottom board can not initiate SerDes Tx
+        // if (retCode) {
+        //     usb_log("Synchronisation done (success)\r\n");
+        // } else {
+        //     usb_log("Synchronisation error(timeout)\r\n");
+        // }
+
     } else {
-        stDeviceDescriptor.idProduct = 0x1338;
         g_isHost = false;
-        // usb_log("[BOTTOM BOARD] Hello!\r\n");
+        usb_log("[BOTTOM BOARD] Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
-    }
-
-
-    /* USB Init. */
-    if (g_isHost) {
-        cfgDescrType = CfgDescr2EpDebug;
-        speed = SpeedHigh;
-        epMask = Ep1Mask | Ep7Mask;
-        endpoint_clear(0x81);
-        endpoint_clear(0x01);
-        endpoint_clear(0x87);
-
-        // Filling structures "describing" our USB peripheral.
-        stDeviceDescriptor                     = stBoardTopDeviceDescriptor;
-        stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
-        stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
-        stringDescriptors                      = boardTopStringDescriptors;
-
-        // TODO: REMOVE
-        // if (!g_isHost) stDeviceDescriptor.idProduct = 0x1338;
-
-        U20_registers_init(speed);
-        U20_endpoints_init(epMask);
     }
 
     /* HSPI Init. */
@@ -125,6 +105,25 @@ main(void)
         SerDes_EnableIT(ALL_INT_TYPE & ~SDS_TX_INT_FLG);
         SerDes_Tx_Init(SDS_PLL_FREQ_1_20G);
         SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, serdesCustomNumber);
+    }
+
+    /* USB Init. */
+    if (g_isHost) {
+        cfgDescrType = CfgDescr2EpDebug;
+        speed = SpeedHigh;
+        epMask = Ep1Mask | Ep7Mask;
+        endpoint_clear(0x81);
+        endpoint_clear(0x01);
+        endpoint_clear(0x87);
+
+        // Filling structures "describing" our USB peripheral.
+        stDeviceDescriptor                     = stBoardTopDeviceDescriptor;
+        stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
+        stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
+        stringDescriptors                      = boardTopStringDescriptors;
+
+        U20_registers_init(speed);
+        U20_endpoints_init(epMask);
     }
 
 
