@@ -1,24 +1,42 @@
 #include <libusb-1.0/libusb.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "usb_descriptors.h"
 
 /* macros */
 #define ID_VENDOR  0x1337
 #define ID_PRODUCT 0x1337
 
-#define TRANSFER_SIZE 64 /* Currently doing USB HS */
+#define TRANSFER_SIZE       64 /* Currently doing USB HS */
+#define USB20_EP1_MAX_SIZE  512
 
 #define INTERFACE 1
 #define EP1OUT      0x01
 #define EP1IN       0x81
 #define EP_DEBUG    0x87
+
+/* enums */
+enum BbioCommand {
+    BbioMainMode      = 0b00000000,
+    BbioIdentifMode   = 0b00000001,
+    BbioSetDescr      = 0b00000010,
+};
+enum BbioSubCommand {
+    BbioSubSetDescrDevice      = 0b00000001,
+    BbioSubSetDescrConfig      = 0b00000010,
+    BbioSubSetDescrInterface   = 0b00000011,
+    BbioSubSetDescrEndpoint    = 0b00000100,
+    BbioSubSetDescrString      = 0b00000101,
+};
 
 /* variables */
 struct libusb_device_handle *g_deviceHandle = NULL;
@@ -123,6 +141,7 @@ menu_print(void)
     printf("1)Log once\n");
     printf("2)Log infinite loop\n");
     printf("3)ROT13\n");
+    printf("4)Fill descriptors for keyboard\n");
     printf("\n");
     printf("9)Exit\n");
     printf(">");
@@ -205,6 +224,64 @@ usb_bulk_rot13(unsigned char *buffer, int capBuffer)
     printf("%s\n", buffer);
 }
 
+
+void
+bbio_command_send(enum BbioCommand bbioCommand, int indexDescriptor, int sizeDescriptor)
+{
+    /* Safeguards */
+    assert(indexDescriptor <= 16 && "bbio_command_send() index > 16");
+    assert(sizeDescriptor <= UINT16_MAX && "Desciptor size > UINT16_MAX\n");
+    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "usb_descriptor_set(): Descriptor is too big for the buffer\n");
+    int retCode;
+    unsigned char bbioBuffer[1];
+
+    bbioBuffer[0] = 0x37;
+
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, bbioBuffer, 1, NULL, 0);
+    if (retCode) {
+        printf("[ERROR]\t bbio_command_send(): bulk transfer failed");
+    }
+}
+
+
+void
+bbio_command_sub_send(enum BbioCommand bbioCommand, enum BbioSubCommand bbioSubCommand, int indexDescriptor, int sizeDescriptor)
+{
+    /* Safeguards */
+    assert(indexDescriptor <= 16 && "bbio_command_send() index > 16");
+    assert(sizeDescriptor <= UINT16_MAX && "Desciptor size > UINT16_MAX\n");
+    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "usb_descriptor_set(): Descriptor is too big for the buffer\n");
+    int retCode;
+    unsigned char bbioBuffer[5];
+
+    bbioBuffer[0] = bbioCommand;
+    bbioBuffer[1] = bbioSubCommand;
+    bbioBuffer[2] = indexDescriptor;
+    bbioBuffer[3] = sizeDescriptor % 256;   // Lower byte
+    bbioBuffer[4] = sizeDescriptor / 256;   // Higher Byte
+
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, bbioBuffer, 5, NULL, 0);
+    if (retCode) {
+        printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
+    }
+}
+
+
+void
+usb_descriptor_set(enum BbioSubCommand bbioSubCommand, int indexDescriptor, unsigned char *descriptor, int sizeDescriptor)
+{
+    int retCode;
+
+    // Send BBIO command
+    bbio_command_sub_send(BbioSetDescr, bbioSubCommand, indexDescriptor, sizeDescriptor);
+
+    // Send descriptor
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptor, sizeDescriptor, NULL, 0);
+    if (retCode) {
+        printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
+    }
+}
+
 /*******************************************************************************
  * @fn      main
  *
@@ -238,6 +315,7 @@ main(int argc, char *argv[])
         case 1:
             // TODOO: Fix bug where the first IN bulk transfer is empty (even
             // when there is data to transmit)
+            memset(buffer, 0, capBuffer);
             usb_log_print(buffer, capBuffer);
             usb_log_print(buffer, capBuffer);
             break;
@@ -251,8 +329,20 @@ main(int argc, char *argv[])
         // - send input + read input
         case 3:
             printf("Message to cypher: ");
-            fgets(buffer, 512, stdin);
-            usb_bulk_rot13(buffer, 512);
+            fgets(buffer, USB20_EP1_MAX_SIZE, stdin);
+            usb_bulk_rot13(buffer, USB20_EP1_MAX_SIZE);
+            break;
+        // - Behave as a keyboard
+        case 4:
+            // Fill Device Descriptor of the ToE board
+            printf("Sending descriptor (%ld bytes)\n", sizeof(g_descriptorDevice));
+            usb_descriptor_set(BbioSubSetDescrDevice, 0, g_descriptorDevice, sizeof(g_descriptorDevice));
+            usb_descriptor_set(BbioSubSetDescrConfig, 0, g_descriptorConfig, sizeof(g_descriptorConfig));
+            usb_descriptor_set(BbioSubSetDescrInterface, 0, g_descriptorInterface, sizeof(g_descriptorInterface));
+            usb_descriptor_set(BbioSubSetDescrEndpoint, 0, g_descriptorEndpoint, sizeof(g_descriptorEndpoint));
+
+            // Connect to the target
+            // Handled automatically for now
             break;
         // - exit
         case 9:

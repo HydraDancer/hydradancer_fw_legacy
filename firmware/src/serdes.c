@@ -1,3 +1,5 @@
+#include <stdarg.h>
+
 #include "serdes.h"
 
 /* variables */
@@ -31,5 +33,29 @@ serdes_wait_for_tx(uint16_t sizeTransmission)
     // (sizeTransmission*20) / 1200 = delay in us.
     // Additionally we add a margin of 20us.
     bsp_wait_us_delay((sizeTransmission*20)/1200 + 20);
+}
+
+/* @fn      serdes_log
+ *
+ * @brief   Function used to log data to the top board via SerDes
+ *
+ * @return  None
+ */
+void
+serdes_log(const char *fmt, ...)
+{
+    // Critical section, if we print something (outside of an interrrupt) and an
+    // interrupt is called and do a print, then the first print is partially
+    // overwritten.
+    va_list ap;
+    // bsp_disable_interrupt();
+    va_start(ap, fmt);
+
+    vsnprintf((char *)serdesDmaAddr, SERDES_DMA_LEN, fmt, ap);
+
+    SerDes_DMA_Tx();
+    SerDes_Wait_Txdone();
+    // serdes_wait_for_tx(SDS_PLL_FREQ_1_20G); // TODO: Check if can be removed
+    // bsp_enable_interrupt();
 }
 

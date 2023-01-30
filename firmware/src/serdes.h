@@ -25,4 +25,13 @@ extern uint8_t serdesDmaAddr[]; // Buffer for SerDes
  *******************************************************************************/
 void serdes_wait_for_tx(uint16_t sizeTransmission);
 
+/*******************************************************************************
+ * Function Name  : serdes_log
+ * Description    : Function used to log data to the top board via SerDes
+ * Input          : Variadic function, same arguments as you would give to
+ *                  printf()
+ * Return         : None
+ *******************************************************************************/
+void serdes_log(const char *fmt, ...);
+
 #endif /* SERDES_H */
