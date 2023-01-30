@@ -141,6 +141,25 @@ main(void)
     } else {
         serdes_log("[DEVICE] Init all done!\r\n");
         while (1) {
+            while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
+            g_bottom_receivedHspiPacket = false;
+
+            // Only device descriptor is set up, setting everything else
+            // manually (for now)
+            cfgDescrType = CfgDescr2EpDebug;
+            speed = SpeedHigh;
+            epMask = Ep1Mask | Ep7Mask;
+            endpoint_clear(0x81);
+            endpoint_clear(0x01);
+            endpoint_clear(0x87);
+
+            // Filling structures "describing" our USB peripheral.
+            stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
+            stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
+            stringDescriptors                      = boardTopStringDescriptors;
+
+            U20_registers_init(speed);
+            U20_endpoints_init(epMask);
         }
     }
 
@@ -208,7 +227,14 @@ SERDES_IRQHandler(void)
 __attribute__((interrupt("WCH-Interrupt-fast"))) void
 HSPI_IRQHandler(void)
 {
+    // Bbio commands are in 2 parts
+    // 1) Bbio instruction, see specs for more details
+    // 2) Datas associated to the instruction previously received
+    // Thus the following static var is used to track which part we are in
+    static uint8_t currentStep = 0;
+
     uint8_t hspiRtxStatus;
+    uint8_t *hspiRxBuffer;
 
     switch (R8_HSPI_INT_FLAG & HSPI_INT_FLAG) {
     case RB_HSPI_IF_T_DONE:
@@ -223,12 +249,28 @@ HSPI_IRQHandler(void)
         break;
     case RB_HSPI_IF_R_DONE:
         hspiRtxStatus = hspi_get_rtx_status();
+        hspiRxBuffer = hspi_get_buffer_rx();
         if (hspiRtxStatus) {
             serdes_log("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
-        serdes_log("[DEVICE] Received something over HSPI\r\n");
 
-        g_bottom_receivedHspiPacket = true;
+        // TODO: Refactor
+        // Business logic goes here
+
+            if (currentStep == 0) {
+                if (hspiRxBuffer[0] == BbioSetDescr) {
+                    // Ready to proceed to next step
+                    currentStep ^= 1;
+                }
+            } else if (currentStep == 1) {
+                usb20_descriptor_set(hspiRxBuffer);
+                currentStep ^= 1;
+                g_bottom_receivedHspiPacket = true;
+            } else {
+                serdes_log("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
+            }
+
+        // g_bottom_receivedHspiPacket = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:

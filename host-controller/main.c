@@ -26,10 +26,16 @@
 
 /* enums */
 enum BbioCommand {
-    SetDescrDevice      = 0b00010000,   // Only the device descriptor does not have multiple possible "values"
-    SetDescrConfig      = 0b00100000,   // The 4 lower bytes are dedicated to the index of the given descriptor
-    SetDescrInterface   = 0b00110000,   // The 4 lower bytes are dedicated to the index of the given descriptor
-    SetDescrEndpoint    = 0b01000000,   // The 4 lower bytes are dedicated to the index of the given descriptor
+    BbioMainMode      = 0b00000000,
+    BbioIdentifMode   = 0b00000001,
+    BbioSetDescr      = 0b00000010,
+};
+enum BbioSubCommand {
+    BbioSubSetDescrDevice      = 0b00000001,
+    BbioSubSetDescrConfig      = 0b00000010,
+    BbioSubSetDescrInterface   = 0b00000011,
+    BbioSubSetDescrEndpoint    = 0b00000100,
+    BbioSubSetDescrString      = 0b00000101,
 };
 
 /* variables */
@@ -220,12 +226,16 @@ usb_bulk_rot13(unsigned char *buffer, int capBuffer)
 
 
 void
-bbio_command_send(enum BbioCommand bbioCommand)
+bbio_command_send(enum BbioCommand bbioCommand, int indexDescriptor, int sizeDescriptor)
 {
+    /* Safeguards */
+    assert(indexDescriptor <= 16 && "bbio_command_send() index > 16");
+    assert(sizeDescriptor <= UINT16_MAX && "Desciptor size > UINT16_MAX\n");
+    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "usb_descriptor_set(): Descriptor is too big for the buffer\n");
     int retCode;
     unsigned char bbioBuffer[1];
 
-    bbioBuffer[0] = bbioCommand;
+    bbioBuffer[0] = 0x37;
 
     retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, bbioBuffer, 1, NULL, 0);
     if (retCode) {
@@ -235,23 +245,38 @@ bbio_command_send(enum BbioCommand bbioCommand)
 
 
 void
-usb_descriptor_set(enum BbioCommand bbioCommand, unsigned char *descriptor, int sizeDescriptor)
+bbio_command_sub_send(enum BbioCommand bbioCommand, enum BbioSubCommand bbioSubCommand, int indexDescriptor, int sizeDescriptor)
+{
+    /* Safeguards */
+    assert(indexDescriptor <= 16 && "bbio_command_send() index > 16");
+    assert(sizeDescriptor <= UINT16_MAX && "Desciptor size > UINT16_MAX\n");
+    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "usb_descriptor_set(): Descriptor is too big for the buffer\n");
+    int retCode;
+    unsigned char bbioBuffer[5];
+
+    bbioBuffer[0] = bbioCommand;
+    bbioBuffer[1] = bbioSubCommand;
+    bbioBuffer[2] = indexDescriptor;
+    bbioBuffer[3] = sizeDescriptor % 256;   // Lower byte
+    bbioBuffer[4] = sizeDescriptor / 256;   // Higher Byte
+
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, bbioBuffer, 5, NULL, 0);
+    if (retCode) {
+        printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
+    }
+}
+
+
+void
+usb_descriptor_set(enum BbioSubCommand bbioSubCommand, int indexDescriptor, unsigned char *descriptor, int sizeDescriptor)
 {
     int retCode;
-    unsigned char encapsulatedDescriptor[USB20_EP1_MAX_SIZE];
-    int sizeEncapsulatedDescriptor;
 
-    assert(sizeDescriptor <= UINT16_MAX && "Device desciptor > UINT16_MAX\n");
-    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE - 2 && "usb_descriptor_set(): Descriptor is too big for the buffer\n");
-
-    // Encapsulate descriptor
-    ((uint16_t *)encapsulatedDescriptor)[0] = sizeDescriptor;
-    memcpy(encapsulatedDescriptor+2, descriptor, sizeDescriptor);
-    sizeEncapsulatedDescriptor= sizeDescriptor + 2;
     // Send BBIO command
-    bbio_command_send(bbioCommand);
-    // Send encapsulated packet
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, encapsulatedDescriptor, sizeEncapsulatedDescriptor, NULL, 0);
+    bbio_command_sub_send(BbioSetDescr, bbioSubCommand, indexDescriptor, sizeDescriptor);
+
+    // Send descriptor
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptor, sizeDescriptor, NULL, 0);
     if (retCode) {
         printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
     }
@@ -290,6 +315,7 @@ main(int argc, char *argv[])
         case 1:
             // TODOO: Fix bug where the first IN bulk transfer is empty (even
             // when there is data to transmit)
+            memset(buffer, 0, capBuffer);
             usb_log_print(buffer, capBuffer);
             usb_log_print(buffer, capBuffer);
             break;
@@ -308,9 +334,10 @@ main(int argc, char *argv[])
             break;
         // - Behave as a keyboard
         case 4:
-            // Fill Device Descriptor
-            printf("Sending descriptor (%d bytes)\n", sizeof(g_descriptorDevice));
-            usb_descriptor_set(SetDescrDevice, g_descriptorDevice, sizeof(g_descriptorDevice));
+            // Fill Device Descriptor of the ToE board
+            printf("Sending descriptor (%ld bytes)\n", sizeof(g_descriptorDevice));
+            usb_descriptor_set(BbioSubSetDescrDevice, 0, g_descriptorDevice, sizeof(g_descriptorDevice));
+
             // // Fill Configuration Descriptor
             // usb_descriptor_set(SetDescrConfig, g_descriptorDevice, sizeof(g_descriptorDevice));
             // // Fill Interace Descriptor

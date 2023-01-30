@@ -481,3 +481,54 @@ usb_log(const char *fmt, ...)
     bsp_enable_interrupt();
 }
 
+// TODO: Add description
+// WARNING: Currently there is big limitations on this function :
+// - Some descriptors are not supported
+// - Can only have one descriptor of each supported type
+void
+usb20_descriptor_set(const uint8_t *newDescriptor)
+{
+    uint8_t *pTargetDescr = NULL;
+    uint8_t targetSize  = 0;
+    uint8_t bLength = newDescriptor[0];
+    uint8_t bDescriptorType = newDescriptor[1];
+
+    switch (bDescriptorType) {
+	case USB_DESCR_TYP_DEVICE:
+        pTargetDescr = (uint8_t *)&stDeviceDescriptor;
+        targetSize = sizeof(USB_DEV_DESCR);
+		break;
+	case USB_DESCR_TYP_CONFIG:
+        pTargetDescr = (uint8_t *)&stConfigurationDescriptor;
+        targetSize = sizeof(USB_CFG_DESCR);
+		break;
+	case USB_DESCR_TYP_INTERF:
+        pTargetDescr = (uint8_t *)&stInterfaceDescriptor;
+        targetSize = sizeof(USB_ITF_DESCR);
+		break;
+	case USB_DESCR_TYP_ENDP:
+        pTargetDescr = (uint8_t *)&stEndpointDescriptor;
+        targetSize = sizeof(USB_ENDP_DESCR);
+		break;
+	case USB_DESCR_TYP_STRING:
+        // Special case, will be handled later
+	case USB_DESCR_TYP_HID:
+        // Special case, will be handled later
+	case USB_DESCR_TYP_REPORT:
+        // Special case, will be handled later
+	case USB_DESCR_TYP_QUALIF:
+	case USB_DESCR_TYP_SPEED:
+	case USB_DESCR_TYP_OTG:
+	case USB_DESCR_TYP_PHYSIC:
+	case USB_DESCR_TYP_CS_INTF:
+	case USB_DESCR_TYP_CS_ENDP:
+	case USB_DESCR_TYP_HUB:
+        // Not supported yet
+    default:
+        serdes_log("ERROR usb20_descriptor_set() bDescriptorType %x not supported", bDescriptorType);
+        return;
+    }
+
+    memset(pTargetDescr, 0, targetSize);
+    memcpy(pTargetDescr, newDescriptor, min(targetSize, bLength));
+}
