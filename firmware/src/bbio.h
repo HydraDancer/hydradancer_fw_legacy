@@ -6,10 +6,16 @@
 
 /* enums */
 enum BbioCommand {
-    BbioSetDescrDevice      = 0b00010000,   // Only the device descriptor does not have multiple possible "values"
-    BbioSetDescrConfig      = 0b00100000,   // The 4 lower bytes are dedicated to the index of the given descriptor
-    BbioSetDescrInterface   = 0b00110000,   // The 4 lower bytes are dedicated to the index of the given descriptor
-    BbioSetDescrEndpoint    = 0b01000000,   // The 4 lower bytes are dedicated to the index of the given descriptor
+    BbioMainMode      = 0b00000000,
+    BbioIdentifMode   = 0b00000001,
+    BbioSetDescr      = 0b00000010,
+};
+enum BbioSubCommand {
+    BbioSubSetDescrDevice      = 0b00000001,
+    BbioSubSetDescrConfig      = 0b00000010,
+    BbioSubSetDescrInterface   = 0b00000011,
+    BbioSubSetDescrEndpoint    = 0b00000100,
+    BbioSubSetDescrString      = 0b00000101,
 };
 
 /* variables */

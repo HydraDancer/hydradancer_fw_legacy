@@ -60,6 +60,10 @@ main(void)
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
 
+    // First time boards are powered the second board does not init properly
+    // Adding this delay make it works
+    bsp_wait_ms_delay(500);
+
     /* Board sync. */
     int retCode;
     if (bsp_switch()) {
