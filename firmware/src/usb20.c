@@ -499,15 +499,15 @@ usb20_descriptor_set(const uint8_t *newDescriptor)
         targetSize = sizeof(USB_DEV_DESCR);
 		break;
 	case USB_DESCR_TYP_CONFIG:
-        pTargetDescr = (uint8_t *)&stConfigurationDescriptor;
+        pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.cfgDescr;
         targetSize = sizeof(USB_CFG_DESCR);
 		break;
 	case USB_DESCR_TYP_INTERF:
-        pTargetDescr = (uint8_t *)&stInterfaceDescriptor;
+        pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.itfDescr;
         targetSize = sizeof(USB_ITF_DESCR);
 		break;
 	case USB_DESCR_TYP_ENDP:
-        pTargetDescr = (uint8_t *)&stEndpointDescriptor;
+        pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.endpDescr;
         targetSize = sizeof(USB_ENDP_DESCR);
 		break;
 	case USB_DESCR_TYP_STRING:

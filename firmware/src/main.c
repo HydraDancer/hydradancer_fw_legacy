@@ -140,26 +140,25 @@ main(void)
         }
     } else {
         serdes_log("[DEVICE] Init all done!\r\n");
+        memset((uint8_t *)&stDeviceDescriptor, 0, sizeof(USB_DEV_DESCR));
+        memset((uint8_t *)&stConfigurationDescriptor.base, 0, sizeof(USB_CFG_DESCR_FULL_BASE));
+        uint8_t counterReady = 0; // Temporary hack
         while (1) {
             while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
             g_bottom_receivedHspiPacket = false;
 
-            // Only device descriptor is set up, setting everything else
-            // manually (for now)
-            cfgDescrType = CfgDescr2EpDebug;
-            speed = SpeedHigh;
-            epMask = Ep1Mask | Ep7Mask;
-            endpoint_clear(0x81);
-            endpoint_clear(0x01);
-            endpoint_clear(0x87);
+            ++counterReady;
+            serdes_log("[DEVICE] counterReady: %d", counterReady);
 
-            // Filling structures "describing" our USB peripheral.
-            stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
-            stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
-            stringDescriptors                      = boardTopStringDescriptors;
+            if (counterReady >= 4) {
+                cfgDescrType = CfgDescrBase;
+                speed = SpeedHigh;
+                epMask = Ep1Mask;
+                endpoint_clear(0x01);
 
-            U20_registers_init(speed);
-            U20_endpoints_init(epMask);
+                U20_registers_init(speed);
+                U20_endpoints_init(epMask);
+            }
         }
     }
 

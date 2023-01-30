@@ -86,6 +86,9 @@ enum Endpoint epMask;
 
 USB_DEV_DESCR stDeviceDescriptor;
 USB_CFG_DESCR_FULL stConfigurationDescriptor;
+// TODOOO: The 3 following are not used, we only use the sub struct of
+// stConfigurationDescriptor ! Either remove the 3 following or make them point
+// those of stConfigurationDescriptor
 USB_ITF_DESCR stInterfaceDescriptor;
 USB_ENDP_DESCR stEndpointDescriptor;
 USB_HID_DESCR stHidDescriptor;
