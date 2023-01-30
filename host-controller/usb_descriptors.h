@@ -22,4 +22,38 @@ unsigned char g_descriptorDevice[] = {
     1,      // bNumConfigurations
 };
 
+unsigned char g_descriptorConfig[] = {
+	0x09, // bLength
+	0x02, // bDescriptorType
+	0x19, // wTotalLengthL
+	0x00, // wTotalLengthH
+	0x01, // bNumInterfaces
+	0x01, // bConfigurationValue
+	0x00, // iConfiguration
+	0x80, // bmAttributes
+	0x64, // MaxPower
+};
+
+unsigned char g_descriptorInterface[] = {
+	0x09, // bLength
+	0x04, // bDescriptorType
+	0x00, // bInterfaceNumber
+	0x00, // bAlternateSetting
+	0x01, // bNumEndpoint
+	0xFF, // bInterfaceClass
+	0xFF, // bInterfaceSubClass
+	0xFF, // bInterfaceProtocol
+	0x00, // iInterface
+};
+
+unsigned char g_descriptorEndpoint[] = {
+	0x07, // bLength
+	0x05, // bDescriptorType
+	0x01, // bEndpointAddress
+	0x02, // bmAttributes
+	0x00, // wMaxPacketSizeL
+	0x02, // wMaxPacketSizeH
+	0x00, // bInterval
+};
+
 #endif /* USB_DESCRIPTORS_H */

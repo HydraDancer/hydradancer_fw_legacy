@@ -337,14 +337,12 @@ main(int argc, char *argv[])
             // Fill Device Descriptor of the ToE board
             printf("Sending descriptor (%ld bytes)\n", sizeof(g_descriptorDevice));
             usb_descriptor_set(BbioSubSetDescrDevice, 0, g_descriptorDevice, sizeof(g_descriptorDevice));
+            usb_descriptor_set(BbioSubSetDescrConfig, 0, g_descriptorConfig, sizeof(g_descriptorConfig));
+            usb_descriptor_set(BbioSubSetDescrInterface, 0, g_descriptorInterface, sizeof(g_descriptorInterface));
+            usb_descriptor_set(BbioSubSetDescrEndpoint, 0, g_descriptorEndpoint, sizeof(g_descriptorEndpoint));
 
-            // // Fill Configuration Descriptor
-            // usb_descriptor_set(SetDescrConfig, g_descriptorDevice, sizeof(g_descriptorDevice));
-            // // Fill Interace Descriptor
-            // usb_descriptor_set(SetDescrInterface, g_descriptorDevice, sizeof(g_descriptorDevice));
-            // // Fill Endpoint Descriptor
-            // usb_descriptor_set(SetDescrEndpoint, g_descriptorDevice, sizeof(g_descriptorDevice));
             // Connect to the target
+            // Handled automatically for now
             break;
         // - exit
         case 9:

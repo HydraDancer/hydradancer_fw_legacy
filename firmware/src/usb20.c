@@ -530,5 +530,6 @@ usb20_descriptor_set(const uint8_t *newDescriptor)
     }
 
     memset(pTargetDescr, 0, targetSize);
+    serdes_log("[DEVICE] targetSize: %d, bLength: %d\r\n", targetSize, bLength);
     memcpy(pTargetDescr, newDescriptor, min(targetSize, bLength));
 }
