@@ -1,5 +1,7 @@
 #include "usb20-endpoints.h"
 
+#include "log.h"
+
 /* functions implementation */
 
 /*******************************************************************************
@@ -74,7 +76,7 @@ epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
         /* Only used with ep0, should not trigger here */
         break;
         default:
-            usb_log("ERROR: epX_transceive_and_update default!");
+            log_to_evaluator("ERROR: epX_transceive_and_update default!");
             break;
     }
 }
@@ -148,7 +150,7 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
         // Not used, only transmitting from host to device board
         break;
     default:
-        usb_log("ERROR: ep1_transceive_and_update default!");
+        log_to_evaluator("ERROR: ep1_transceive_and_update default!");
         break;
     }
 }
@@ -184,7 +186,7 @@ ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *
         // Not implemented yet
         break;
     default:
-        usb_log("ERROR: ep1_transceive_and_update default!");
+        log_to_evaluator("ERROR: ep1_transceive_and_update default!");
         break;
     }
 }

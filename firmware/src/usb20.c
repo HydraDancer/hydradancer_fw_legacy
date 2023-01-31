@@ -1,6 +1,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "log.h"
+
 #include "usb20.h"
 
 /* variables */
@@ -241,7 +243,7 @@ endpoint_clear(uint8_t endpointToClear)
         R8_UEP7_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
     default:
-        usb_log("ERROR: endpoint_clear() invalid argument");
+        log_to_evaluator("ERROR: endpoint_clear() invalid argument");
         break;
     }
 }
@@ -301,7 +303,7 @@ endpoint_halt(uint8_t endpointToHalt)
         R8_UEP7_RX_CTRL = (R8_UEP7_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
     default:
-        usb_log("ERROR: endpoint_halt() invalid argument");
+        log_to_evaluator("ERROR: endpoint_halt() invalid argument");
         break;
     }
 }
@@ -352,7 +354,7 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
         *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
         break;
     default:
-        usb_log("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
+        log_to_evaluator("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
         break;
     }
 }
@@ -390,7 +392,7 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
         /* Not implemented. */
         break;
     default:
-        usb_log("ERROR: ep0_transceive_and_update() invalid uisToken");
+        log_to_evaluator("ERROR: ep0_transceive_and_update() invalid uisToken");
         break;
     }
 
@@ -449,7 +451,7 @@ ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuff
         }
         break;
         default:
-            usb_log("ERROR: ep7_transmit_and_update default!");
+            log_to_evaluator("ERROR: ep7_transmit_and_update default!");
             break;
     }
 }
@@ -472,7 +474,7 @@ usb_log(const char *fmt, ...)
     uint16_t sizeLeft = capacityEndp7LoggingBuff - sizeEndp7LoggingBuff;
     
     if (sizeEndp7LoggingBuff >= capacityEndp7LoggingBuff) {
-        usb_log("ERROR: Buffer already filled!");
+        log_to_evaluator("ERROR: Buffer already filled!");
         sizeLeft = 0;
     }
     
@@ -525,11 +527,11 @@ usb20_descriptor_set(const uint8_t *newDescriptor)
 	case USB_DESCR_TYP_HUB:
         // Not supported yet
     default:
-        serdes_log("ERROR usb20_descriptor_set() bDescriptorType %x not supported", bDescriptorType);
+        log_to_evaluator("ERROR: usb20_descriptor_set() bDescriptorType %x not supported", bDescriptorType);
         return;
     }
 
     memset(pTargetDescr, 0, targetSize);
-    serdes_log("[DEVICE] targetSize: %d, bLength: %d\r\n", targetSize, bLength);
+    log_to_evaluator("targetSize: %d, bLength: %d\r\n", targetSize, bLength);
     memcpy(pTargetDescr, newDescriptor, min(targetSize, bLength));
 }
