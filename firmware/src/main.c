@@ -18,13 +18,12 @@
 
 #include "bbio.h"
 #include "hspi.h"
+#include "log.h"
 #include "serdes.h"
 #include "usb20-endpoints.h"
 #include "usb20.h"
 
 #include "rot13-example.h"  // Added for the example only !
-//
-// TODOOOO: Add prefix for logging with usb_log()
 
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOOO: Prefix all global Variables with g_
@@ -68,21 +67,21 @@ main(void)
     int retCode;
     if (bsp_switch()) {
         g_isHost = true;
-        usb_log("[TOP BOARD] Hello!\r\n");
+        log_to_evaluator("Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
 
         // TODO: Investigate
         // If uncommented this create a "desync" between the board and the
         // bottom board can not initiate SerDes Tx
         // if (retCode) {
-        //     usb_log("Synchronisation done (success)\r\n");
+        //     log_to_evaluator("Synchronisation done (success)\r\n");
         // } else {
-        //     usb_log("Synchronisation error(timeout)\r\n");
+        //     log_to_evaluator("Synchronisation error(timeout)\r\n");
         // }
 
     } else {
         g_isHost = false;
-        usb_log("[BOTTOM BOARD] Hello!\r\n");
+        log_to_evaluator("Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
     }
 
@@ -132,14 +131,14 @@ main(void)
 
 
     if (g_isHost) {
-        usb_log("[HOST]   Init all done!\r\n");
+        log_to_evaluator("Init all done!\r\n");
         while (1) {
             // BBIO commands are passed directly to the bottom board,
             // There is no logic in the top board.
             // See ep1_transceive_and_update_host()
         }
     } else {
-        serdes_log("[DEVICE] Init all done!\r\n");
+        log_to_evaluator("Init all done!\r\n");
         memset((uint8_t *)&stDeviceDescriptor, 0, sizeof(USB_DEV_DESCR));
         memset((uint8_t *)&stConfigurationDescriptor.base, 0, sizeof(USB_CFG_DESCR_FULL_BASE));
         uint8_t counterReady = 0; // Temporary hack
@@ -148,7 +147,7 @@ main(void)
             g_bottom_receivedHspiPacket = false;
 
             ++counterReady;
-            serdes_log("[DEVICE] counterReady: %d", counterReady);
+            log_to_evaluator("counterReady: %d", counterReady);
 
             if (counterReady >= 4) {
                 cfgDescrType = CfgDescrBase;
@@ -194,7 +193,7 @@ SERDES_IRQHandler(void)
         SerDes_ClearIT(SDS_RX_INT_FLG);
         break;
     case SDS_RX_ERR_FLG | SDS_RX_INT_FLG:
-        usb_log("SDS_RX_ERR_FLG | SDS_RX_INT_FLG\r\n");
+        log_to_evaluator("SDS_RX_ERR_FLG | SDS_RX_INT_FLG\r\n");
         g_top_receivedSerdes = true;
         // Handle log received from bottom board
         logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
@@ -239,7 +238,7 @@ HSPI_IRQHandler(void)
     case RB_HSPI_IF_T_DONE:
         hspiRtxStatus = hspi_get_rtx_status();
         if (hspiRtxStatus) {
-            usb_log("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            log_to_evaluator("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
         // TODO: Find a cleaner solution for "acknowledgement" of the T_DONE.
@@ -250,7 +249,7 @@ HSPI_IRQHandler(void)
         hspiRtxStatus = hspi_get_rtx_status();
         hspiRxBuffer = hspi_get_buffer_rx();
         if (hspiRtxStatus) {
-            serdes_log("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            log_to_evaluator("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
         // TODO: Refactor
@@ -266,7 +265,7 @@ HSPI_IRQHandler(void)
                 currentStep ^= 1;
                 g_bottom_receivedHspiPacket = true;
             } else {
-                serdes_log("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
+                log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
             }
 
         // g_bottom_receivedHspiPacket = true;
@@ -335,7 +334,7 @@ USBHS_IRQHandler(void)
                 endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
                 break;
             default:
-                usb_log("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
+                log_to_evaluator("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
                 break;
             }
             break;
@@ -343,11 +342,11 @@ USBHS_IRQHandler(void)
             switch (SetupReqType & USB_REQ_RECIP_MASK) {
             case USB_REQ_RECIP_DEVICE:
                 /* Not implemented. */
-                usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
+                log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
                 break;
             case USB_REQ_RECIP_INTERF:
                 /* Not implemented. */
-                usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
+                log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
                 break;
             case USB_REQ_RECIP_ENDP:
                 switch (UsbSetupBuf->wValue.w) {
@@ -355,12 +354,12 @@ USBHS_IRQHandler(void)
                     endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
                     break;
                 default:
-                    usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
+                    log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
                     break;
                 }
                 break;
             default:
-                usb_log("ERROR: SETUP Interrupt USB_SET_FEATURE invalid recipient");
+                log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE invalid recipient");
                 break;
             }
             break;
