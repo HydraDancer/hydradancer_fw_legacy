@@ -23,13 +23,13 @@ static uint8_t *_descriptorsStoreCursor;
 
 // TODO: Use structs instead of a variable for the array and a variable for the
 // size
-uint8_t *g_descriptorDevice;
-uint8_t *g_descriptorConfiguration;
-uint8_t *g_descriptorsString[_DESCRIPTOR_STRING_CAPACITY];
+uint8_t *g_bbioDescriptorDevice;
+uint8_t *g_bbioDescriptorConfiguration;
+uint8_t *g_bbioDescriptorsString[_DESCRIPTOR_STRING_CAPACITY];
 
-uint16_t g_descriptorDeviceSize;
-uint16_t g_descriptorConfigurationSize;
-uint16_t g_descriptorsStringSizes[_DESCRIPTOR_STRING_CAPACITY];
+uint16_t g_bbioDescriptorDeviceSize;
+uint16_t g_bbioDescriptorConfigurationSize;
+uint16_t g_bbioDescriptorsStringSizes[_DESCRIPTOR_STRING_CAPACITY];
 
 /* internal variables */
 // Internals variables used to share data between bbio_decode_command and
@@ -126,8 +126,7 @@ bbio_command_handle(uint8_t *bufferData)
             return 0;
         case 3: // Connect
             {
-                cfgDescrType = CfgDescrCustom;
-                g_cfgDescrConfigurationCustomSize = g_descriptorConfigurationSize;
+                g_descriptorConfigCustomSize = g_bbioDescriptorConfigurationSize;
                 speed = SpeedHigh;
 
                 // TODO: Currently hardcoded, handle it properly
@@ -136,9 +135,9 @@ bbio_command_handle(uint8_t *bufferData)
                 endpoint_clear(0x01);   // OUT
 
                 // Filling structures "describing" our USB peripheral.
-                stDeviceDescriptor        = stBoardTopDeviceDescriptor;
-                stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
-                stringDescriptors         = boardTopStringDescriptors;
+                g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
+                g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
+                g_descriptorStrings = boardTopStringDescriptors;
 
                 U20_registers_init(speed);
                 U20_endpoints_init(epMask);
@@ -162,18 +161,18 @@ bbio_sub_command_handle(uint8_t *bufferData)
 
     if (_subCommand == 1) { 
         // Device descriptor
-        g_descriptorDevice     = _descriptorsStoreCursor;
-        g_descriptorDeviceSize = _descrSize;
+        g_bbioDescriptorDevice     = _descriptorsStoreCursor;
+        g_bbioDescriptorDeviceSize = _descrSize;
     }
     else if (_subCommand == 2) { 
         // Config descriptor
-        g_descriptorConfiguration     = _descriptorsStoreCursor;
-        g_descriptorConfigurationSize = _descrSize;
+        g_bbioDescriptorConfiguration     = _descriptorsStoreCursor;
+        g_bbioDescriptorConfigurationSize = _descrSize;
     }
     else if (_subCommand == 3) { 
         // String descriptor
-        g_descriptorsString[_descrStringIndex]      = _descriptorsStoreCursor;
-        g_descriptorsStringSizes[_descrStringIndex] = _descrSize;
+        g_bbioDescriptorsString[_descrStringIndex]      = _descriptorsStoreCursor;
+        g_bbioDescriptorsStringSizes[_descrStringIndex] = _descrSize;
     } else {
         log_to_evaluator("ERROR: bbio_handle_command() unknown sub command\r\n");
         return;

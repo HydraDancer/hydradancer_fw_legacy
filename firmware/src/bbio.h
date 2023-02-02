@@ -29,13 +29,13 @@ enum BbioSubCommand {
 
 /* The following global variables are pointers to structures loaded by the user.
  */
-extern uint8_t *g_descriptorDevice;
-extern uint8_t *g_descriptorConfiguration;
-extern uint8_t *g_descriptorsString[];
+extern uint8_t *g_bbioDescriptorDevice;
+extern uint8_t *g_bbioDescriptorConfiguration;
+extern uint8_t *g_bbioDescriptorsString[];
 
-extern uint16_t g_descriptorDeviceSize;
+extern uint16_t g_bbioDescriptorDeviceSize;
 extern uint16_t g_descriptorConfiguratioSize;
-extern uint16_t g_descriptorsStringSizes[];
+extern uint16_t g_bbioDescriptorsStringSizes[];
 
 
 /* functions declaration */
