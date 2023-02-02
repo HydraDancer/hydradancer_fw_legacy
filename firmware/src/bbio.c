@@ -35,6 +35,13 @@ uint16_t g_descriptorsStringSizes[_DESCRIPTOR_STRING_CAPACITY];
 // Internals variables used to share data between bbio_decode_command and
 // bbio_handle_command
 
+// Shares the command
+// 0 : Not set
+// 1 : Set descriptor
+// 2 : Set endpoint
+// 3 : Connect
+static uint8_t _command = 0;
+
 // Shares the sub command
 // 0 : Not set
 // 1 : Device
@@ -64,21 +71,21 @@ bbio_command_decode(uint8_t *command)
     _descrStringIndex = 0;
     _descrSize = 0;
 
+    // TODO: Replace if/else with a switch/case for readability
     if (command[0] == BbioMainMode) {
         // Not implemented yet
     } else if (command[0] == BbioIdentifMode) {
         // Not implemented yet
     } else if (command[0] == BbioSetDescr) {
         // Decode the sub command
+        _command = 1;
         if (command[1] == BbioSubSetDescrDevice) {
             // Device descriptor
             _subCommand = 1;
-        }
-        else if (command[1] == BbioSubSetDescrConfig) {
+        } else if (command[1] == BbioSubSetDescrConfig) {
             // Config descriptor
             _subCommand = 2;
-        }
-        else if (command[1] == BbioSubSetDescrString) {
+        } else if (command[1] == BbioSubSetDescrString) {
             // String descriptor
             _subCommand = 3;
             if (command[2] >= _DESCRIPTOR_STRING_CAPACITY) {
@@ -92,9 +99,34 @@ bbio_command_decode(uint8_t *command)
         }
         _descrSize = (command[4] << 8) | command[3];
 
+    } else if (command[1] == BbioSetEndp) {
+        // Endpoints configuration
+        _command = 2;
+    } else if (command[1] == BbioConnect) {
+        // Connect the USB device
+        _command = 3;
     } else {
         log_to_evaluator("ERROR: bbio_decode_command() unknown command\r\n");
         return;
+    }
+}
+
+// Return 0 if success, 1 else
+uint8_t
+bbio_command_handle(uint8_t *bufferData)
+{
+    switch (_command) {
+        case 0:
+            return 1;
+        case 1:
+            bbio_sub_command_handle(bufferData);
+            return 0;
+        case 2:
+            bbio_command_endpoints_handle(bufferData);
+            return 0;
+        case 3:
+            // TODO: Handle
+            return 2;
     }
 }
 
@@ -134,3 +166,25 @@ bbio_sub_command_handle(uint8_t *bufferData)
     _descriptorsStoreCursor += _descrSize;
 }
 
+// This function will enable endpoints with the right mode
+// (isochronous/bulk/interrupt)
+// The data is encoded in 1 byte :
+// 0b00yy Xxxx
+// yy correspond to the mode :
+// 01: isochronous
+// 10: bulk
+// 11: interrupt
+//
+// Xxxx correspond to the endpoint number
+// X: 0 for OUT, 1 for IN
+// xxx: the endpoint number (from 1 to 7)
+void
+bbio_command_endpoints_handle(uint8_t *bufferEndpoints)
+{
+    while (*bufferEndpoints != 0) {
+        // TODO: Populate
+
+        // epilog
+        ++bufferEndpoints;
+    }
+}

@@ -14,6 +14,8 @@ enum BbioCommand {
     BbioMainMode      = 0b00000000,
     BbioIdentifMode   = 0b00000001,
     BbioSetDescr      = 0b00000010,
+    BbioSetEndp       = 0b00000011,
+    BbioConnect       = 0b00000100,
 };
 enum BbioSubCommand {
     BbioSubSetDescrDevice      = 0b00000001,
