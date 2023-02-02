@@ -361,13 +361,15 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
         // *pSizeBuffer = stEndpointDescriptor.bLength;
         break;
     case USB_DESCR_TYP_HID:
-        *pBuffer = (uint8_t *)&stHidDescriptor;
-        *pSizeBuffer = stHidDescriptor.bLength;
+        /* Not supported yet, it should already be sent with the configuration
+         * descriptor */
+        // *pBuffer = (uint8_t *)&stHidDescriptor;
+        // *pSizeBuffer = stHidDescriptor.bLength;
         break;
     case USB_DESCR_TYP_REPORT:
-        *pBuffer = (uint8_t *)reportDescriptor;
-        /* TODO: support lengh of type uint16_t. */
-        *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
+        // TODOOO: Implement
+        // *pBuffer = (uint8_t *)reportDescriptor;
+        // *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
         break;
     default:
         log_to_evaluator("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
