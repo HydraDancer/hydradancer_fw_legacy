@@ -50,7 +50,7 @@ static uint16_t _descrSize = 0;
 
 /* functions implementation */
 void
-bbio_decode_command(uint8_t *command)
+bbio_command_decode(uint8_t *command)
 {
    /* Reminder of the structure of a bbio command :
     * command[0] = BbioCommand
@@ -99,7 +99,7 @@ bbio_decode_command(uint8_t *command)
 }
 
 void
-bbio_handle_command(uint8_t *bufferData)
+bbio_sub_command_handle(uint8_t *bufferData)
 {
     // Safeguards
     if (_descriptorsStoreCursor + _descrSize > _descriptorsStore + _DESCRIPTOR_STORE_SIZE) {
