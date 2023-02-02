@@ -26,11 +26,14 @@ enum BbioSubCommand {
 /* variables */
 
 /* The following global variables are pointers to structures loaded by the user.
- *
  */
-extern USB_DEV_DESCR *g_descriptorDevice;
-extern USB_CFG_DESCR *g_descriptorConfiguration;
+extern uint8_t *g_descriptorDevice;
+extern uint8_t *g_descriptorConfiguration;
 extern uint8_t *g_descriptorsString[];
+
+extern uint16_t g_descriptorDeviceSize;
+extern uint16_t g_descriptorConfiguratioSize;
+extern uint16_t g_descriptorsStringSizes[];
 
 
 /* functions declaration */
