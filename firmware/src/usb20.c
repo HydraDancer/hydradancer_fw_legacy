@@ -6,6 +6,14 @@
 #include "usb20.h"
 
 /* variables */
+//
+// If this variable is != 0 then use this size rather than .wTotalLength
+uint16_t g_descriptorConfigCustomSize = 0;
+
+uint8_t *g_descriptorDevice = NULL;
+uint8_t *g_descriptorConfig = NULL;
+uint8_t **g_descriptorStrings = NULL;
+
 uint16_t sizeEndp7LoggingBuff = 0;
 const uint16_t capacityEndp7LoggingBuff = 4096;
 __attribute__((aligned(16))) uint8_t endp7LoggingBuffRaw[4096];
@@ -319,36 +327,38 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
 {
     switch(descritorRequested.bw.bb0) {
     case USB_DESCR_TYP_DEVICE:
-        *pBuffer = (uint8_t *)&stDeviceDescriptor;
-        *pSizeBuffer = stDeviceDescriptor.bLength;
+        *pBuffer = g_descriptorDevice;
+        *pSizeBuffer = ((USB_DEV_DESCR *)g_descriptorDevice)->bLength;
         break;
     case USB_DESCR_TYP_CONFIG:
         /* The .cfgDescr field is always the first, no matter the union's type.
          */
-        *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
+        *pBuffer = g_descriptorConfig;
         // If the descriptor type is custom we can not trust its .wTotalLength
         // field
-            if (cfgDescrType == CfgDescrCustom) {
-                *pSizeBuffer = g_cfgDescrConfigurationCustomSize;
+            if (g_descriptorConfigCustomSize != 0) {
+                *pSizeBuffer = g_descriptorConfigCustomSize;
             } else {
-                *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
+                *pSizeBuffer = ((USB_CFG_DESCR *)g_descriptorConfig)->wTotalLength;
             }
         break;
     case USB_DESCR_TYP_STRING: {
         uint8_t i = descritorRequested.bw.bb1;
-        if (i >= 0 && i < array_addr_len((void **)stringDescriptors)) {
-            *pBuffer = (uint8_t *)stringDescriptors[i];
-            *pSizeBuffer = stringDescriptors[i][0];
+        if (i >= 0 && i < array_addr_len((void **)g_descriptorStrings)) {
+            *pBuffer = g_descriptorStrings[i];
+            *pSizeBuffer = g_descriptorStrings[i][0];
         }
     }
     break;
     case USB_DESCR_TYP_INTERF:
-        *pBuffer = (uint8_t *)&stInterfaceDescriptor;
-        *pSizeBuffer = stInterfaceDescriptor.bLength;
+        /* Not supported for now */
+        // *pBuffer = (uint8_t *)&stInterfaceDescriptor;
+        // *pSizeBuffer = stInterfaceDescriptor.bLength;
         break;
     case USB_DESCR_TYP_ENDP:
-        *pBuffer = (uint8_t *)&stEndpointDescriptor;
-        *pSizeBuffer = stEndpointDescriptor.bLength;
+        /* Not supported for now */
+        // *pBuffer = (uint8_t *)&stEndpointDescriptor;
+        // *pSizeBuffer = stEndpointDescriptor.bLength;
         break;
     case USB_DESCR_TYP_HID:
         *pBuffer = (uint8_t *)&stHidDescriptor;

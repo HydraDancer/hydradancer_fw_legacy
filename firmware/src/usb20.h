@@ -29,61 +29,16 @@ enum Endpoint {
     Ep7Mask = 1 << 7,
 };
 
-// TODOO: Remove this enum ? Deprecated ?
-enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep, CfgDescr2EpDebug, CfgDescrCustom};
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_BASE {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_ENDP_DESCR endpDescr;
-} USB_CFG_DESCR_FULL_BASE, *PUSB_CFG_DESCR_FULL_BASE;
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_HID {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_HID_DESCR  hidDescr;
-    USB_ENDP_DESCR endpDescr;
-} USB_CFG_DESCR_FULL_HID, *PUSB_CFG_DESCR_FULL_HID;
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_ENDP_DESCR endpDescr1In;
-    USB_ENDP_DESCR endpDescr1Out;
-} USB_CFG_DESCR_FULL_2_ENDPOINTS, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS;
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_ENDP_DESCR endpDescr1In;
-    USB_ENDP_DESCR endpDescr1Out;
-    USB_ENDP_DESCR endpDescr7Out;
-} USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG;
-
-typedef union {
-    USB_CFG_DESCR_FULL_BASE base;
-    USB_CFG_DESCR_FULL_HID withHid;
-    USB_CFG_DESCR_FULL_2_ENDPOINTS base2Ep;
-    USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG base2EpDebug;
-} USB_CFG_DESCR_FULL, *PUSB_CFG_DESCR_FULL;
 
 /* variables */
-enum ConfigurationDescriptorType cfgDescrType;
 enum Speed speed;
 enum Endpoint epMask;
 
-uint16_t g_cfgDescrConfigurationCustomSize;
-
-USB_DEV_DESCR stDeviceDescriptor;
-USB_CFG_DESCR_FULL stConfigurationDescriptor;
-// TODOOO: The 3 following are not used, we only use the sub struct of
-// stConfigurationDescriptor ! Either remove the 3 following or make them point
-// those of stConfigurationDescriptor
-USB_ITF_DESCR stInterfaceDescriptor;
-USB_ENDP_DESCR stEndpointDescriptor;
-USB_HID_DESCR stHidDescriptor;
-uint8_t *reportDescriptor;
-uint8_t **stringDescriptors;
+// If this variable is != 0 then use this size rather than .wTotalLength
+extern uint16_t g_descriptorConfigCustomSize;
+extern uint8_t *g_descriptorDevice;
+extern uint8_t *g_descriptorConfig;
+extern uint8_t **g_descriptorStrings;
 
 extern uint16_t sizeEndp7LoggingBuff;
 extern const uint16_t capacityEndp7LoggingBuff;

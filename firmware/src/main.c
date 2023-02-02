@@ -112,7 +112,6 @@ main(void)
 
     /* USB Init. */
     if (g_isHost) {
-        cfgDescrType = CfgDescr2EpDebug;
         speed = SpeedHigh;
         epMask = Ep1Mask | Ep7Mask;
         endpoint_clear(0x81);
@@ -120,10 +119,9 @@ main(void)
         endpoint_clear(0x87);
 
         // Filling structures "describing" our USB peripheral.
-        stDeviceDescriptor                     = stBoardTopDeviceDescriptor;
-        stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
-        stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
-        stringDescriptors                      = boardTopStringDescriptors;
+        g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
+        g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
+        g_descriptorStrings = boardTopStringDescriptors;
 
         U20_registers_init(speed);
         U20_endpoints_init(epMask);
@@ -139,8 +137,6 @@ main(void)
         }
     } else {
         log_to_evaluator("Init all done!\r\n");
-        memset((uint8_t *)&stDeviceDescriptor, 0, sizeof(USB_DEV_DESCR));
-        memset((uint8_t *)&stConfigurationDescriptor.base, 0, sizeof(USB_CFG_DESCR_FULL_BASE));
         uint8_t counterReady = 0; // Temporary hack
         while (1) {
             while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
@@ -150,7 +146,6 @@ main(void)
             log_to_evaluator("counterReady: %d", counterReady);
 
             if (counterReady >= 4) {
-                cfgDescrType = CfgDescrBase;
                 speed = SpeedHigh;
                 epMask = Ep1Mask;
                 endpoint_clear(0x01);
@@ -374,16 +369,16 @@ USBHS_IRQHandler(void)
             /* Unused. */
             break;
         case USB_GET_CONFIGURATION:
-            /* We have only one configuration. */
-            endp0RTbuff[0] = stConfigurationDescriptor.base.cfgDescr.bConfigurationValue;
+            /* We have only one configuration, hardcoded for now. */
+            endp0RTbuff[0] = 1;
             bytesToWrite = 1;
             break;
         case USB_SET_CONFIGURATION:
             /* As of now there is only one configuration. */
             break;
         case USB_GET_INTERFACE:
-            /* We have only one interface. */
-            endp0RTbuff[0] = stInterfaceDescriptor.bInterfaceNumber;
+            /* We have only one interface, hardcoded for now */
+            endp0RTbuff[0] = 0;
             bytesToWrite = 1;
             break;
         case USB_SET_INTERFACE:

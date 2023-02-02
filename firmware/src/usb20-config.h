@@ -19,11 +19,21 @@ static USB_DEV_DESCR stBoardTopDeviceDescriptor = {
     .bNumConfigurations = 1,
 };
 
-static USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG stBoardTopConfigurationDescriptor = {
+// This struct is used only to get the whole config descriptor (config
+// descriptor + interface descriptors + endpoint descriptors packed);
+struct __PACKED DescriptorConfigComplete_t {
+    USB_CFG_DESCR cfgDescr;
+    USB_ITF_DESCR itfDescr;
+    USB_ENDP_DESCR endpDescr1In;
+    USB_ENDP_DESCR endpDescr1Out;
+    USB_ENDP_DESCR endpDescr7Out;
+};
+
+static struct DescriptorConfigComplete_t stBoardTopConfigurationDescriptor = {
     .cfgDescr = {
         .bLength = sizeof(USB_CFG_DESCR),
         .bDescriptorType = USB_DESCR_TYP_CONFIG,
-        .wTotalLength = sizeof(USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG),
+        .wTotalLength = sizeof(struct DescriptorConfigComplete_t),
         .bNumInterfaces = 1,
         .bConfigurationValue = 1,
         .iConfiguration = 4,
