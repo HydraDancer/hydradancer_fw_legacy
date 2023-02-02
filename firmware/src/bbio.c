@@ -118,13 +118,13 @@ bbio_command_handle(uint8_t *bufferData)
     switch (_command) {
         case 0:
             return 1;
-        case 1:
+        case 1: // Set descriptor
             bbio_sub_command_handle(bufferData);
             return 0;
-        case 2:
+        case 2: // Set endpoints
             bbio_command_endpoints_handle(bufferData);
             return 0;
-        case 3:
+        case 3: // Connect
             // TODO: Handle
             return 2;
     }
