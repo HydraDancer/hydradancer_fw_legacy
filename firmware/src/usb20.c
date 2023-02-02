@@ -326,7 +326,13 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
         /* The .cfgDescr field is always the first, no matter the union's type.
          */
         *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
-        *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
+        // If the descriptor type is custom we can not trust its .wTotalLength
+        // field
+            if (cfgDescrType == CfgDescrCustom) {
+                *pSizeBuffer = g_cfgDescrConfigurationCustomSize;
+            } else {
+                *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
+            }
         break;
     case USB_DESCR_TYP_STRING: {
         uint8_t i = descritorRequested.bw.bb1;

@@ -125,8 +125,25 @@ bbio_command_handle(uint8_t *bufferData)
             bbio_command_endpoints_handle(bufferData);
             return 0;
         case 3: // Connect
-            // TODO: Handle
-            return 2;
+            {
+                cfgDescrType = CfgDescrCustom;
+                g_cfgDescrConfigurationCustomSize = g_descriptorConfigurationSize;
+                speed = SpeedHigh;
+
+                // TODO: Currently hardcoded, handle it properly
+                epMask = Ep1Mask;
+                endpoint_clear(0x81);   // IN
+                endpoint_clear(0x01);   // OUT
+
+                // Filling structures "describing" our USB peripheral.
+                stDeviceDescriptor        = stBoardTopDeviceDescriptor;
+                stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
+                stringDescriptors         = boardTopStringDescriptors;
+
+                U20_registers_init(speed);
+                U20_endpoints_init(epMask);
+            }
+            return 0;
     }
 }
 

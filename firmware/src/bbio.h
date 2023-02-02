@@ -39,7 +39,27 @@ extern uint16_t g_descriptorsStringSizes[];
 
 
 /* functions declaration */
+void bbio_command_decode(uint8_t *command);
 
+
+// Return 0 if success, 1 else
+uint8_t bbio_command_handle(uint8_t *bufferData);
+
+void bbio_sub_command_handle(uint8_t *bufferData);
+
+// This function will enable endpoints with the right mode
+// (isochronous/bulk/interrupt)
+// The data is encoded in 1 byte :
+// 0b00yy Xxxx
+// yy correspond to the mode :
+// 01: isochronous
+// 10: bulk
+// 11: interrupt
+//
+// Xxxx correspond to the endpoint number
+// X: 0 for OUT, 1 for IN
+// xxx: the endpoint number (from 1 to 7)
+void bbio_command_endpoints_handle(uint8_t *bufferEndpoints);
 
 #endif /* BBIO_H */
 

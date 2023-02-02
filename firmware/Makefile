@@ -27,7 +27,7 @@ BOARD_DIR   = ../wch-ch56x-bsp/board
 BOARD_SRCS  = ../wch-ch56x-bsp/board/hydrausb3_v1.c
 OBJS     += $(patsubst $(BOARD_DIR)/%.c,$(BUILD_DIR)/%.o,$(BOARD_SRCS))
 
-# USB_DIR   = ../wch-ch56x-bsp/usb/usb_devbulk
+USB_DIR   = ../wch-ch56x-bsp/usb/usb_devbulk
 # USB_SRCS  = $(wildcard $(USB_DIR)/*.c)
 # OBJS        += $(patsubst $(USB_DIR)/%.c,$(BUILD_DIR)/%.o,$(USB_SRCS))
 
@@ -49,7 +49,7 @@ INCLUDES = \
   -I"$(RVMSIS_DIR)" \
   -I"$(DRV_DIR)" \
   -I"$(BOARD_DIR)" \
-  # -I"$(USB_DIR)" \
+  -I"$(USB_DIR)" \
   -I"$(SRC_DIR)"
 
 # Add inputs and outputs from these tool invocations to the build variables

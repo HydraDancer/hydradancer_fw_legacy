@@ -5,6 +5,7 @@
 
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
+#include "CH56x_usb30_devbulk_LIB.h"
 
 #include "usb20-endpoints.h"
 
@@ -18,31 +19,18 @@
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };
 enum Endpoint {
-    Ep1Mask = 1 << 0,
-    Ep2Mask = 1 << 1,
-    Ep3Mask = 1 << 2,
-    Ep4Mask = 1 << 3,
-    Ep5Mask = 1 << 4,
-    Ep6Mask = 1 << 5,
-    Ep7Mask = 1 << 6,
+    Ep0Mask = 1 << 0,
+    Ep1Mask = 1 << 1,
+    Ep2Mask = 1 << 2,
+    Ep3Mask = 1 << 3,
+    Ep4Mask = 1 << 4,
+    Ep5Mask = 1 << 5,
+    Ep6Mask = 1 << 6,
+    Ep7Mask = 1 << 7,
 };
-enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep, CfgDescr2EpDebug};
 
-typedef union {
-    uint16_t w;
-    struct BW {
-        uint8_t bb1; /* Low byte. */
-        uint8_t bb0;
-    } bw;
-} UINT16_UINT8;
-
-typedef struct __PACKED {
-    uint8_t       bRequestType;
-    uint8_t       bRequest;
-    UINT16_UINT8  wValue;
-    UINT16_UINT8  wIndex;
-    uint16_t      wLength;
-} *PUSB_SETUP;
+// TODOO: Remove this enum ? Deprecated ?
+enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep, CfgDescr2EpDebug, CfgDescrCustom};
 
 typedef struct __PACKED _USB_CONFIG_DESCR_FULL_BASE {
     USB_CFG_DESCR  cfgDescr;
@@ -83,6 +71,8 @@ typedef union {
 enum ConfigurationDescriptorType cfgDescrType;
 enum Speed speed;
 enum Endpoint epMask;
+
+uint16_t g_cfgDescrConfigurationCustomSize;
 
 USB_DEV_DESCR stDeviceDescriptor;
 USB_CFG_DESCR_FULL stConfigurationDescriptor;
