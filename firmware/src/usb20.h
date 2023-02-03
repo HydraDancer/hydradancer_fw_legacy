@@ -5,6 +5,7 @@
 
 #include "CH56xSFR.h"
 #include "CH56x_common.h"
+#include "CH56x_usb30_devbulk_LIB.h"
 
 #include "usb20-endpoints.h"
 
@@ -18,82 +19,27 @@
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };
 enum Endpoint {
-    Ep1Mask = 1 << 0,
-    Ep2Mask = 1 << 1,
-    Ep3Mask = 1 << 2,
-    Ep4Mask = 1 << 3,
-    Ep5Mask = 1 << 4,
-    Ep6Mask = 1 << 5,
-    Ep7Mask = 1 << 6,
+    Ep0Mask = 1 << 0,
+    Ep1Mask = 1 << 1,
+    Ep2Mask = 1 << 2,
+    Ep3Mask = 1 << 3,
+    Ep4Mask = 1 << 4,
+    Ep5Mask = 1 << 5,
+    Ep6Mask = 1 << 6,
+    Ep7Mask = 1 << 7,
 };
-enum ConfigurationDescriptorType { CfgDescrBase, CfgDescrWithHid, CfgDescr2Ep, CfgDescr2EpDebug};
 
-typedef union {
-    uint16_t w;
-    struct BW {
-        uint8_t bb1; /* Low byte. */
-        uint8_t bb0;
-    } bw;
-} UINT16_UINT8;
-
-typedef struct __PACKED {
-    uint8_t       bRequestType;
-    uint8_t       bRequest;
-    UINT16_UINT8  wValue;
-    UINT16_UINT8  wIndex;
-    uint16_t      wLength;
-} *PUSB_SETUP;
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_BASE {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_ENDP_DESCR endpDescr;
-} USB_CFG_DESCR_FULL_BASE, *PUSB_CFG_DESCR_FULL_BASE;
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_HID {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_HID_DESCR  hidDescr;
-    USB_ENDP_DESCR endpDescr;
-} USB_CFG_DESCR_FULL_HID, *PUSB_CFG_DESCR_FULL_HID;
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_ENDP_DESCR endpDescr1In;
-    USB_ENDP_DESCR endpDescr1Out;
-} USB_CFG_DESCR_FULL_2_ENDPOINTS, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS;
-
-typedef struct __PACKED _USB_CONFIG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG {
-    USB_CFG_DESCR  cfgDescr;
-    USB_ITF_DESCR  itfDescr;
-    USB_ENDP_DESCR endpDescr1In;
-    USB_ENDP_DESCR endpDescr1Out;
-    USB_ENDP_DESCR endpDescr7Out;
-} USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG, *PUSB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG;
-
-typedef union {
-    USB_CFG_DESCR_FULL_BASE base;
-    USB_CFG_DESCR_FULL_HID withHid;
-    USB_CFG_DESCR_FULL_2_ENDPOINTS base2Ep;
-    USB_CFG_DESCR_FULL_2_ENDPOINTS_PLUS_DEBUG base2EpDebug;
-} USB_CFG_DESCR_FULL, *PUSB_CFG_DESCR_FULL;
 
 /* variables */
-enum ConfigurationDescriptorType cfgDescrType;
 enum Speed speed;
-enum Endpoint epMask;
+enum Endpoint epInMask;
+enum Endpoint epOutMask;
 
-USB_DEV_DESCR stDeviceDescriptor;
-USB_CFG_DESCR_FULL stConfigurationDescriptor;
-// TODOOO: The 3 following are not used, we only use the sub struct of
-// stConfigurationDescriptor ! Either remove the 3 following or make them point
-// those of stConfigurationDescriptor
-USB_ITF_DESCR stInterfaceDescriptor;
-USB_ENDP_DESCR stEndpointDescriptor;
-USB_HID_DESCR stHidDescriptor;
-uint8_t *reportDescriptor;
-uint8_t **stringDescriptors;
+// If this variable is != 0 then use this size rather than .wTotalLength
+extern uint16_t g_descriptorConfigCustomSize;
+extern uint8_t *g_descriptorDevice;
+extern uint8_t *g_descriptorConfig;
+extern uint8_t **g_descriptorStrings;
 
 extern uint16_t sizeEndp7LoggingBuff;
 extern const uint16_t capacityEndp7LoggingBuff;
@@ -135,11 +81,12 @@ void U20_registers_init(enum Speed sp);
  * Input          : A bitmask of the endpoints to initialise and enable
  * Return         : None
  *******************************************************************************/
-void U20_endpoints_init(enum Endpoint endpointsMask);
+void U20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask);
 
 /*******************************************************************************
  * Function Name  : endpoint_clear
  * Description    : Reset the given endpoint
+ * Warning        : DEPRECATED !
  * Warning        : It only reset one endpoint, do NOT give multiples !
  * Input          : The endpoint to reset
  * Return         : None

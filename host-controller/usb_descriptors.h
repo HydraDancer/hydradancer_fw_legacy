@@ -23,6 +23,7 @@ unsigned char g_descriptorDevice[] = {
 };
 
 unsigned char g_descriptorConfig[] = {
+    //  Descriptor Config
 	0x09, // bLength
 	0x02, // bDescriptorType
 	0x19, // wTotalLengthL
@@ -32,9 +33,7 @@ unsigned char g_descriptorConfig[] = {
 	0x00, // iConfiguration
 	0x80, // bmAttributes
 	0x64, // MaxPower
-};
-
-unsigned char g_descriptorInterface[] = {
+    //  Descriptor Interace
 	0x09, // bLength
 	0x04, // bDescriptorType
 	0x00, // bInterfaceNumber
@@ -44,12 +43,10 @@ unsigned char g_descriptorInterface[] = {
 	0xFF, // bInterfaceSubClass
 	0xFF, // bInterfaceProtocol
 	0x00, // iInterface
-};
-
-unsigned char g_descriptorEndpoint[] = {
+    //  Descriptor Endpoint
 	0x07, // bLength
 	0x05, // bDescriptorType
-	0x01, // bEndpointAddress
+	0x01, // bEndpointAddress (OUT)
 	0x02, // bmAttributes
 	0x00, // wMaxPacketSizeL
 	0x02, // wMaxPacketSizeH

@@ -37,7 +37,6 @@
 
 /* variables */
 static bool g_isHost = false;
-uint8_t HSPI_WORKARROUND = false;
 
 uint16_t sizeEndp1Buff = 0;
 const uint16_t capacityEndp1Buff = 4096;
@@ -59,15 +58,26 @@ main(void)
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
 
-    // First time boards are powered the second board does not init properly
-    // Adding this delay make it works
-    bsp_wait_ms_delay(500);
+
+    /* USB Init. */
+    if (bsp_switch()) {
+        speed = SpeedHigh;
+        epInMask  = Ep1Mask | Ep7Mask;
+        epOutMask = Ep1Mask;
+
+        // Filling structures "describing" our USB peripheral.
+        g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
+        g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
+        g_descriptorStrings = boardTopStringDescriptors;
+
+        U20_registers_init(speed);
+        U20_endpoints_init(epInMask, epOutMask);
+    }
 
     /* Board sync. */
     int retCode;
     if (bsp_switch()) {
         g_isHost = true;
-        log_to_evaluator("Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
 
         // TODO: Investigate
@@ -81,7 +91,6 @@ main(void)
 
     } else {
         g_isHost = false;
-        log_to_evaluator("Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
     }
 
@@ -110,24 +119,6 @@ main(void)
         SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, serdesCustomNumber);
     }
 
-    /* USB Init. */
-    if (g_isHost) {
-        cfgDescrType = CfgDescr2EpDebug;
-        speed = SpeedHigh;
-        epMask = Ep1Mask | Ep7Mask;
-        endpoint_clear(0x81);
-        endpoint_clear(0x01);
-        endpoint_clear(0x87);
-
-        // Filling structures "describing" our USB peripheral.
-        stDeviceDescriptor                     = stBoardTopDeviceDescriptor;
-        stConfigurationDescriptor.base2EpDebug = stBoardTopConfigurationDescriptor;
-        stInterfaceDescriptor                  = stBoardTopConfigurationDescriptor.itfDescr;
-        stringDescriptors                      = boardTopStringDescriptors;
-
-        U20_registers_init(speed);
-        U20_endpoints_init(epMask);
-    }
 
 
     if (g_isHost) {
@@ -139,25 +130,11 @@ main(void)
         }
     } else {
         log_to_evaluator("Init all done!\r\n");
-        memset((uint8_t *)&stDeviceDescriptor, 0, sizeof(USB_DEV_DESCR));
-        memset((uint8_t *)&stConfigurationDescriptor.base, 0, sizeof(USB_CFG_DESCR_FULL_BASE));
-        uint8_t counterReady = 0; // Temporary hack
-        while (1) {
-            while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
-            g_bottom_receivedHspiPacket = false;
-
-            ++counterReady;
-            log_to_evaluator("counterReady: %d", counterReady);
-
-            if (counterReady >= 4) {
-                cfgDescrType = CfgDescrBase;
-                speed = SpeedHigh;
-                epMask = Ep1Mask;
-                endpoint_clear(0x01);
-
-                U20_registers_init(speed);
-                U20_endpoints_init(epMask);
-            }
+        while (1) { 
+            bsp_uled_on();
+            bsp_wait_ms_delay(500);
+            bsp_uled_off();
+            bsp_wait_ms_delay(500);
         }
     }
 
@@ -240,9 +217,6 @@ HSPI_IRQHandler(void)
         if (hspiRtxStatus) {
             log_to_evaluator("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
-
-        // TODO: Find a cleaner solution for "acknowledgement" of the T_DONE.
-        HSPI_WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
@@ -252,21 +226,22 @@ HSPI_IRQHandler(void)
             log_to_evaluator("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
-        // TODO: Refactor
         // Business logic goes here
+        log_to_evaluator("Received HSPI\r\n");
 
-            if (currentStep == 0) {
-                if (hspiRxBuffer[0] == BbioSetDescr) {
-                    // Ready to proceed to next step
-                    currentStep ^= 1;
-                }
-            } else if (currentStep == 1) {
-                usb20_descriptor_set(hspiRxBuffer);
-                currentStep ^= 1;
-                g_bottom_receivedHspiPacket = true;
-            } else {
-                log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
-            }
+        if (currentStep == 0) {
+            bbio_command_decode(hspiRxBuffer);
+
+            // Epilog
+            currentStep ^= 1;
+        } else if (currentStep == 1) {
+            bbio_command_handle(hspiRxBuffer);
+
+            // Epilog
+            currentStep ^= 1;
+        } else {
+            log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
+        }
 
         // g_bottom_receivedHspiPacket = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
@@ -374,16 +349,16 @@ USBHS_IRQHandler(void)
             /* Unused. */
             break;
         case USB_GET_CONFIGURATION:
-            /* We have only one configuration. */
-            endp0RTbuff[0] = stConfigurationDescriptor.base.cfgDescr.bConfigurationValue;
+            /* We have only one configuration, hardcoded for now. */
+            endp0RTbuff[0] = 1;
             bytesToWrite = 1;
             break;
         case USB_SET_CONFIGURATION:
             /* As of now there is only one configuration. */
             break;
         case USB_GET_INTERFACE:
-            /* We have only one interface. */
-            endp0RTbuff[0] = stInterfaceDescriptor.bInterfaceNumber;
+            /* We have only one interface, hardcoded for now */
+            endp0RTbuff[0] = 0;
             bytesToWrite = 1;
             break;
         case USB_SET_INTERFACE:
@@ -447,7 +422,7 @@ USBHS_IRQHandler(void)
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag
     } else if (R8_USB_INT_FG & RB_USB_IF_BUSRST) {
         U20_registers_init(speed);
-        U20_endpoints_init(epMask);
+        U20_endpoints_init(epInMask, epOutMask);
 
         R8_USB_INT_FG = RB_USB_IF_BUSRST;
     }

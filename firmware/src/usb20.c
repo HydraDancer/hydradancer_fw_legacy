@@ -6,6 +6,14 @@
 #include "usb20.h"
 
 /* variables */
+//
+// If this variable is != 0 then use this size rather than .wTotalLength
+uint16_t g_descriptorConfigCustomSize = 0;
+
+uint8_t *g_descriptorDevice = NULL;
+uint8_t *g_descriptorConfig = NULL;
+uint8_t **g_descriptorStrings = NULL;
+
 uint16_t sizeEndp7LoggingBuff = 0;
 const uint16_t capacityEndp7LoggingBuff = 4096;
 __attribute__((aligned(16))) uint8_t endp7LoggingBuffRaw[4096];
@@ -81,7 +89,7 @@ U20_registers_init(enum Speed sp)
  * @return  None
  */
 void
-U20_endpoints_init(enum Endpoint endpointsMask)
+U20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask)
 {
     R8_UEP4_1_MOD = 0;
     R8_UEP2_3_MOD = 0;
@@ -117,66 +125,103 @@ U20_endpoints_init(enum Endpoint endpointsMask)
     R8_UEP0_TX_CTRL = 0;
     R8_UEP0_RX_CTRL = 0;
 
-    if (endpointsMask & Ep1Mask) {
-        R8_UEP4_1_MOD |= RB_UEP1_RX_EN | RB_UEP1_TX_EN;
+    /* Endpoints IN */
+    if (endpointsInMask & Ep1Mask) {
+        R8_UEP4_1_MOD |= RB_UEP1_TX_EN;
         R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
-        R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
         R8_UEP1_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep2Mask) {
+        R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
+        R8_UEP2_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP2_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep3Mask) {
+        R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
+        R8_UEP3_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP3_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep4Mask) {
+        R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
+        R8_UEP4_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP4_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep5Mask) {
+        R8_UEP5_6_MOD |= RB_UEP5_TX_EN;
+        R8_UEP5_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP5_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep6Mask) {
+        R8_UEP5_6_MOD |= RB_UEP6_TX_EN;
+        R8_UEP6_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP6_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep7Mask) {
+        R8_UEP7_MOD |= RB_UEP7_TX_EN;
+        R8_UEP7_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP7_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    /* Endpoints OUT */
+    if (endpointsOutMask & Ep1Mask) {
+        R8_UEP4_1_MOD |= RB_UEP1_RX_EN;
+        R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+    } else {
         R8_UEP1_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep2Mask) {
-        R8_UEP2_3_MOD |= RB_UEP2_RX_EN | RB_UEP2_TX_EN;
-        R8_UEP2_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep2Mask) {
+        R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
         R8_UEP2_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP2_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP2_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep3Mask) {
-        R8_UEP2_3_MOD |= RB_UEP3_RX_EN | RB_UEP3_TX_EN;
-        R8_UEP3_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep3Mask) {
+        R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
         R8_UEP3_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP3_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP3_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep4Mask) {
-        R8_UEP4_1_MOD |= RB_UEP4_RX_EN | RB_UEP4_TX_EN;
-        R8_UEP4_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep4Mask) {
+        R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
         R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP4_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP4_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep5Mask) {
-        R8_UEP5_6_MOD |= RB_UEP5_RX_EN | RB_UEP5_TX_EN;
-        R8_UEP5_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep5Mask) {
+        R8_UEP5_6_MOD |= RB_UEP5_TX_EN;
         R8_UEP5_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP5_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP5_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep6Mask) {
-        R8_UEP5_6_MOD |= RB_UEP6_RX_EN | RB_UEP6_TX_EN;
-        R8_UEP6_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep6Mask) {
+        R8_UEP5_6_MOD |= RB_UEP6_TX_EN;
         R8_UEP6_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP6_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP6_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep7Mask) {
-        R8_UEP7_MOD |= RB_UEP7_RX_EN | RB_UEP7_TX_EN;
-        R8_UEP7_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep7Mask) {
+        R8_UEP7_MOD |= RB_UEP7_TX_EN;
         R8_UEP7_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP7_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP7_RX_CTRL = UEP_R_RES_NAK;
     }
 }
@@ -184,6 +229,8 @@ U20_endpoints_init(enum Endpoint endpointsMask)
 /* @fn      endpoint_clear
  *
  * @brief   Reset the given endpoint
+ *
+ * @warning DEPRECATED !
  *
  * @warning It only reset one endpoint, do NOT give multiples !
  * 
@@ -319,39 +366,49 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
 {
     switch(descritorRequested.bw.bb0) {
     case USB_DESCR_TYP_DEVICE:
-        *pBuffer = (uint8_t *)&stDeviceDescriptor;
-        *pSizeBuffer = stDeviceDescriptor.bLength;
+        *pBuffer = g_descriptorDevice;
+        *pSizeBuffer = ((USB_DEV_DESCR *)g_descriptorDevice)->bLength;
         break;
     case USB_DESCR_TYP_CONFIG:
         /* The .cfgDescr field is always the first, no matter the union's type.
          */
-        *pBuffer = (uint8_t *)&stConfigurationDescriptor.base;
-        *pSizeBuffer = stConfigurationDescriptor.base.cfgDescr.wTotalLength;
+        *pBuffer = g_descriptorConfig;
+        // If the descriptor type is custom we can not trust its .wTotalLength
+        // field
+            if (g_descriptorConfigCustomSize != 0) {
+                *pSizeBuffer = g_descriptorConfigCustomSize;
+            } else {
+                *pSizeBuffer = ((USB_CFG_DESCR *)g_descriptorConfig)->wTotalLength;
+            }
         break;
     case USB_DESCR_TYP_STRING: {
         uint8_t i = descritorRequested.bw.bb1;
-        if (i >= 0 && i < array_addr_len((void **)stringDescriptors)) {
-            *pBuffer = (uint8_t *)stringDescriptors[i];
-            *pSizeBuffer = stringDescriptors[i][0];
+        if (i >= 0 && i < array_addr_len((void **)g_descriptorStrings)) {
+            *pBuffer = g_descriptorStrings[i];
+            *pSizeBuffer = g_descriptorStrings[i][0];
         }
     }
     break;
     case USB_DESCR_TYP_INTERF:
-        *pBuffer = (uint8_t *)&stInterfaceDescriptor;
-        *pSizeBuffer = stInterfaceDescriptor.bLength;
+        /* Not supported for now */
+        // *pBuffer = (uint8_t *)&stInterfaceDescriptor;
+        // *pSizeBuffer = stInterfaceDescriptor.bLength;
         break;
     case USB_DESCR_TYP_ENDP:
-        *pBuffer = (uint8_t *)&stEndpointDescriptor;
-        *pSizeBuffer = stEndpointDescriptor.bLength;
+        /* Not supported for now */
+        // *pBuffer = (uint8_t *)&stEndpointDescriptor;
+        // *pSizeBuffer = stEndpointDescriptor.bLength;
         break;
     case USB_DESCR_TYP_HID:
-        *pBuffer = (uint8_t *)&stHidDescriptor;
-        *pSizeBuffer = stHidDescriptor.bLength;
+        /* Not supported yet, it should already be sent with the configuration
+         * descriptor */
+        // *pBuffer = (uint8_t *)&stHidDescriptor;
+        // *pSizeBuffer = stHidDescriptor.bLength;
         break;
     case USB_DESCR_TYP_REPORT:
-        *pBuffer = (uint8_t *)reportDescriptor;
-        /* TODO: support lengh of type uint16_t. */
-        *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
+        // TODOOO: Implement
+        // *pBuffer = (uint8_t *)reportDescriptor;
+        // *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
         break;
     default:
         log_to_evaluator("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
@@ -497,20 +554,23 @@ usb20_descriptor_set(const uint8_t *newDescriptor)
 
     switch (bDescriptorType) {
 	case USB_DESCR_TYP_DEVICE:
-        pTargetDescr = (uint8_t *)&stDeviceDescriptor;
+        pTargetDescr = g_descriptorDevice;
         targetSize = sizeof(USB_DEV_DESCR);
 		break;
 	case USB_DESCR_TYP_CONFIG:
-        pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.cfgDescr;
+        pTargetDescr = g_descriptorConfig;
+        // TODOO: Fix the size
         targetSize = sizeof(USB_CFG_DESCR);
 		break;
 	case USB_DESCR_TYP_INTERF:
-        pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.itfDescr;
-        targetSize = sizeof(USB_ITF_DESCR);
+        /* To Be Done */
+        // pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.itfDescr;
+        // targetSize = sizeof(USB_ITF_DESCR);
 		break;
 	case USB_DESCR_TYP_ENDP:
-        pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.endpDescr;
-        targetSize = sizeof(USB_ENDP_DESCR);
+        /* To Be Done */
+        // pTargetDescr = (uint8_t *)&stConfigurationDescriptor.base.endpDescr;
+        // targetSize = sizeof(USB_ENDP_DESCR);
 		break;
 	case USB_DESCR_TYP_STRING:
         // Special case, will be handled later
