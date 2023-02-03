@@ -62,10 +62,8 @@ main(void)
     /* USB Init. */
     if (bsp_switch()) {
         speed = SpeedHigh;
-        epMask = Ep1Mask | Ep7Mask;
-        endpoint_clear(0x81);
-        endpoint_clear(0x01);
-        endpoint_clear(0x87);
+        epInMask  = Ep1Mask | Ep7Mask;
+        epOutMask = Ep1Mask;
 
         // Filling structures "describing" our USB peripheral.
         g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
@@ -73,7 +71,7 @@ main(void)
         g_descriptorStrings = boardTopStringDescriptors;
 
         U20_registers_init(speed);
-        U20_endpoints_init(epMask);
+        U20_endpoints_init(epInMask, epOutMask);
     }
 
     /* Board sync. */
@@ -424,7 +422,7 @@ USBHS_IRQHandler(void)
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag
     } else if (R8_USB_INT_FG & RB_USB_IF_BUSRST) {
         U20_registers_init(speed);
-        U20_endpoints_init(epMask);
+        U20_endpoints_init(epInMask, epOutMask);
 
         R8_USB_INT_FG = RB_USB_IF_BUSRST;
     }

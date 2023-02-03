@@ -17,6 +17,7 @@ enum BbioCommand {
     BbioSetEndp       = 0b00000011,
     BbioConnect       = 0b00000100,
 };
+
 enum BbioSubCommand {
     BbioSubSetDescrDevice      = 0b00000001,
     BbioSubSetDescrConfig      = 0b00000010,

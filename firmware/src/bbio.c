@@ -5,6 +5,8 @@
 
 #include "bbio.h"
 
+// TODOOO: Add enable endpoints feature
+// TODOOO: Add reset feature
 // TODO: Use return value to indicate termination state (0 success or error code)
 
 
@@ -135,9 +137,6 @@ bbio_command_handle(uint8_t *bufferData)
                 speed = SpeedHigh;
 
                 // TODO: Currently hardcoded, handle it properly
-                epMask = Ep1Mask;
-                endpoint_clear(0x81);   // IN
-                endpoint_clear(0x01);   // OUT
 
                 // Filling structures "describing" our USB peripheral.
                 g_descriptorDevice  = g_descriptorDevice;
@@ -145,7 +144,7 @@ bbio_command_handle(uint8_t *bufferData)
                 g_descriptorStrings = g_descriptorStrings;
 
                 U20_registers_init(speed);
-                U20_endpoints_init(epMask);
+                U20_endpoints_init(Ep1Mask, 0);
             }
             return 0;
     }

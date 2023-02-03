@@ -32,7 +32,8 @@ enum Endpoint {
 
 /* variables */
 enum Speed speed;
-enum Endpoint epMask;
+enum Endpoint epInMask;
+enum Endpoint epOutMask;
 
 // If this variable is != 0 then use this size rather than .wTotalLength
 extern uint16_t g_descriptorConfigCustomSize;
@@ -80,11 +81,12 @@ void U20_registers_init(enum Speed sp);
  * Input          : A bitmask of the endpoints to initialise and enable
  * Return         : None
  *******************************************************************************/
-void U20_endpoints_init(enum Endpoint endpointsMask);
+void U20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask);
 
 /*******************************************************************************
  * Function Name  : endpoint_clear
  * Description    : Reset the given endpoint
+ * Warning        : DEPRECATED !
  * Warning        : It only reset one endpoint, do NOT give multiples !
  * Input          : The endpoint to reset
  * Return         : None

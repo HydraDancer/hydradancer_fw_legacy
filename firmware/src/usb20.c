@@ -89,7 +89,7 @@ U20_registers_init(enum Speed sp)
  * @return  None
  */
 void
-U20_endpoints_init(enum Endpoint endpointsMask)
+U20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask)
 {
     R8_UEP4_1_MOD = 0;
     R8_UEP2_3_MOD = 0;
@@ -125,66 +125,103 @@ U20_endpoints_init(enum Endpoint endpointsMask)
     R8_UEP0_TX_CTRL = 0;
     R8_UEP0_RX_CTRL = 0;
 
-    if (endpointsMask & Ep1Mask) {
-        R8_UEP4_1_MOD |= RB_UEP1_RX_EN | RB_UEP1_TX_EN;
+    /* Endpoints IN */
+    if (endpointsInMask & Ep1Mask) {
+        R8_UEP4_1_MOD |= RB_UEP1_TX_EN;
         R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
-        R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
         R8_UEP1_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep2Mask) {
+        R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
+        R8_UEP2_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP2_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep3Mask) {
+        R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
+        R8_UEP3_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP3_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep4Mask) {
+        R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
+        R8_UEP4_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP4_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep5Mask) {
+        R8_UEP5_6_MOD |= RB_UEP5_TX_EN;
+        R8_UEP5_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP5_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep6Mask) {
+        R8_UEP5_6_MOD |= RB_UEP6_TX_EN;
+        R8_UEP6_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP6_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    if (endpointsInMask & Ep7Mask) {
+        R8_UEP7_MOD |= RB_UEP7_TX_EN;
+        R8_UEP7_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    } else {
+        R8_UEP7_TX_CTRL = UEP_T_RES_NAK;
+    }
+
+    /* Endpoints OUT */
+    if (endpointsOutMask & Ep1Mask) {
+        R8_UEP4_1_MOD |= RB_UEP1_RX_EN;
+        R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+    } else {
         R8_UEP1_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep2Mask) {
-        R8_UEP2_3_MOD |= RB_UEP2_RX_EN | RB_UEP2_TX_EN;
-        R8_UEP2_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep2Mask) {
+        R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
         R8_UEP2_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP2_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP2_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep3Mask) {
-        R8_UEP2_3_MOD |= RB_UEP3_RX_EN | RB_UEP3_TX_EN;
-        R8_UEP3_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep3Mask) {
+        R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
         R8_UEP3_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP3_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP3_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep4Mask) {
-        R8_UEP4_1_MOD |= RB_UEP4_RX_EN | RB_UEP4_TX_EN;
-        R8_UEP4_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep4Mask) {
+        R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
         R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP4_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP4_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep5Mask) {
-        R8_UEP5_6_MOD |= RB_UEP5_RX_EN | RB_UEP5_TX_EN;
-        R8_UEP5_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep5Mask) {
+        R8_UEP5_6_MOD |= RB_UEP5_TX_EN;
         R8_UEP5_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP5_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP5_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep6Mask) {
-        R8_UEP5_6_MOD |= RB_UEP6_RX_EN | RB_UEP6_TX_EN;
-        R8_UEP6_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep6Mask) {
+        R8_UEP5_6_MOD |= RB_UEP6_TX_EN;
         R8_UEP6_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP6_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP6_RX_CTRL = UEP_R_RES_NAK;
     }
 
-    if (endpointsMask & Ep7Mask) {
-        R8_UEP7_MOD |= RB_UEP7_RX_EN | RB_UEP7_TX_EN;
-        R8_UEP7_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+    if (endpointsOutMask & Ep7Mask) {
+        R8_UEP7_MOD |= RB_UEP7_TX_EN;
         R8_UEP7_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
     } else {
-        R8_UEP7_TX_CTRL = UEP_T_RES_NAK;
         R8_UEP7_RX_CTRL = UEP_R_RES_NAK;
     }
 }
@@ -192,6 +229,8 @@ U20_endpoints_init(enum Endpoint endpointsMask)
 /* @fn      endpoint_clear
  *
  * @brief   Reset the given endpoint
+ *
+ * @warning DEPRECATED !
  *
  * @warning It only reset one endpoint, do NOT give multiples !
  * 
