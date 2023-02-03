@@ -22,7 +22,7 @@
  * prefix.
  */
 static uint8_t _descriptorsStore[_DESCRIPTOR_STORE_SIZE];
-static uint8_t *_descriptorsStoreCursor;
+static uint8_t *_descriptorsStoreCursor = _descriptorsStore;
 
 // TODO: Use structs instead of a variable for the array and a variable for the
 // size
@@ -62,6 +62,7 @@ static uint16_t _descrSize = 0;
 void
 bbio_command_decode(uint8_t *command)
 {
+    log_to_evaluator("bbio_command_decode()\r\n");
    /* Reminder of the structure of a bbio command :
     * command[0] = BbioCommand
     * command[1] = BbioSubCommand                   Valid only when BbioCommand = BbioSetDescr
@@ -102,10 +103,10 @@ bbio_command_decode(uint8_t *command)
         }
         _descrSize = (command[4] << 8) | command[3];
 
-    } else if (command[1] == BbioSetEndp) {
+    } else if (command[0] == BbioSetEndp) {
         // Endpoints configuration
         _command = 2;
-    } else if (command[1] == BbioConnect) {
+    } else if (command[0] == BbioConnect) {
         // Connect the USB device
         _command = 3;
     } else {
@@ -118,6 +119,7 @@ bbio_command_decode(uint8_t *command)
 uint8_t
 bbio_command_handle(uint8_t *bufferData)
 {
+    log_to_evaluator("bbio_command_handle()\r\n");
     switch (_command) {
         case 0:
             return 1;
@@ -138,9 +140,9 @@ bbio_command_handle(uint8_t *bufferData)
                 endpoint_clear(0x01);   // OUT
 
                 // Filling structures "describing" our USB peripheral.
-                g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
-                g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
-                g_descriptorStrings = boardTopStringDescriptors;
+                g_descriptorDevice  = g_descriptorDevice;
+                g_descriptorConfig  = g_descriptorConfig;
+                g_descriptorStrings = g_descriptorStrings;
 
                 U20_registers_init(speed);
                 U20_endpoints_init(epMask);

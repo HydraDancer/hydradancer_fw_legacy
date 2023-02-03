@@ -132,7 +132,12 @@ main(void)
         }
     } else {
         log_to_evaluator("Init all done!\r\n");
-        while (1) {  }
+        while (1) { 
+            bsp_uled_on();
+            bsp_wait_ms_delay(500);
+            bsp_uled_off();
+            bsp_wait_ms_delay(500);
+        }
     }
 
 }
@@ -223,22 +228,22 @@ HSPI_IRQHandler(void)
             log_to_evaluator("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
-        // TODO: Refactor
         // Business logic goes here
+        log_to_evaluator("Received HSPI\r\n");
 
-            if (currentStep == 0) {
-                bbio_command_decode(hspiRxBuffer);
+        if (currentStep == 0) {
+            bbio_command_decode(hspiRxBuffer);
 
-                // Epilog
-                currentStep ^= 1;
-            } else if (currentStep == 1) {
-                bbio_command_handle(hspiRxBuffer);
+            // Epilog
+            currentStep ^= 1;
+        } else if (currentStep == 1) {
+            bbio_command_handle(hspiRxBuffer);
 
-                // Epilog
-                currentStep ^= 1;
-            } else {
-                log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
-            }
+            // Epilog
+            currentStep ^= 1;
+        } else {
+            log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
+        }
 
         // g_bottom_receivedHspiPacket = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
