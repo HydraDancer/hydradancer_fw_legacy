@@ -144,7 +144,8 @@ menu_print(void)
     printf("2) Log infinite loop\n");
     printf("3) Send descriptor device\n");
     printf("4) Send descriptor configuration\n");
-    printf("5) Connect\n");
+    printf("5) Set endpoints\n");
+    printf("6) Connect\n");
     printf("\n");
     printf("9) Exit\n");
     printf("> ");
@@ -335,8 +336,18 @@ main(int argc, char *argv[])
             // Fill Config Descriptor of the ToE board
             usb_descriptor_set(BbioSubSetDescrConfig, 0, g_descriptorConfig, sizeof(g_descriptorConfig));
             break;
-        // - Connect to the target
+        // - Set endpoints
         case 5:
+            // Connect to the target
+            bbio_command_send(BbioSetEndp);
+
+            // endpoint 1 Out
+            char buffEndpoints[] = {0x01, 0x00};
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buffEndpoints, 2, NULL, 0);
+
+            break;
+        // - Connect to the target
+        case 6:
             // Connect to the target
             bbio_command_send(BbioConnect);
 

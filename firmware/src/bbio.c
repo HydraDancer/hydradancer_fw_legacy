@@ -136,15 +136,12 @@ bbio_command_handle(uint8_t *bufferData)
                 g_descriptorConfigCustomSize = g_bbioDescriptorConfigurationSize;
                 speed = SpeedHigh;
 
-                // TODO: Currently hardcoded, handle it properly
-
                 // Filling structures "describing" our USB peripheral.
                 g_descriptorDevice  = g_descriptorDevice;
                 g_descriptorConfig  = g_descriptorConfig;
                 g_descriptorStrings = g_descriptorStrings;
 
                 U20_registers_init(speed);
-                U20_endpoints_init(Ep1Mask, 0);
             }
             return 0;
     }
@@ -190,7 +187,7 @@ bbio_sub_command_handle(uint8_t *bufferData)
 // (isochronous/bulk/interrupt)
 // The data is encoded in 1 byte :
 // 0b00yy Xxxx
-// yy correspond to the mode :
+// yy correspond to the mode : (Not used as of now)
 // 01: isochronous
 // 10: bulk
 // 11: interrupt
@@ -201,10 +198,65 @@ bbio_sub_command_handle(uint8_t *bufferData)
 void
 bbio_command_endpoints_handle(uint8_t *bufferEndpoints)
 {
+    enum Endpoint endpointsIn  = 0;
+    enum Endpoint endpointsOut = 0;
+
     while (*bufferEndpoints != 0) {
         // TODO: Populate
+        if (*bufferEndpoints & 0b00001000) { // If IN
+            switch (*bufferEndpoints & 0b00000111) {
+            case 1:
+                endpointsIn |= Ep1Mask;
+                break;
+            case 2:
+                endpointsIn |= Ep2Mask;
+                break;
+            case 3:
+                endpointsIn |= Ep3Mask;
+                break;
+            case 4:
+                endpointsIn |= Ep4Mask;
+                break;
+            case 5:
+                endpointsIn |= Ep5Mask;
+                break;
+            case 6:
+                endpointsIn |= Ep6Mask;
+                break;
+            case 7:
+                endpointsIn |= Ep7Mask;
+                break;
+            }
+        } else { // Else OUT
+            switch (*bufferEndpoints & 0b00000111) {
+            case 1:
+                endpointsOut |= Ep1Mask;
+                break;
+            case 2:
+                endpointsOut |= Ep2Mask;
+                break;
+            case 3:
+                endpointsOut |= Ep3Mask;
+                break;
+            case 4:
+                endpointsOut |= Ep4Mask;
+                break;
+            case 5:
+                endpointsOut |= Ep5Mask;
+                break;
+            case 6:
+                endpointsOut |= Ep6Mask;
+                break;
+            case 7:
+                endpointsOut |= Ep7Mask;
+                break;
+            }
+        }
 
         // epilog
         ++bufferEndpoints;
     }
+
+    log_to_evaluator("epIn: %x, epOut: %x\r\n", endpointsIn, endpointsOut);
+    U20_endpoints_init(endpointsIn, endpointsOut);
 }
