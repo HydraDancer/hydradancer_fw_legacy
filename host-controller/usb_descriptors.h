@@ -46,7 +46,7 @@ unsigned char g_descriptorConfig[] = {
     //  Descriptor Endpoint
 	0x07, // bLength
 	0x05, // bDescriptorType
-	0x01, // bEndpointAddress
+	0x01, // bEndpointAddress (OUT)
 	0x02, // bmAttributes
 	0x00, // wMaxPacketSizeL
 	0x02, // wMaxPacketSizeH
