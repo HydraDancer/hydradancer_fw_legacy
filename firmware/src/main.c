@@ -59,15 +59,28 @@ main(void)
     bsp_init(FREQ_SYS);
     UART1_init(115200, FREQ_SYS);
 
-    // First time boards are powered the second board does not init properly
-    // Adding this delay make it works
-    bsp_wait_ms_delay(500);
+
+    /* USB Init. */
+    if (bsp_switch()) {
+        speed = SpeedHigh;
+        epMask = Ep1Mask | Ep7Mask;
+        endpoint_clear(0x81);
+        endpoint_clear(0x01);
+        endpoint_clear(0x87);
+
+        // Filling structures "describing" our USB peripheral.
+        g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
+        g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
+        g_descriptorStrings = boardTopStringDescriptors;
+
+        U20_registers_init(speed);
+        U20_endpoints_init(epMask);
+    }
 
     /* Board sync. */
     int retCode;
     if (bsp_switch()) {
         g_isHost = true;
-        log_to_evaluator("Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
 
         // TODO: Investigate
@@ -81,7 +94,6 @@ main(void)
 
     } else {
         g_isHost = false;
-        log_to_evaluator("Hello!\r\n");
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
     }
 
@@ -110,22 +122,6 @@ main(void)
         SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, serdesCustomNumber);
     }
 
-    /* USB Init. */
-    if (g_isHost) {
-        speed = SpeedHigh;
-        epMask = Ep1Mask | Ep7Mask;
-        endpoint_clear(0x81);
-        endpoint_clear(0x01);
-        endpoint_clear(0x87);
-
-        // Filling structures "describing" our USB peripheral.
-        g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
-        g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
-        g_descriptorStrings = boardTopStringDescriptors;
-
-        U20_registers_init(speed);
-        U20_endpoints_init(epMask);
-    }
 
 
     if (g_isHost) {
@@ -138,6 +134,7 @@ main(void)
     } else {
         log_to_evaluator("Init all done!\r\n");
         uint8_t counterReady = 0; // Temporary hack
+        bsp_uled_on();
         while (1) {
             while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
             g_bottom_receivedHspiPacket = false;
