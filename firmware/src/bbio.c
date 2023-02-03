@@ -5,6 +5,9 @@
 
 #include "bbio.h"
 
+// TODO: Use return value to indicate termination state (0 success or error code)
+
+
 /* macros */
 #define _DESCRIPTOR_STORE_SIZE (4096)
 #define _DESCRIPTOR_STRING_CAPACITY (10)

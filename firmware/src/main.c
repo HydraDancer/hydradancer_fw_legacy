@@ -37,7 +37,6 @@
 
 /* variables */
 static bool g_isHost = false;
-uint8_t HSPI_WORKARROUND = false;
 
 uint16_t sizeEndp1Buff = 0;
 const uint16_t capacityEndp1Buff = 4096;
@@ -133,24 +132,7 @@ main(void)
         }
     } else {
         log_to_evaluator("Init all done!\r\n");
-        uint8_t counterReady = 0; // Temporary hack
-        bsp_uled_on();
-        while (1) {
-            while (!g_bottom_receivedHspiPacket) { bsp_wait_ms_delay(10); }
-            g_bottom_receivedHspiPacket = false;
-
-            ++counterReady;
-            log_to_evaluator("counterReady: %d", counterReady);
-
-            if (counterReady >= 4) {
-                speed = SpeedHigh;
-                epMask = Ep1Mask;
-                endpoint_clear(0x01);
-
-                U20_registers_init(speed);
-                U20_endpoints_init(epMask);
-            }
-        }
+        while (1) {  }
     }
 
 }
@@ -232,9 +214,6 @@ HSPI_IRQHandler(void)
         if (hspiRtxStatus) {
             log_to_evaluator("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
-
-        // TODO: Find a cleaner solution for "acknowledgement" of the T_DONE.
-        HSPI_WORKARROUND = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
     case RB_HSPI_IF_R_DONE:
@@ -248,14 +227,15 @@ HSPI_IRQHandler(void)
         // Business logic goes here
 
             if (currentStep == 0) {
-                if (hspiRxBuffer[0] == BbioSetDescr) {
-                    // Ready to proceed to next step
-                    currentStep ^= 1;
-                }
-            } else if (currentStep == 1) {
-                usb20_descriptor_set(hspiRxBuffer);
+                bbio_command_decode(hspiRxBuffer);
+
+                // Epilog
                 currentStep ^= 1;
-                g_bottom_receivedHspiPacket = true;
+            } else if (currentStep == 1) {
+                bbio_command_handle(hspiRxBuffer);
+
+                // Epilog
+                currentStep ^= 1;
             } else {
                 log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
             }
