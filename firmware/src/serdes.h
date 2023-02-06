@@ -14,6 +14,7 @@
 enum SerdesMagicNumber {
     SerdesMagicNumberLog     = 0x01111111,
     SerdesMagicNumberRetCode = 0x02222222,
+    SerdesMagicNumberMask    = 0x0FFFFFFF,
 };
 
 /* variables */

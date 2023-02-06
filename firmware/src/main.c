@@ -166,7 +166,7 @@ SERDES_IRQHandler(void)
         // No breaks, the handling is the same for both interrupts
     case SDS_RX_INT_FLG:
 
-        switch(SDS->SDS_DATA0) {
+        switch(SDS->SDS_DATA0 & SerdesMagicNumberMask) {
         case SerdesMagicNumberLog:
             // Handle log received from bottom board
             logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
