@@ -143,5 +143,14 @@ void ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSiz
  *******************************************************************************/
 void usb_log(const char *fmt, ...);
 
+/*******************************************************************************
+ * Function Name  : usb_vlog
+ * Description    : Function used to log data to the Host computer over USB
+ * Input          : A format string and the associated va_list
+ * Return         : None
+ *******************************************************************************/
+void usb_vlog(const char *fmt, va_list args);
+
+
 
 #endif /* USB20_H */

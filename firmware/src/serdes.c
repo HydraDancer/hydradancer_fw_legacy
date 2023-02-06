@@ -3,7 +3,6 @@
 #include "serdes.h"
 
 /* variables */
-uint32_t serdesCustomNumber = 0x05555555;
 __attribute__((aligned(16))) uint8_t serdesDmaAddr[4096] __attribute__((section(".DMADATA"))); // Buffer for SerDes
 
 /* functions implementation */
@@ -50,8 +49,33 @@ serdes_log(const char *fmt, ...)
     va_list ap;
     // bsp_disable_interrupt();
     va_start(ap, fmt);
+    SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberLog);
 
     vsnprintf((char *)serdesDmaAddr, SERDES_DMA_LEN, fmt, ap);
+
+    SerDes_DMA_Tx();
+    SerDes_Wait_Txdone();
+    // serdes_wait_for_tx(SDS_PLL_FREQ_1_20G); // TODO: Check if can be removed
+    // bsp_enable_interrupt();
+}
+
+/* @fn      serdes_vlog
+ *
+ * @brief   Function used to log data to the top board via SerDes, takes a
+ *          va_list as the second argument
+ *
+ * @return  None
+ */
+void
+serdes_vlog(const char *fmt, va_list vargs)
+{
+    // Critical section, if we print something (outside of an interrrupt) and an
+    // interrupt is called and do a print, then the first print is partially
+    // overwritten.
+    // bsp_disable_interrupt();
+    SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberLog);
+
+    vsnprintf((char *)serdesDmaAddr, SERDES_DMA_LEN, fmt, vargs);
 
     SerDes_DMA_Tx();
     SerDes_Wait_Txdone();
