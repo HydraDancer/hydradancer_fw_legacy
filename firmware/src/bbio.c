@@ -5,7 +5,6 @@
 
 #include "bbio.h"
 
-// TODOOO: Add enable endpoints feature
 // TODOOO: Add reset feature
 // TODO: Use return value to indicate termination state (0 success or error code)
 // TODO: Add doxygen to functions
