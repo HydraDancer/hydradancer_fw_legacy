@@ -42,7 +42,6 @@ epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 
     switch (uisToken) {
     case UIS_TOKEN_OUT:
-        // TODOOO: Handle transfer where there is more than one transaction.
         R16_UEP0_T_LEN = 0;
         R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
         R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
