@@ -10,8 +10,13 @@
 /* macros */
 #define SERDES_DMA_LEN  (512)
 
+/* enums */
+enum SerdesMagicNumber {
+    SerdesMagicNumberLog     = 0x01111111,
+    SerdesMagicNumberRetCode = 0x02222222,
+};
+
 /* variables */
-extern uint32_t serdesCustomNumber;
 extern uint8_t serdesDmaAddr[]; // Buffer for SerDes
 
 /* functions declaration */

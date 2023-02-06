@@ -23,7 +23,6 @@
 #include "usb20-endpoints.h"
 #include "usb20.h"
 
-#include "rot13-example.h"  // Added for the example only !
 
 // TODOOO: Add Halt support for endpoints (get_status()).
 // TODOOO: Prefix all global Variables with g_
@@ -116,7 +115,9 @@ main(void)
         // SerDes_Wait_Txdone()
         SerDes_EnableIT(ALL_INT_TYPE & ~SDS_TX_INT_FLG);
         SerDes_Tx_Init(SDS_PLL_FREQ_1_20G);
-        SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, serdesCustomNumber);
+        // reconfigured before each transaction, used to identify the "kind" of
+        // the transaction
+        // SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, serdesCustomNumber);
     }
 
 
@@ -160,24 +161,25 @@ SERDES_IRQHandler(void)
     case SDS_TX_INT_FLG:
         SerDes_ClearIT(SDS_TX_INT_FLG);
         break;
+    case SDS_RX_INT_FLG | SDS_RX_ERR_FLG:
+        log_to_evaluator("SDS_RX_INT_FLG | SDS_RX_ERR_FLG\r\n");
+        // No breaks, the handling is the same for both interrupts
     case SDS_RX_INT_FLG:
-        g_top_receivedSerdes = true;
-        // Handle log received from bottom board
-        logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
-        memcpy(endp7LoggingBuff + sizeEndp7LoggingBuff, serdesDmaAddr, logLen);
-        sizeEndp7LoggingBuff += logLen;
 
-        SerDes_ClearIT(SDS_RX_INT_FLG);
-        break;
-    case SDS_RX_ERR_FLG | SDS_RX_INT_FLG:
-        log_to_evaluator("SDS_RX_ERR_FLG | SDS_RX_INT_FLG\r\n");
-        g_top_receivedSerdes = true;
-        // Handle log received from bottom board
-        logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
-        memcpy(endp7LoggingBuff + sizeEndp7LoggingBuff, serdesDmaAddr, logLen);
-        sizeEndp7LoggingBuff += logLen;
+        switch(SDS->SDS_DATA0) {
+        case SerdesMagicNumberLog:
+            // Handle log received from bottom board
+            logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
+            if (sizeEndp7LoggingBuff + logLen <= capacityEndp7LoggingBuff) {
+                memcpy(endp7LoggingBuff + sizeEndp7LoggingBuff, serdesDmaAddr, logLen);
+                sizeEndp7LoggingBuff += logLen;
+            }
+            break;
+        case SerdesMagicNumberRetCode:
+            break;
+        }
 
-        SerDes_ClearIT(SDS_RX_ERR_FLG | SDS_RX_INT_FLG);
+        SerDes_ClearIT(SerDes_StatusIT() & ALL_INT_TYPE);
         break;
     case SDS_FIFO_OV_FLG:
         SerDes_ClearIT(SDS_FIFO_OV_FLG);
@@ -243,7 +245,6 @@ HSPI_IRQHandler(void)
             log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
         }
 
-        // g_bottom_receivedHspiPacket = true;
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:

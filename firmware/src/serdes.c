@@ -3,7 +3,6 @@
 #include "serdes.h"
 
 /* variables */
-uint32_t serdesCustomNumber = 0x05555555;
 __attribute__((aligned(16))) uint8_t serdesDmaAddr[4096] __attribute__((section(".DMADATA"))); // Buffer for SerDes
 
 /* functions implementation */
@@ -50,6 +49,7 @@ serdes_log(const char *fmt, ...)
     va_list ap;
     // bsp_disable_interrupt();
     va_start(ap, fmt);
+    SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberLog);
 
     vsnprintf((char *)serdesDmaAddr, SERDES_DMA_LEN, fmt, ap);
 
@@ -73,6 +73,7 @@ serdes_vlog(const char *fmt, va_list vargs)
     // interrupt is called and do a print, then the first print is partially
     // overwritten.
     // bsp_disable_interrupt();
+    SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberLog);
 
     vsnprintf((char *)serdesDmaAddr, SERDES_DMA_LEN, fmt, vargs);
 
