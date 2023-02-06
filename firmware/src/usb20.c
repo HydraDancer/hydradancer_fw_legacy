@@ -539,6 +539,31 @@ usb_log(const char *fmt, ...)
     sizeEndp7LoggingBuff += bytesWritten;
     bsp_enable_interrupt();
 }
+/* @fn      usb_vlog
+ *
+ * @brief   Function used to log data to the Host computer over USB, takes a
+ *          va_list as second argument
+ *
+ * @return  None
+ */
+void
+usb_vlog(const char *fmt, va_list vargs)
+{
+    // Critical section, if we print something (outside of an interrrupt) and an
+    // interrupt is called and do a print, then the first print is partially
+    // overwritten.
+    bsp_disable_interrupt();
+    uint16_t sizeLeft = capacityEndp7LoggingBuff - sizeEndp7LoggingBuff;
+    
+    if (sizeEndp7LoggingBuff >= capacityEndp7LoggingBuff) {
+        log_to_evaluator("ERROR: Buffer already filled!");
+        sizeLeft = 0;
+    }
+    
+    int bytesWritten = vsnprintf(endp7LoggingBuff + sizeEndp7LoggingBuff, sizeLeft, fmt, vargs);
+    sizeEndp7LoggingBuff += bytesWritten;
+    bsp_enable_interrupt();
+}
 
 // TODO: Add description
 // WARNING: Currently there is big limitations on this function :

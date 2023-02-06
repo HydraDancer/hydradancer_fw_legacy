@@ -1,6 +1,7 @@
 #ifndef SERDES_H
 #define SERDES_H
 
+#include <stdarg.h>
 #include <stdint.h>
 
 #include "CH56xSFR.h"
@@ -33,5 +34,15 @@ void serdes_wait_for_tx(uint16_t sizeTransmission);
  * Return         : None
  *******************************************************************************/
 void serdes_log(const char *fmt, ...);
+
+/*******************************************************************************
+ * Function Name  : serdes_vlog
+ * Description    : Function used to log data to the top board via SerDes
+ * Input          : A format strind and the associated va_list
+ * Return         : None
+ *******************************************************************************/
+void serdes_vlog(const char *fmt, va_list vargs);
+
+
 
 #endif /* SERDES_H */
