@@ -11,11 +11,12 @@
 
 /* enums */
 enum BbioCommand {
-    BbioMainMode      = 0b00000000,
-    BbioIdentifMode   = 0b00000001,
-    BbioSetDescr      = 0b00000010,
-    BbioSetEndp       = 0b00000011,
-    BbioConnect       = 0b00000100,
+    BbioMainMode      = 0b00000001,
+    BbioIdentifMode   = 0b00000010,
+    BbioSetDescr      = 0b00000011,
+    BbioSetEndp       = 0b00000100,
+    BbioConnect       = 0b00000101,
+    BbioDisconnect    = 0b00000110,
 };
 
 enum BbioSubCommand {
