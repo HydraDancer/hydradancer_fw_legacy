@@ -6,7 +6,6 @@
 #include "bbio.h"
 
 // TODOOO: Add reset feature
-// TODO: Add doxygen to functions
 
 
 /* macros */
@@ -26,7 +25,7 @@ static uint8_t _descriptorsStore[_DESCRIPTOR_STORE_SIZE];
 static uint8_t *_descriptorsStoreCursor = _descriptorsStore;
 
 // TODO: Use structs instead of a variable for the array and a variable for the
-// size
+// size, is it worth ?
 uint8_t *g_bbioDescriptorDevice;
 uint8_t *g_bbioDescriptorConfiguration;
 uint8_t *g_bbioDescriptorsString[_DESCRIPTOR_STRING_CAPACITY];
@@ -214,7 +213,6 @@ bbio_command_set_endpoints_handle(uint8_t *bufferEndpoints)
     enum Endpoint endpointsOut = 0;
 
     while (*bufferEndpoints != 0) {
-        // TODO: Populate
         if (*bufferEndpoints & 0b00001000) { // If IN
             switch (*bufferEndpoints & 0b00000111) {
             case 1:
