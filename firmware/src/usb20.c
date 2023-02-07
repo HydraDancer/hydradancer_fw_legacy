@@ -5,6 +5,8 @@
 
 #include "usb20.h"
 
+// TODO: Prefix all functions name with usb20_
+
 /* variables */
 //
 // If this variable is != 0 then use this size rather than .wTotalLength
