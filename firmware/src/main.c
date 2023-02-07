@@ -24,9 +24,7 @@
 #include "usb20.h"
 
 
-// TODOOO: Prefix all global Variables with g_
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
-// TODOO: Add doxygen for every function.
 // TODO: Homogenize var name to camelCase.
 // TODO: Homogenize var comments.
 // TODO: Add defaults to switches.
@@ -57,17 +55,17 @@ main(void)
 
     /* USB Init. */
     if (bsp_switch()) {
-        speed = SpeedHigh;
-        epInMask  = Ep1Mask | Ep7Mask;
-        epOutMask = Ep1Mask;
+        g_usb20Speed = SpeedHigh;
+        g_usb20EpInMask  = Ep1Mask | Ep7Mask;
+        g_usb20EpOutMask = Ep1Mask;
 
         // Filling structures "describing" our USB peripheral.
         g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
         g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
         g_descriptorStrings = boardTopStringDescriptors;
 
-        usb20_registers_init(speed);
-        usb20_endpoints_init(epInMask, epOutMask);
+        usb20_registers_init(g_usb20Speed);
+        usb20_endpoints_init(g_usb20EpInMask, g_usb20EpOutMask);
     }
 
     /* Board sync. */
@@ -75,16 +73,6 @@ main(void)
     if (bsp_switch()) {
         g_isHost = true;
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
-
-        // TODO: Investigate
-        // If uncommented this create a "desync" between the board and the
-        // bottom board can not initiate SerDes Tx
-        // if (retCode) {
-        //     log_to_evaluator("Synchronisation done (success)\r\n");
-        // } else {
-        //     log_to_evaluator("Synchronisation error(timeout)\r\n");
-        // }
-
     } else {
         g_isHost = false;
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
@@ -419,8 +407,8 @@ USBHS_IRQHandler(void)
 
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag
     } else if (R8_USB_INT_FG & RB_USB_IF_BUSRST) {
-        usb20_registers_init(speed);
-        usb20_endpoints_init(epInMask, epOutMask);
+        usb20_registers_init(g_usb20Speed);
+        usb20_endpoints_init(g_usb20EpInMask, g_usb20EpOutMask);
 
         R8_USB_INT_FG = RB_USB_IF_BUSRST;
     }

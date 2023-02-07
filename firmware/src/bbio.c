@@ -126,14 +126,14 @@ bbio_command_handle(uint8_t *bufferData)
         return 0;
     case BbioConnect:
         g_descriptorConfigCustomSize = g_bbioDescriptorConfigurationSize;
-        speed = SpeedHigh;
+        g_usb20Speed = SpeedHigh;
 
         // Filling structures "describing" our USB peripheral.
         g_descriptorDevice  = g_descriptorDevice;
         g_descriptorConfig  = g_descriptorConfig;
         g_descriptorStrings = g_descriptorStrings;
 
-        usb20_registers_init(speed);
+        usb20_registers_init(g_usb20Speed);
         return 0;
     case BbioDisconnect:
         /* Not implemented yet */
