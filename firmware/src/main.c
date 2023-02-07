@@ -24,15 +24,12 @@
 #include "usb20.h"
 
 
-// TODOOO: Add Halt support for endpoints (get_status()).
 // TODOOO: Prefix all global Variables with g_
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
-// TODOO: Add debgu over UART. Still useful ?
 // TODOO: Add doxygen for every function.
 // TODO: Homogenize var name to camelCase.
 // TODO: Homogenize var comments.
 // TODO: Add defaults to switches.
-// TODO: Add idle state.
 
 /* variables */
 static bool g_isHost = false;
