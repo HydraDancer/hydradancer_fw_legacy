@@ -46,6 +46,13 @@ static uint8_t _descrStringIndex = 0;
 static uint16_t _descrSize       = 0;
 
 /* functions implementation */
+
+/* @fn      bbio_command_decode
+ *
+ * @brief   Store the commands for the next call to bbio_command_handle
+ *
+ * @return  0 if Success, an error code else
+ */
 uint8_t
 bbio_command_decode(uint8_t *command)
 {
@@ -94,6 +101,13 @@ bbio_command_decode(uint8_t *command)
     return 0;
 }
 
+/* @fn      bbio_command_handle
+ *
+ * @brief   Treat the command received at the previous call of
+ *          bbio_command_decode
+ *
+ * @return  0 if Success, an error code else
+ */
 uint8_t
 bbio_command_handle(uint8_t *bufferData)
 {
@@ -106,10 +120,10 @@ bbio_command_handle(uint8_t *bufferData)
         /* Not implemented yet */
         return 2;
     case BbioSetDescr:
-        bbio_sub_command_handle(bufferData);
+        bbio_command_set_descriptor_handle(bufferData);
         return 0;
     case BbioSetEndp:
-        bbio_command_endpoints_handle(bufferData);
+        bbio_command_set_endpoints_handle(bufferData);
         return 0;
     case BbioConnect:
         g_descriptorConfigCustomSize = g_bbioDescriptorConfigurationSize;
@@ -131,8 +145,14 @@ bbio_command_handle(uint8_t *bufferData)
     }
 }
 
+/* @fn      bbio_command_set_descriptor_handle
+ *
+ * @brief   Set the descriptor received
+ *
+ * @return  0 if Success, an error code else
+ */
 uint8_t
-bbio_sub_command_handle(uint8_t *bufferData)
+bbio_command_set_descriptor_handle(uint8_t *bufferData)
 {
     // Safeguards
     if (_descriptorsStoreCursor + _descrSize > _descriptorsStore + _DESCRIPTOR_STORE_SIZE) {
@@ -169,21 +189,27 @@ bbio_sub_command_handle(uint8_t *bufferData)
     return 0;
 }
 
-// This function will enable endpoints with the right mode
-// (isochronous/bulk/interrupt)
-// The data is encoded in 1 byte :
-// 0b00yy Xxxx
-// yy correspond to the mode : (Not used as of now)
-// 01: isochronous
-// 10: bulk
-// 11: interrupt
-//
-// Xxxx correspond to the endpoint number
-// X: 0 for OUT, 1 for IN
-// xxx: the endpoint number (from 1 to 7)
+/* @fn      bbio_command_set_endpoints_handle
+ *
+ * @brief   Set the descriptor received
+ *
+ * @return  0 if Success, an error code else
+ */
 uint8_t
-bbio_command_endpoints_handle(uint8_t *bufferEndpoints)
+bbio_command_set_endpoints_handle(uint8_t *bufferEndpoints)
 {
+    // This function will enable endpoints with the right mode
+    // (isochronous/bulk/interrupt)
+    // The data is encoded in 1 byte :
+    // 0b00yy Xxxx
+    // yy correspond to the mode : (Not used as of now)
+    // 01: isochronous
+    // 10: bulk
+    // 11: interrupt
+    //
+    // Xxxx correspond to the endpoint number
+    // X: 0 for OUT, 1 for IN
+    // xxx: the endpoint number (from 1 to 7)
     enum Endpoint endpointsIn  = 0;
     enum Endpoint endpointsOut = 0;
 
@@ -247,3 +273,4 @@ bbio_command_endpoints_handle(uint8_t *bufferEndpoints)
 
     return 0;
 }
+

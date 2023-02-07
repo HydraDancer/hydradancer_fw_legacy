@@ -41,27 +41,42 @@ extern uint16_t g_bbioDescriptorsStringSizes[];
 
 
 /* functions declaration */
-void bbio_command_decode(uint8_t *command);
 
+/*******************************************************************************
+ * Function Name  : bbio_command_decode
+ * Description    : Store the commands for the next call to bbio_command_handle
+ * Input          : Array containing the commands to decode, see bbio specs for
+ *                  more details
+ * Return         : 0 if success, else an error code
+ *******************************************************************************/
+uint8_t bbio_command_decode(uint8_t *command);
 
-// Return 0 if success, 1 else
+/*******************************************************************************
+ * Function Name  : bbio_command_handle
+ * Description    : Treat the command received at the previous call of
+ *                  bbio_command_decode
+ * Input          : Array containing the datas associated to the previous
+ *                  command
+ * Return         : 0 if success, else an error code
+ *******************************************************************************/
 uint8_t bbio_command_handle(uint8_t *bufferData);
 
-void bbio_sub_command_handle(uint8_t *bufferData);
+/*******************************************************************************
+ * Function Name  : bbio_command_set_descr_handle
+ * Description    : Set the descriptor requested by the previous command
+ * Input          : Array containing the descriptor to set
+ * Return         : 0 if success, else an error code
+ *******************************************************************************/
+uint8_t bbio_command_set_descriptor_handle(uint8_t *bufferData);
 
-// This function will enable endpoints with the right mode
-// (isochronous/bulk/interrupt)
-// The data is encoded in 1 byte :
-// 0b00yy Xxxx
-// yy correspond to the mode :
-// 01: isochronous
-// 10: bulk
-// 11: interrupt
-//
-// Xxxx correspond to the endpoint number
-// X: 0 for OUT, 1 for IN
-// xxx: the endpoint number (from 1 to 7)
-void bbio_command_endpoints_handle(uint8_t *bufferEndpoints);
+/*******************************************************************************
+ * Function Name  : bbio_command_set_endpoints_handle
+ * Description    : Set the endpoints requested by the previous command
+ * Input          : Array containing the endpoints to set
+ * Return         : 0 if success, else an error code
+ *******************************************************************************/
+uint8_t bbio_command_set_endpoints_handle(uint8_t *bufferEndpoints);
+
 
 #endif /* BBIO_H */
 
