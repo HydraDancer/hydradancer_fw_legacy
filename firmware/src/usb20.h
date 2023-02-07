@@ -11,9 +11,9 @@
 
 /* macros */
 #define U20_MAXPACKET_LEN (512)                                                                     
-#define U20_UEP0_MAXSIZE  (64)  // Change accordingly to USB mode (Here HS).
-#define U20_UEP1_MAXSIZE  (512) // Change accordingly to USB mode (Here HS).
-#define U20_UEP7_MAXSIZE  (512) // Change accordingly to USB mode (Here HS).
+#define U20_UEP0_MAXSIZE  (64)  // Change accordingly to USB mode (Here HS)
+#define U20_UEP1_MAXSIZE  (512) // Change accordingly to USB mode (Here HS)
+#define U20_UEP7_MAXSIZE  (512) // Change accordingly to USB mode (Here HS)
 #define UsbSetupBuf       ((PUSB_SETUP)endp0RTbuff)                                                 
 
 /* enums */
@@ -45,21 +45,21 @@ extern uint16_t sizeEndp7LoggingBuff;
 extern const uint16_t capacityEndp7LoggingBuff;
 extern uint8_t *endp7LoggingBuff;
 
-extern uint8_t endp0RTbuff[]; // Endpoint 0 data transceiver buffer.
-extern uint8_t endp1Rbuff[];  // Endpoint 1 data receiver buffer.
-extern uint8_t endp1Tbuff[];  // Endpoint 1 data transmitter buffer.
-extern uint8_t endp2Rbuff[];  // Endpoint 2 data receiver buffer.
-extern uint8_t endp2Tbuff[];  // Endpoint 2 data transmitter buffer.
-extern uint8_t endp3Rbuff[];  // Endpoint 3 data receiver buffer.
-extern uint8_t endp3Tbuff[];  // Endpoint 3 data transmitter buffer.
-extern uint8_t endp4Rbuff[];  // Endpoint 4 data receiver buffer.
-extern uint8_t endp4Tbuff[];  // Endpoint 4 data transmitter buffer.
-extern uint8_t endp5Rbuff[];  // Endpoint 5 data receiver buffer.
-extern uint8_t endp5Tbuff[];  // Endpoint 5 data transmitter buffer.
-extern uint8_t endp6Rbuff[];  // Endpoint 6 data receiver buffer.
-extern uint8_t endp6Tbuff[];  // Endpoint 6 data transmitter buffer.
-extern uint8_t endp7Rbuff[];  // Endpoint 7 data receiver buffer.
-extern uint8_t endp7Tbuff[];  // Endpoint 7 data transmitter buffer.
+extern uint8_t endp0RTbuff[]; // Endpoint 0 data transceiver buffer
+extern uint8_t endp1Rbuff[];  // Endpoint 1 data receiver buffer
+extern uint8_t endp1Tbuff[];  // Endpoint 1 data transmitter buffer
+extern uint8_t endp2Rbuff[];  // Endpoint 2 data receiver buffer
+extern uint8_t endp2Tbuff[];  // Endpoint 2 data transmitter buffer
+extern uint8_t endp3Rbuff[];  // Endpoint 3 data receiver buffer
+extern uint8_t endp3Tbuff[];  // Endpoint 3 data transmitter buffer
+extern uint8_t endp4Rbuff[];  // Endpoint 4 data receiver buffer
+extern uint8_t endp4Tbuff[];  // Endpoint 4 data transmitter buffer
+extern uint8_t endp5Rbuff[];  // Endpoint 5 data receiver buffer
+extern uint8_t endp5Tbuff[];  // Endpoint 5 data transmitter buffer
+extern uint8_t endp6Rbuff[];  // Endpoint 6 data receiver buffer
+extern uint8_t endp6Tbuff[];  // Endpoint 6 data transmitter buffer
+extern uint8_t endp7Rbuff[];  // Endpoint 7 data receiver buffer
+extern uint8_t endp7Tbuff[];  // Endpoint 7 data transmitter buffer
 
 /* configuration, allows nested code to access above variables */
 #include "usb20-config.h"

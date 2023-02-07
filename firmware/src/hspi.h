@@ -32,7 +32,7 @@ void hspi_wait_for_tx(uint16_t sizeTransmission);
  * Description    : Get the status of the transmission/reception of the
  *                  transaction
  * Input          : None
- * Return         : 0b0010 if CRC_ERR, 0b0100 if NUM_MIS, 0 else.
+ * Return         : 0b0010 if CRC_ERR, 0b0100 if NUM_MIS, 0 else
  *******************************************************************************/
 uint8_t hspi_get_rtx_status(void);
 

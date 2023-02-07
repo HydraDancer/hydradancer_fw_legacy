@@ -10,11 +10,11 @@ __attribute__((aligned(16))) uint8_t serdesDmaAddr[4096] __attribute__((section(
 /* @fn      serdes_wait_for_tx
  *
  * @brief   Wait the amount of time required to ensure the transmission is
- *          completed and that we can safely send the next one.
+ *          completed and that we can safely send the next one
  *
- * @warning This function assumes the transfer speed is 1.2Gbps.
+ * @warning This function assumes the transfer speed is 1.2Gbps
  *
- * @return  Nothing.
+ * @return  Nothing
  */
 void
 serdes_wait_for_tx(uint16_t sizeTransmission)
@@ -29,8 +29,8 @@ serdes_wait_for_tx(uint16_t sizeTransmission)
     // @endcode
     // Thus we get the following formula for our transmission delay (assuming 2x
     // refers to e_sds_pll_freq):
-    // (sizeTransmission*20) / 1200 = delay in us.
-    // Additionally we add a margin of 20us.
+    // (sizeTransmission*20) / 1200 = delay in us
+    // Additionally we add a margin of 20us
     bsp_wait_us_delay((sizeTransmission*20)/1200 + 20);
 }
 
@@ -45,7 +45,7 @@ serdes_log(const char *fmt, ...)
 {
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
-    // overwritten.
+    // overwritten
     va_list ap;
     // bsp_disable_interrupt();
     va_start(ap, fmt);
@@ -71,7 +71,7 @@ serdes_vlog(const char *fmt, va_list vargs)
 {
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
-    // overwritten.
+    // overwritten
     // bsp_disable_interrupt();
     SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberLog);
 

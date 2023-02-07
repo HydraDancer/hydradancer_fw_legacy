@@ -29,7 +29,7 @@ enum BbioSubCommand {
 
 /* variables */
 
-/* The following global variables are pointers to structures loaded by the user.
+/* The following global variables are pointers to structures loaded by the user
  */
 extern uint8_t *g_bbioDescriptorDevice;
 extern uint8_t *g_bbioDescriptorConfiguration;

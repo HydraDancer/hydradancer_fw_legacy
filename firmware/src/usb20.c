@@ -241,53 +241,53 @@ void
 usb20_endpoint_clear(uint8_t endpointToClear)
 {
     switch (endpointToClear) {
-    case 0x81: /* endpoint 1 IN. */
+    case 0x81: /* endpoint 1 IN */
         R16_UEP1_T_LEN = 0;
         R8_UEP1_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
-    case 0x01: /* endpoint 1 OUT. */
+    case 0x01: /* endpoint 1 OUT */
         R8_UEP1_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
-    case 0x82: /* endpoint 2 IN. */
+    case 0x82: /* endpoint 2 IN */
         R16_UEP2_T_LEN = 0;
         R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
-    case 0x02: /* endpoint 2 OUT. */
+    case 0x02: /* endpoint 2 OUT */
         R8_UEP2_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
-    case 0x83: /* endpoint 3 IN. */
+    case 0x83: /* endpoint 3 IN */
         R16_UEP3_T_LEN = 0;
         R8_UEP3_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
-    case 0x03: /* endpoint 3 OUT. */
+    case 0x03: /* endpoint 3 OUT */
         R8_UEP3_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
-    case 0x84: /* endpoint 4 IN. */
+    case 0x84: /* endpoint 4 IN */
         R16_UEP4_T_LEN = 0;
         R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
-    case 0x04: /* endpoint 4 OUT. */
+    case 0x04: /* endpoint 4 OUT */
         R8_UEP4_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
-    case 0x85: /* endpoint 5 IN. */
+    case 0x85: /* endpoint 5 IN */
         R16_UEP5_T_LEN = 0;
         R8_UEP5_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
-    case 0x05: /* endpoint 5 OUT. */
+    case 0x05: /* endpoint 5 OUT */
         R8_UEP5_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
-    case 0x86: /* endpoint 6 IN. */
+    case 0x86: /* endpoint 6 IN */
         R16_UEP6_T_LEN = 0;
         R8_UEP6_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
-    case 0x06: /* endpoint 6 OUT. */
+    case 0x06: /* endpoint 6 OUT */
         R8_UEP6_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
-    case 0x87: /* endpoint 7 IN. */
+    case 0x87: /* endpoint 7 IN */
         R16_UEP7_T_LEN = 0;
         R8_UEP7_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
-    case 0x07: /* endpoint 7 OUT. */
+    case 0x07: /* endpoint 7 OUT */
         R8_UEP7_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
         break;
     default:
@@ -308,46 +308,46 @@ void
 usb20_endpoint_halt(uint8_t endpointToHalt)
 {
     switch(endpointToHalt) {
-    case 0x81: /* Set endpoint 1 IN STALL. */
+    case 0x81: /* Set endpoint 1 IN STALL */
         R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
         break;
-    case 0x01: /* Set endpoint 1 OUT STALL. */
+    case 0x01: /* Set endpoint 1 OUT STALL */
         R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
-    case 0x82: /* Set endpoint 2 IN STALL. */
+    case 0x82: /* Set endpoint 2 IN STALL */
         R8_UEP2_TX_CTRL = (R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
         break;
-    case 0x02: /* Set endpoint 2 OUT STALL. */
+    case 0x02: /* Set endpoint 2 OUT STALL */
         R8_UEP2_RX_CTRL = (R8_UEP2_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
-    case 0x83: /* Set endpoint 3 IN STALL. */
+    case 0x83: /* Set endpoint 3 IN STALL */
         R8_UEP3_TX_CTRL = (R8_UEP3_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
         break;
-    case 0x03: /* Set endpoint 3 OUT STALL. */
+    case 0x03: /* Set endpoint 3 OUT STALL */
         R8_UEP3_RX_CTRL = (R8_UEP3_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
-    case 0x84: /* Set endpoint 4 IN STALL. */
+    case 0x84: /* Set endpoint 4 IN STALL */
         R8_UEP4_TX_CTRL = (R8_UEP4_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
         break;
-    case 0x04: /* Set endpoint 4 OUT STALL. */
+    case 0x04: /* Set endpoint 4 OUT STALL */
         R8_UEP4_RX_CTRL = (R8_UEP4_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
-    case 0x85: /* Set endpoint 5 IN STALL. */
+    case 0x85: /* Set endpoint 5 IN STALL */
         R8_UEP5_TX_CTRL = (R8_UEP5_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
         break;
-    case 0x05: /* Set endpoint 5 OUT STALL. */
+    case 0x05: /* Set endpoint 5 OUT STALL */
         R8_UEP5_RX_CTRL = (R8_UEP5_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
-    case 0x86: /* Set endpoint 6 IN STALL. */
+    case 0x86: /* Set endpoint 6 IN STALL */
         R8_UEP6_TX_CTRL = (R8_UEP6_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
         break;
-    case 0x06: /* Set endpoint 6 OUT STALL. */
+    case 0x06: /* Set endpoint 6 OUT STALL */
         R8_UEP6_RX_CTRL = (R8_UEP6_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
-    case 0x87: /* Set endpoint 7 IN STALL. */
+    case 0x87: /* Set endpoint 7 IN STALL */
         R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
         break;
-    case 0x07: /* Set endpoint 7 OUT STALL. */
+    case 0x07: /* Set endpoint 7 OUT STALL */
         R8_UEP7_RX_CTRL = (R8_UEP7_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
         break;
     default:
@@ -371,7 +371,7 @@ usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBu
         *pSizeBuffer = ((USB_DEV_DESCR *)g_descriptorDevice)->bLength;
         break;
     case USB_DESCR_TYP_CONFIG:
-        /* The .cfgDescr field is always the first, no matter the union's type.
+        /* The .cfgDescr field is always the first, no matter the union's type
          */
         *pBuffer = g_descriptorConfig;
         // If the descriptor type is custom we can not trust its .wTotalLength
@@ -431,10 +431,10 @@ usb20_ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *p
 
     switch (uisToken) {
     case UIS_TOKEN_OUT:
-        /* Not implemented. */
+        /* Not implemented */
         break;
     case UIS_TOKEN_SOF:
-        /* Not implemented. */
+        /* Not implemented */
         break;
     case UIS_TOKEN_IN:
         bytesToWriteForCurrentTransaction = *pSizeBuffer;
@@ -447,7 +447,7 @@ usb20_ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *p
         }
         break;
     case UIS_TOKEN_SETUP:
-        /* Not implemented. */
+        /* Not implemented */
         break;
     default:
         log_to_evaluator("ERROR: ep0_transceive_and_update() invalid uisToken");
@@ -456,7 +456,7 @@ usb20_ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *p
 
     *pSizeBuffer -= bytesToWriteForCurrentTransaction;
 
-    if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction. */
+    if (bytesToWriteForCurrentTransaction == 0) {    /* If it was the last transaction */
         *pBuffer = NULL;
 
         R16_UEP0_T_LEN = 0;
@@ -499,7 +499,7 @@ usb20_ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSi
             R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
 
             *pSizeBuffer -= sizeCurrentTransaction;
-            *(uint32_t *)pBuffer += U20_UEP7_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value. */
+            *(uint32_t *)pBuffer += U20_UEP7_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value */
         } else {
             *pBuffer = bufferResetValue;
 
@@ -525,7 +525,7 @@ usb20_log(const char *fmt, ...)
 {
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
-    // overwritten.
+    // overwritten
     va_list ap;
     bsp_disable_interrupt();
     va_start(ap, fmt);
@@ -552,7 +552,7 @@ usb20_vlog(const char *fmt, va_list vargs)
 {
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
-    // overwritten.
+    // overwritten
     bsp_disable_interrupt();
     uint16_t sizeLeft = capacityEndp7LoggingBuff - sizeEndp7LoggingBuff;
     

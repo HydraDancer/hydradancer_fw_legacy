@@ -7,7 +7,7 @@
 /*******************************************************************************
  * @fn      epX_transceive_and_update
  *
- * @brief   Template for endpoint handler.
+ * @brief   Template for endpoint handler
  *          To use copy and paste it bellow, rename the following "variables":
  *          - R16_UEP0_T_LEN to R16_UEPx_T_LEN where x = desired endpoint
  *          - R8_UEP0_TX_CTRL to R8_UEPx_TX_CTRL where x = desired endpoint
@@ -16,11 +16,11 @@
  *            for a packet on this endpoint
  *          You also need to rename this function (replace X with the endpoint
  *          number desired) and add it to USBHS_IRQHandler in IF_TRANSFER (see
- *          ep1_transceive_and_update() as an example).
+ *          ep1_transceive_and_update() as an example)
  *
  *          The parameters can be changed, but using a temporary buffer with a
  *          "cursor" can be useful when dealing with a message longer than one
- *          transaction.
+ *          transaction
  *
  * @warning Handlers for endpoint 0 and 7 are already defined
  *          - Ep0 is used for initialising USB device
@@ -100,7 +100,7 @@ ep1_transmit_keyboard(void)
     static uint8_t i = 0;
     uint8_t modulus = 4;
 
-    /* Keyboard input crafting. */
+    /* Keyboard input crafting */
     uint8_t output[] = { 0x00, 0x00, 0x00, 0x00 };
     if (i%modulus == 0) {
         output[0] = keyboard_payload[i/modulus];

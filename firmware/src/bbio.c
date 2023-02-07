@@ -15,11 +15,11 @@
 /* variables */
 
 /* _descriptorsStore is our "free store", it is a memory pool dedicated to
- * descriptors the user will load.
+ * descriptors the user will load
  * In the future we will have a dedicated memory allocator to manage this free
- * store.
+ * store
  * This free store is always hidden to the user, hence the underscore as a
- * prefix.
+ * prefix
  */
 static uint8_t _descriptorsStore[_DESCRIPTOR_STORE_SIZE];
 static uint8_t *_descriptorsStoreCursor = _descriptorsStore;
@@ -35,10 +35,6 @@ uint16_t g_bbioDescriptorConfigurationSize;
 uint16_t g_bbioDescriptorsStringSizes[_DESCRIPTOR_STRING_CAPACITY];
 
 /* internal variables */
-// Internals variables used to share data between bbio_decode_command and
-// bbio_handle_command
-
-
 static uint8_t _command          = 0;   // 0 : If not set, else the value of the enum BbioCommand
 static uint8_t _subCommand       = 0;   // 0 : If not set, else the value of the enum BbioSubCommand
 static uint8_t _descrStringIndex = 0;
@@ -128,7 +124,7 @@ bbio_command_handle(uint8_t *bufferData)
         g_descriptorConfigCustomSize = g_bbioDescriptorConfigurationSize;
         g_usb20Speed = SpeedHigh;
 
-        // Filling structures "describing" our USB peripheral.
+        // Filling structures "describing" our USB peripheral
         g_descriptorDevice  = g_descriptorDevice;
         g_descriptorConfig  = g_descriptorConfig;
         g_descriptorStrings = g_descriptorStrings;
