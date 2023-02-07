@@ -9,11 +9,11 @@ __attribute__((aligned(16))) uint8_t hspiDmaAddr1[4096] __attribute__((section("
 /* @fn      hspi_wait_for_tx
  *
  * @brief   Wait the amount of time required to ensure the transmission is
- *          completed and that we can safely send the next one.
+ *          completed and that we can safely send the next one
  *
- * @warning This function assumes the transfer speed is 1.2Gbps.
+ * @warning This function assumes the transfer speed is 1.2Gbps
  *
- * @return  Nothing.
+ * @return  Nothing
  */
 void
 hspi_wait_for_tx(uint16_t sizeTransmission)
@@ -27,9 +27,9 @@ hspi_wait_for_tx(uint16_t sizeTransmission)
 
 /* @fn      hspi_get_rtx_status
  *
- * @brief   Get the status of the transmission/reception of the HSPI Transaction.
+ * @brief   Get the status of the transmission/reception of the HSPI Transaction
  *
- * @return  Return 0b0010 if CRC_ERR, 0b0100 if NUM_MIS, 0 else.
+ * @return  Return 0b0010 if CRC_ERR, 0b0100 if NUM_MIS, 0 else
  */
 uint8_t
 hspi_get_rtx_status(void)
@@ -40,10 +40,10 @@ hspi_get_rtx_status(void)
 /* @fn      hspi_get_buffer_next_tx
  *
  * @brief   Get the buffer that will be used for the next transmission over
- *          HSPI.
+ *          HSPI
  *
  * @return  Return the buffer that will be used for the next transmission over
- *          HSPI.
+ *          HSPI
  */
 uint8_t *
 hspi_get_buffer_next_tx(void)
@@ -59,15 +59,16 @@ hspi_get_buffer_next_tx(void)
 /* @fn      hspi_get_buffer_tx
  *
  * @brief   Get the buffer that was used for the previous transmission over
- *          HSPI.
+ *          HSPI
  *
  * @return  Return the buffer that was used for the previous transmission over
- *          HSPI. */
+ *          HSPI
+ */
 uint8_t *
 hspi_get_buffer_tx(void)
 {
     // R8_HSPI_TX_SC stores the buffer that will be used for the next
-    // transmission, thus we need to inverse the buffers.
+    // transmission, thus we need to inverse the buffers
     uint8_t *bufferTx = hspiDmaAddr1;
     if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG) {
         bufferTx = hspiDmaAddr0;
@@ -78,10 +79,10 @@ hspi_get_buffer_tx(void)
 
 /* @fn      hspi_get_buffer_next_rx
  *
- * @brief   Get the buffer that will be used for the next reception over HSPI.
+ * @brief   Get the buffer that will be used for the next reception over HSPI
  *
  * @return  Return the buffer that will be used for the next reception over
- *          HSPI.
+ *          HSPI
  */
 uint8_t *
 hspi_get_buffer_next_rx(void)
@@ -96,15 +97,16 @@ hspi_get_buffer_next_rx(void)
 
 /* @fn      hspi_get_buffer_rx
  *
- * @brief   Get the buffer that was used for the previous reception over HSPI.
+ * @brief   Get the buffer that was used for the previous reception over HSPI
  *
  * @return  Return the buffer that was used for the previous reception over
- *          HSPI. */
+ *          HSPI
+ */
 uint8_t *
 hspi_get_buffer_rx(void)
 {
     // R8_HSPI_RX_SC stores the buffer that will be used for the next
-    // reception, thus we need to inverse the buffers.
+    // reception, thus we need to inverse the buffers
     uint8_t *bufferRx = hspiDmaAddr1;
     if (R8_HSPI_RX_SC & RB_HSPI_RX_TOG) {
         bufferRx = hspiDmaAddr0;

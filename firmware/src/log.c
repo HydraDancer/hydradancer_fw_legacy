@@ -16,15 +16,9 @@ log_to_evaluator(const char *fmt, ...)
 
     if (bsp_switch()) {
         // If is top board
-        // TODOO: Use vsnprintf to make 1 string rather than 2 prints to make it
-        // atomic
-        usb_log("[BOARD TOP]    "); // Add prefix for top board
-        usb_vlog(fmt, ap);
+        usb20_vlog(fmt, ap);
     } else {
         // Else is bottom board
-        // TODOO: Use vsnprintf to make 1 string rather than 2 prints to make it
-        // atomic
-        serdes_log("[BOARD BOTTOM] "); // Add prefix for bottom board
         serdes_vlog(fmt, ap);
     }
 

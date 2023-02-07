@@ -16,7 +16,7 @@
 
 /*******************************************************************************
  * Function Name  : epX_transceive_and_update
- * Description    : Template for endpoint handler.
+ * Description    : Template for endpoint handler
  *                  To use copy and paste it bellow, rename the following
  *                  "variables":
  *                  - R16_UEP0_T_LEN to R16_UEPx_T_LEN where x = desired endpoint
@@ -26,7 +26,7 @@
  *                    size for a packet on this endpoint
  *                  You also need to rename this function (replace X with the
  *                  endpoint number desired) and add it to USBHS_IRQHandler in
- *                  IF_TRANSFER (see ep1_transceive_and_update() as an example).
+ *                  IF_TRANSFER (see ep1_transceive_and_update() as an example)
  * Warning        : Handlers for endpoint 0 and 7 are already defined
  *                  - Ep0 is used for initialising USB device
  *                  - ep7 is dedicated to logging
@@ -35,7 +35,7 @@
  *                    the associated size
  *                  The parameters can be changed, but using a temporary buffer
  *                  with a "cursor" can be useful when dealing with a message
- *                  longer than one transaction.
+ *                  longer than one transaction
  * Return         : None
  *******************************************************************************/
 void epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);

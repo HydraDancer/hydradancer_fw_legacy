@@ -24,15 +24,7 @@
 #include "usb20.h"
 
 
-// TODOOO: Add Halt support for endpoints (get_status()).
-// TODOOO: Prefix all global Variables with g_
-// TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
-// TODOO: Add debgu over UART. Still useful ?
-// TODOO: Add doxygen for every function.
-// TODO: Homogenize var name to camelCase.
-// TODO: Homogenize var comments.
-// TODO: Add defaults to switches.
-// TODO: Add idle state.
+// TODOO: Add clock for debug (PFIC_Enable(SysTick) ?)
 
 /* variables */
 static bool g_isHost = false;
@@ -46,7 +38,7 @@ uint8_t *endp1Buff = endp1BuffRaw;
 /*********************************************************************
  * @fn      main
  *
- * @brief   Main program.
+ * @brief   Main program
  *
  * @return  none
  */
@@ -58,42 +50,32 @@ main(void)
     UART1_init(115200, FREQ_SYS);
 
 
-    /* USB Init. */
+    /* USB Init */
     if (bsp_switch()) {
-        speed = SpeedHigh;
-        epInMask  = Ep1Mask | Ep7Mask;
-        epOutMask = Ep1Mask;
+        g_usb20Speed = SpeedHigh;
+        g_usb20EpInMask  = Ep1Mask | Ep7Mask;
+        g_usb20EpOutMask = Ep1Mask;
 
-        // Filling structures "describing" our USB peripheral.
+        // Filling structures "describing" our USB peripheral
         g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
         g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
         g_descriptorStrings = boardTopStringDescriptors;
 
-        U20_registers_init(speed);
-        U20_endpoints_init(epInMask, epOutMask);
+        usb20_registers_init(g_usb20Speed);
+        usb20_endpoints_init(g_usb20EpInMask, g_usb20EpOutMask);
     }
 
-    /* Board sync. */
+    /* Board sync */
     int retCode;
     if (bsp_switch()) {
         g_isHost = true;
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD1);
-
-        // TODO: Investigate
-        // If uncommented this create a "desync" between the board and the
-        // bottom board can not initiate SerDes Tx
-        // if (retCode) {
-        //     log_to_evaluator("Synchronisation done (success)\r\n");
-        // } else {
-        //     log_to_evaluator("Synchronisation error(timeout)\r\n");
-        // }
-
     } else {
         g_isHost = false;
         retCode = bsp_sync2boards(PA14, PA12, BSP_BOARD2);
     }
 
-    /* HSPI Init. */
+    /* HSPI Init */
     memset((void *)hspiDmaAddr0, 0, HSPI_DMA_LEN0);
     hspiDmaAddr0[HSPI_DMA_LEN0-1] = 0;
     memset((void *)hspiDmaAddr1, 0, HSPI_DMA_LEN1);
@@ -104,7 +86,7 @@ main(void)
         HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, 0);
     }
 
-    /* SerDes Init. */
+    /* SerDes Init */
     PFIC_EnableIRQ(SERDES_IRQn);
     SerDes_EnableIT(ALL_INT_TYPE);
     if (g_isHost) {
@@ -126,8 +108,8 @@ main(void)
         log_to_evaluator("Init all done!\r\n");
         while (1) {
             // BBIO commands are passed directly to the bottom board,
-            // There is no logic in the top board.
-            // See ep1_transceive_and_update_host()
+            // There is no logic in the top board
+            // See usb20_ep1_transceive_and_update_host()
         }
     } else {
         log_to_evaluator("Init all done!\r\n");
@@ -145,7 +127,7 @@ main(void)
 /*******************************************************************************
  * @fn     SERDES_IRQHandler
  *
- * @brief  SERDES Interrupt Handler.
+ * @brief  SERDES Interrupt Handler
  *
  * @return None
  */
@@ -157,7 +139,7 @@ SERDES_IRQHandler(void)
     case SDS_PHY_RDY_FLG:
         SerDes_ClearIT(SDS_PHY_RDY_FLG);
         break;
-    // SDS_TX_INT_FLG == SDS_RX_ERR_FLG, depend if it is Tx or Rx.
+    // SDS_TX_INT_FLG == SDS_RX_ERR_FLG, depend if it is Tx or Rx
     case SDS_TX_INT_FLG:
         SerDes_ClearIT(SDS_TX_INT_FLG);
         break;
@@ -176,6 +158,9 @@ SERDES_IRQHandler(void)
             }
             break;
         case SerdesMagicNumberRetCode:
+            break;
+        default:
+            log_to_evaluator("ERROR: SERDES_IRQHandler() unknown magic number\r\n");
             break;
         }
 
@@ -197,7 +182,7 @@ SERDES_IRQHandler(void)
 /*******************************************************************************
  * @fn     HSPI_IRQHandler
  *
- * @brief  HSPI Interrupt Handler.
+ * @brief  HSPI Interrupt Handler
  *
  * @return None
  */
@@ -263,7 +248,7 @@ HSPI_IRQHandler(void)
 /*******************************************************************************
  * @fn     USBHS_IRQHandler
  *
- * @brief  USB2.0 Interrupt Handler.
+ * @brief  USB2.0 Interrupt Handler
  *
  * @return None
  */
@@ -278,14 +263,14 @@ USBHS_IRQHandler(void)
     static vuint16_t SetupReqLen = 0;
 
     if (R8_USB_INT_FG & RB_USB_IF_ISOACT) {
-        /* Unused. */
+        /* Unused */
         R8_USB_INT_FG = RB_USB_IF_ISOACT;
-    } else if (R8_USB_INT_FG & RB_USB_IF_SETUOACT) { // Setup interrupt.
+    } else if (R8_USB_INT_FG & RB_USB_IF_SETUOACT) { // Setup interrupt
         SetupReqType = UsbSetupBuf->bRequestType;
         SetupReq = UsbSetupBuf->bRequest;
         SetupReqLen = UsbSetupBuf->wLength;
 
-        /* If bRequest != 0 it is a non standard request, thus not covered  by the spec. */
+        /* If bRequest != 0 it is a non standard request, thus not covered  by the spec */
         if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD) {
             return;
         }
@@ -296,18 +281,18 @@ USBHS_IRQHandler(void)
             endp0RTbuff[1] = 0x00;
             bytesToWrite = 2;
 
-            // Here should be the handling of the halt endpoint's command.
+            // Here should be the handling of the halt endpoint's command
             break;
         case USB_CLEAR_FEATURE:
             switch (SetupReqType & USB_REQ_RECIP_MASK) {
             case USB_REQ_RECIP_DEVICE:
-                /* Not implemented. */
+                /* Not implemented */
                 break;
             case USB_REQ_RECIP_INTERF:
-                /* Not implemented. */
+                /* Not implemented */
                 break;
             case USB_REQ_RECIP_ENDP:
-                endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
+                usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
                 break;
             default:
                 log_to_evaluator("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
@@ -317,17 +302,17 @@ USBHS_IRQHandler(void)
         case USB_SET_FEATURE:
             switch (SetupReqType & USB_REQ_RECIP_MASK) {
             case USB_REQ_RECIP_DEVICE:
-                /* Not implemented. */
+                /* Not implemented */
                 log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
                 break;
             case USB_REQ_RECIP_INTERF:
-                /* Not implemented. */
+                /* Not implemented */
                 log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
                 break;
             case USB_REQ_RECIP_ENDP:
                 switch (UsbSetupBuf->wValue.w) {
                 case 0x0000: /* ENDPOINT_HALT */
-                    endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
+                    usb20_endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
                     break;
                 default:
                     log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
@@ -341,21 +326,21 @@ USBHS_IRQHandler(void)
             break;
         case USB_SET_ADDRESS:
             // NOTE: Address should not be set in this transaction but rather in the
-            // following one (RB_USB_IF_TRANSFER IN).
+            // following one (RB_USB_IF_TRANSFER IN)
             break;
         case USB_GET_DESCRIPTOR:
-            fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
+            usb20_fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
             break;
         case USB_SET_DESCRIPTOR:
-            /* Unused. */
+            /* Unused */
             break;
         case USB_GET_CONFIGURATION:
-            /* We have only one configuration, hardcoded for now. */
+            /* We have only one configuration, hardcoded for now */
             endp0RTbuff[0] = 1;
             bytesToWrite = 1;
             break;
         case USB_SET_CONFIGURATION:
-            /* As of now there is only one configuration. */
+            /* As of now there is only one configuration */
             break;
         case USB_GET_INTERFACE:
             /* We have only one interface, hardcoded for now */
@@ -363,7 +348,7 @@ USBHS_IRQHandler(void)
             bytesToWrite = 1;
             break;
         case USB_SET_INTERFACE:
-            /* As of now there is only one interface. */
+            /* As of now there is only one interface */
             break;
         case USB_SYNCH_FRAME:
             break;
@@ -379,15 +364,17 @@ USBHS_IRQHandler(void)
         if (SetupReqType & 0x80) {
             uisToken = UIS_TOKEN_IN;
         }
-        ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
-        /* Packet type must cycle between DATA0 and DATA1. The request (the
-         * first packet) is DATA0, thus the next packet must be DATA1 and so on.
-         * So here the first packet is forced to 1. */
+        usb20_ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
+        /* Packet type must cycle between DATA0 and DATA1
+         * The request (the first packet) is DATA0, thus the next packet must be
+         * DATA1 and so on
+         * So here the first packet is forced to 1
+         */
         R8_UEP0_TX_CTRL |= RB_UEP_T_TOG_1;
 
         R8_USB_INT_FG = RB_USB_IF_SETUOACT;
     } else if (R8_USB_INT_FG & RB_USB_IF_FIFOOV) {
-        /* Unused. */
+        /* Unused */
         R8_USB_INT_FG = RB_USB_IF_FIFOOV;
     } else if (R8_USB_INT_FG & RB_USB_IF_SUSPEND) {
         R8_USB_INT_FG = RB_USB_IF_SUSPEND;
@@ -405,7 +392,7 @@ USBHS_IRQHandler(void)
                 R8_UEP0_TX_CTRL = 0;
                 R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
             } else {
-                ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
+                usb20_ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
             }
             break;
         case 1:
@@ -416,14 +403,17 @@ USBHS_IRQHandler(void)
             }
             break;
         case 7:
-            ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
+            usb20_ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
+            break;
+        default:
+            log_to_evaluator("ERROR: USBHS_IRQHandler() endpoint requested (%d) has no handler associated\r\n", endpNum);
             break;
         }
 
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag
     } else if (R8_USB_INT_FG & RB_USB_IF_BUSRST) {
-        U20_registers_init(speed);
-        U20_endpoints_init(epInMask, epOutMask);
+        usb20_registers_init(g_usb20Speed);
+        usb20_endpoints_init(g_usb20EpInMask, g_usb20EpOutMask);
 
         R8_USB_INT_FG = RB_USB_IF_BUSRST;
     }
