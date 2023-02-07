@@ -25,9 +25,7 @@
 
 
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?).
-// TODO: Homogenize var name to camelCase.
 // TODO: Homogenize var comments.
-// TODO: Add defaults to switches.
 
 /* variables */
 static bool g_isHost = false;
@@ -161,6 +159,9 @@ SERDES_IRQHandler(void)
             }
             break;
         case SerdesMagicNumberRetCode:
+            break;
+        default:
+            log_to_evaluator("ERROR: SERDES_IRQHandler() unknown magic number\r\n");
             break;
         }
 
@@ -402,6 +403,9 @@ USBHS_IRQHandler(void)
             break;
         case 7:
             usb20_ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
+            break;
+        default:
+            log_to_evaluator("ERROR: USBHS_IRQHandler() endpoint requested (%d) has no handler associated\r\n", endpNum);
             break;
         }
 
