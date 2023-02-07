@@ -191,3 +191,44 @@ ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *
     }
 }
 
+/* @fn      ep7_transmit_and_update
+ *
+ * @brief   Handle the "command" on endpoint 7 (transmit debug) and update the
+ *          buffer accordingly
+ *
+ * @return  None
+ */
+void
+ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer != 0x0000) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP7_MAXSIZE);
+            memcpy(endp7Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP7_T_LEN = sizeCurrentTransaction;
+            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)pBuffer += U20_UEP7_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            R16_UEP7_T_LEN = 0;
+            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        }
+        break;
+        default:
+            log_to_evaluator("ERROR: ep7_transmit_and_update default!");
+            break;
+    }
+}
+

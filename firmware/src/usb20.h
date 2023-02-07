@@ -124,17 +124,6 @@ void usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t 
 void usb20_ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep7_transmit_and_update
- * Description    : Handle the "command" on endpoint 7 (transmit debug) and
- *                  update the buffer accordingly
- * Input          : - uisToken is the bmRequestType field of the Setup Packet
- *                  - pBuffer and pSizeBuffer are the buffer to transceive and
- *                    the associated size
- * Return         : None
- *******************************************************************************/
-void usb20_ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
-
-/*******************************************************************************
  * Function Name  : usb_log
  * Description    : Function used to log data to the Host computer over USB
  * Input          : Variadic function, same arguments as you would give to
