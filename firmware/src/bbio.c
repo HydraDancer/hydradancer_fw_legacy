@@ -133,7 +133,7 @@ bbio_command_handle(uint8_t *bufferData)
         g_descriptorConfig  = g_descriptorConfig;
         g_descriptorStrings = g_descriptorStrings;
 
-        U20_registers_init(speed);
+        usb20_registers_init(speed);
         return 0;
     case BbioDisconnect:
         /* Not implemented yet */
@@ -267,7 +267,7 @@ bbio_command_set_endpoints_handle(uint8_t *bufferEndpoints)
         ++bufferEndpoints;
     }
 
-    U20_endpoints_init(endpointsIn, endpointsOut);
+    usb20_endpoints_init(endpointsIn, endpointsOut);
 
     return 0;
 }

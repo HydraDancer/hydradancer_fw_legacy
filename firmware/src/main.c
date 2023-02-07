@@ -69,8 +69,8 @@ main(void)
         g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;
         g_descriptorStrings = boardTopStringDescriptors;
 
-        U20_registers_init(speed);
-        U20_endpoints_init(epInMask, epOutMask);
+        usb20_registers_init(speed);
+        usb20_endpoints_init(epInMask, epOutMask);
     }
 
     /* Board sync. */
@@ -127,7 +127,7 @@ main(void)
         while (1) {
             // BBIO commands are passed directly to the bottom board,
             // There is no logic in the top board.
-            // See ep1_transceive_and_update_host()
+            // See usb20_ep1_transceive_and_update_host()
         }
     } else {
         log_to_evaluator("Init all done!\r\n");
@@ -307,7 +307,7 @@ USBHS_IRQHandler(void)
                 /* Not implemented. */
                 break;
             case USB_REQ_RECIP_ENDP:
-                endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
+                usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
                 break;
             default:
                 log_to_evaluator("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
@@ -327,7 +327,7 @@ USBHS_IRQHandler(void)
             case USB_REQ_RECIP_ENDP:
                 switch (UsbSetupBuf->wValue.w) {
                 case 0x0000: /* ENDPOINT_HALT */
-                    endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
+                    usb20_endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
                     break;
                 default:
                     log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
@@ -344,7 +344,7 @@ USBHS_IRQHandler(void)
             // following one (RB_USB_IF_TRANSFER IN).
             break;
         case USB_GET_DESCRIPTOR:
-            fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
+            usb20_fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
             break;
         case USB_SET_DESCRIPTOR:
             /* Unused. */
@@ -379,7 +379,7 @@ USBHS_IRQHandler(void)
         if (SetupReqType & 0x80) {
             uisToken = UIS_TOKEN_IN;
         }
-        ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
+        usb20_ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
         /* Packet type must cycle between DATA0 and DATA1. The request (the
          * first packet) is DATA0, thus the next packet must be DATA1 and so on.
          * So here the first packet is forced to 1. */
@@ -405,7 +405,7 @@ USBHS_IRQHandler(void)
                 R8_UEP0_TX_CTRL = 0;
                 R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
             } else {
-                ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
+                usb20_ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
             }
             break;
         case 1:
@@ -416,14 +416,14 @@ USBHS_IRQHandler(void)
             }
             break;
         case 7:
-            ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
+            usb20_ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
             break;
         }
 
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag
     } else if (R8_USB_INT_FG & RB_USB_IF_BUSRST) {
-        U20_registers_init(speed);
-        U20_endpoints_init(epInMask, epOutMask);
+        usb20_registers_init(speed);
+        usb20_endpoints_init(epInMask, epOutMask);
 
         R8_USB_INT_FG = RB_USB_IF_BUSRST;
     }

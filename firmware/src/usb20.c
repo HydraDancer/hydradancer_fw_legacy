@@ -5,7 +5,6 @@
 
 #include "usb20.h"
 
-// TODO: Prefix all functions name with usb20_
 
 /* variables */
 //
@@ -48,7 +47,7 @@ __attribute__((aligned(16))) uint8_t endp7Tbuff[4096] __attribute__((section(".D
  * @return  Return the length of an array of pointers
  */
 static uint8_t
-array_addr_len(void **array)
+_array_addr_len(void **array)
 {
     for (uint8_t i = 0;; ++i) {
         if (array[i] == NULL) {
@@ -57,14 +56,14 @@ array_addr_len(void **array)
     }
 }
 
-/* @fn      U20_registers_init
+/* @fn      usb20_registers_init
  *
  * @brief   Initialise registers and enable interrupt related to USB 2.0
  *
  * @return  None
  */
 void
-U20_registers_init(enum Speed sp)
+usb20_registers_init(enum Speed sp)
 {
     R32_USB_CONTROL = 0;
     PFIC_EnableIRQ(USBHS_IRQn);
@@ -83,7 +82,7 @@ U20_registers_init(enum Speed sp)
                     | RB_USB_IE_SUSPEND | RB_USB_IE_TRANS | RB_USB_IE_BUSRST;
 }
 
-/* @fn      U20_endpoints_init
+/* @fn      usb20_endpoints_init
  *
  * @brief   Initialise registers and buffers for endpoints, by default none of
  *          them is enabled (except ep0)
@@ -91,7 +90,7 @@ U20_registers_init(enum Speed sp)
  * @return  None
  */
 void
-U20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask)
+usb20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask)
 {
     R8_UEP4_1_MOD = 0;
     R8_UEP2_3_MOD = 0;
@@ -228,7 +227,7 @@ U20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask
     }
 }
 
-/* @fn      endpoint_clear
+/* @fn      usb20_endpoint_clear
  *
  * @brief   Reset the given endpoint
  *
@@ -239,7 +238,7 @@ U20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask
  * @return  None
  */
 void
-endpoint_clear(uint8_t endpointToClear)
+usb20_endpoint_clear(uint8_t endpointToClear)
 {
     switch (endpointToClear) {
     case 0x81: /* endpoint 1 IN. */
@@ -297,7 +296,7 @@ endpoint_clear(uint8_t endpointToClear)
     }
 }
 
-/* @fn      endpoint_halt
+/* @fn      usb20_endpoint_halt
  *
  * @brief   Halt the given endpoint
  *
@@ -306,7 +305,7 @@ endpoint_clear(uint8_t endpointToClear)
  * @return  None
  */
 void
-endpoint_halt(uint8_t endpointToHalt)
+usb20_endpoint_halt(uint8_t endpointToHalt)
 {
     switch(endpointToHalt) {
     case 0x81: /* Set endpoint 1 IN STALL. */
@@ -357,14 +356,14 @@ endpoint_halt(uint8_t endpointToHalt)
     }
 }
 
-/* @fn      fill_buffer_with_descriptor
+/* @fn      usb20_fill_buffer_with_descriptor
  *
  * @brief   Fill the given buffer with the requested descriptor
  *
  * @return  None
  */
 void
-fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
     switch(descritorRequested.bw.bb0) {
     case USB_DESCR_TYP_DEVICE:
@@ -385,7 +384,7 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
         break;
     case USB_DESCR_TYP_STRING: {
         uint8_t i = descritorRequested.bw.bb1;
-        if (i >= 0 && i < array_addr_len((void **)g_descriptorStrings)) {
+        if (i >= 0 && i < _array_addr_len((void **)g_descriptorStrings)) {
             *pBuffer = g_descriptorStrings[i];
             *pSizeBuffer = g_descriptorStrings[i][0];
         }
@@ -418,7 +417,7 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
     }
 }
 
-/* @fn      ep0_transceive_and_update
+/* @fn      usb20_ep0_transceive_and_update
  *
  * @brief   Handle the "command" on endpoint 0 (mainly receive/transmit) and 
  *          update the buffer accordingly
@@ -426,7 +425,7 @@ fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, 
  * @return  None
  */
 void
-ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+usb20_ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
     uint16_t bytesToWriteForCurrentTransaction = 0;
 
@@ -474,7 +473,7 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
     }
 }
 
-/* @fn      ep7_transmit_and_update
+/* @fn      usb20_ep7_transmit_and_update
  *
  * @brief   Handle the "command" on endpoint 7 (transmit debug) and update the
  *          buffer accordingly
@@ -482,7 +481,7 @@ ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
  * @return  None
  */
 void
-ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+usb20_ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
 {
     static uint8_t *bufferResetValue = NULL;
     if (bufferResetValue == NULL) {
@@ -515,14 +514,14 @@ ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuff
     }
 }
 
-/* @fn      usb_log
+/* @fn      usb20_log
  *
  * @brief   Function used to log data to the Host computer over USB
  *
  * @return  None
  */
 void
-usb_log(const char *fmt, ...)
+usb20_log(const char *fmt, ...)
 {
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
@@ -541,7 +540,7 @@ usb_log(const char *fmt, ...)
     sizeEndp7LoggingBuff += bytesWritten;
     bsp_enable_interrupt();
 }
-/* @fn      usb_vlog
+/* @fn      usb20_vlog
  *
  * @brief   Function used to log data to the Host computer over USB, takes a
  *          va_list as second argument
@@ -549,7 +548,7 @@ usb_log(const char *fmt, ...)
  * @return  None
  */
 void
-usb_vlog(const char *fmt, va_list vargs)
+usb20_vlog(const char *fmt, va_list vargs)
 {
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
@@ -622,3 +621,4 @@ usb20_descriptor_set(const uint8_t *newDescriptor)
     log_to_evaluator("targetSize: %d, bLength: %d\r\n", targetSize, bLength);
     memcpy(pTargetDescr, newDescriptor, min(targetSize, bLength));
 }
+

@@ -16,7 +16,7 @@ log_to_evaluator(const char *fmt, ...)
 
     if (bsp_switch()) {
         // If is top board
-        usb_vlog(fmt, ap);
+        usb20_vlog(fmt, ap);
     } else {
         // Else is bottom board
         serdes_vlog(fmt, ap);
