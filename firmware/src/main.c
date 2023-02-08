@@ -158,6 +158,19 @@ SERDES_IRQHandler(void)
             }
             break;
         case SerdesMagicNumberRetCode:
+            // Handle the return code received from bbio_*()
+
+            /* As mentionned in HSPI_IRQHandler(), if the transaction is
+             * faulted, we set the bit 0x80
+             */
+            if (SerDes_StatusIT() & SDS_RX_ERR_FLG) {
+                serdesDmaAddr ^= 0x80;
+            }
+
+            // fill ep1 with bbio return code
+
+            // re enable ack for ep1 IN
+
             break;
         default:
             log_to_evaluator("ERROR: SERDES_IRQHandler() unknown magic number\r\n");
@@ -194,6 +207,7 @@ HSPI_IRQHandler(void)
     // 2) Datas associated to the instruction previously received
     // Thus the following static var is used to track which part we are in
     static uint8_t currentStep = 0;
+    uint8_t bbioRetCode = 0;
 
     uint8_t hspiRtxStatus;
     uint8_t *hspiRxBuffer;
@@ -217,20 +231,33 @@ HSPI_IRQHandler(void)
         log_to_evaluator("Received HSPI\r\n");
 
         if (currentStep == 0) {
-            bbio_command_decode(hspiRxBuffer);
+            bbioRetCode = bbio_command_decode(hspiRxBuffer);
 
             // Epilog
             currentStep ^= 1;
         } else if (currentStep == 1) {
-            bbio_command_handle(hspiRxBuffer);
+            bbioRetCode = bbio_command_handle(hspiRxBuffer);
 
             // Epilog
             currentStep ^= 1;
         } else {
             log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
         }
-
+        // Clear the interrupt before sending the bbioRetCode via SerDes
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
+
+        /* Some documentation about bbioRetCode :
+         * - if 0x80 is set, the SerDes transaction was faulted
+         * - if 0x40 is set, the HSPI transaction was faulted
+         * - 0x0F bits correspond to the return value from bbio_*()
+         */
+        if (hspiRtxStatus) {
+            bbioRetCode ^= 0x40;
+        }
+        serdesDmaAddr[0] = bbioRetCode;
+        SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberRetCode);
+        SerDes_DMA_Tx();
+        SerDes_Wait_Txdone();
         break;
     case RB_HSPI_IF_FIFO_OV:
         R8_HSPI_INT_FLAG = RB_HSPI_IF_FIFO_OV;
@@ -292,7 +319,8 @@ USBHS_IRQHandler(void)
                 /* Not implemented */
                 break;
             case USB_REQ_RECIP_ENDP:
-                usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
+                /* Not implemented */
+                // usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
                 break;
             default:
                 log_to_evaluator("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
@@ -397,6 +425,10 @@ USBHS_IRQHandler(void)
             break;
         case 1:
             if (g_isHost) {
+                /* We NAK IN transactions until we receive the return value
+                 * from bbio_*()
+                 */
+                usb20_endpoint_nak(0x81);
                 ep1_transceive_and_update_host(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
             } else {
                 ep1_transceive_and_update_target(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
