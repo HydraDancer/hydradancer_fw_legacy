@@ -41,6 +41,7 @@ struct __PACKED DescriptorConfigComplete_t {
     USB_ITF_DESCR itfDescr;
     USB_ENDP_DESCR endpDescr1In;
     USB_ENDP_DESCR endpDescr1Out;
+    USB_ENDP_DESCR endpDescr6Out;
     USB_ENDP_DESCR endpDescr7Out;
 };
 
@@ -60,7 +61,7 @@ static struct DescriptorConfigComplete_t stBoardTopConfigurationDescriptor = {
         .bDescriptorType = USB_DESCR_TYP_INTERF,
         .bInterfaceNumber = 0,
         .bAlternateSetting = 0,
-        .bNumEndpoints = 3,
+        .bNumEndpoints = 4,
         .bInterfaceClass = USB_DEV_CLASS_VEN_SPEC,
         .bInterfaceSubClass = 0xff,
         .bInterfaceProtocol = 0xff,
@@ -79,6 +80,15 @@ static struct DescriptorConfigComplete_t stBoardTopConfigurationDescriptor = {
         .bLength = sizeof(USB_ENDP_DESCR),
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x01,               /* In endpoint (MSB set to 1) */
+        .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type */
+        .wMaxPacketSizeL = 0,                   /* Packet size as defined by the spec for USB HS */
+        .wMaxPacketSizeH = 0x02,                /* Here 512 bytes */
+        .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0 */
+    },
+    .endpDescr6Out = {
+        .bLength = sizeof(USB_ENDP_DESCR),
+        .bDescriptorType = USB_DESCR_TYP_ENDP,
+        .bEndpointAddress = 0x86,               /* In endpoint (MSB set to 1) */
         .bmAttributes = USB_ENDP_TYPE_BULK,     /* Transfer type */
         .wMaxPacketSizeL = 0,                   /* Packet size as defined by the spec for USB HS */
         .wMaxPacketSizeH = 0x02,                /* Here 512 bytes */
