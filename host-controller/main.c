@@ -51,7 +51,7 @@ int usb_init_verbose(void);
 void usb_close(void);
 void menu_print(void);
 int menu_get_input(void);
-void usb_log_print(unsigned char *buffer, int capBuffer);
+void usb_log_print(char endpoint, unsigned char *buffer, int capBuffer);
 void usb_bulk_rot13(unsigned char *buffer, int capBuffer);
 
 
@@ -172,30 +172,16 @@ menu_get_input(void)
 /*******************************************************************************
  * @fn      usb_log_print
  *
- * @brief   Query the endpoint dedicated to log and print received log
+ * @brief   Query the given endpoint for logs and print received logs
  *
  * @return  None
  */
 void
-usb_log_print(unsigned char *buffer, int capBuffer)
+usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
 {
     int retCode;
 
-    // Retrieve top board log
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP_DEBUG_BOARD_TOP, buffer, capBuffer, NULL, 0);
-    buffer[capBuffer-1] = 0; // Force null terminating the string
-    if (retCode == 0) {
-        // If we received something
-        if (buffer[0] != 0) {
-            printf("%s", buffer);
-        }
-    } else {
-        printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
-    }
-    memset(buffer, 0, capBuffer);
-
-    // Retrieve bottom board log
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer, NULL, 0);
+    retCode = libusb_bulk_transfer(g_deviceHandle, endpoint, buffer, capBuffer, NULL, 0);
     buffer[capBuffer-1] = 0; // Force null terminating the string
     if (retCode == 0) {
         // If we received something
@@ -330,13 +316,14 @@ main(int argc, char *argv[])
             // TODOO: Fix bug where the first IN bulk transfer is empty (even
             // when there is data to transmit)
             memset(buffer, 0, capBuffer);
-            usb_log_print(buffer, capBuffer);
-            usb_log_print(buffer, capBuffer);
+            usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
+            usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             break;
         // - get log infinite loop
         case 2:
             while (1) {
-                usb_log_print(buffer, capBuffer);
+                usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
+                usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
                 usleep(10000);
             }
             break;
