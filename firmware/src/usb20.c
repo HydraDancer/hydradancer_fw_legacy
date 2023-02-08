@@ -222,68 +222,133 @@ usb20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMa
     }
 }
 
-/* @fn      usb20_endpoint_clear
+/* @fn      usb20_endpoint_ack
  *
- * @brief   Reset the given endpoint
+ * @brief   Set response to ACK for the given endpoint
  *
- * @warning DEPRECATED !
- *
- * @warning It only reset one endpoint, do NOT give multiples !
+ * @warning It only ACK one endpoint, do NOT give multiples !
  * 
  * @return  None
  */
 void
-usb20_endpoint_clear(uint8_t endpointToClear)
+usb20_endpoint_ack(uint8_t endpointToACK)
 {
-    switch (endpointToClear) {
+    switch (endpointToACK) {
+    case 0x81: /* endpoint 1 IN */
+        R16_UEP1_T_LEN = 0;
+        R8_UEP1_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+        break;
+    case 0x01: /* endpoint 1 OUT */
+        R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+        break;
+    case 0x82: /* endpoint 2 IN */
+        R16_UEP2_T_LEN = 0;
+        R8_UEP2_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+        break;
+    case 0x02: /* endpoint 2 OUT */
+        R8_UEP2_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+        break;
+    case 0x83: /* endpoint 3 IN */
+        R16_UEP3_T_LEN = 0;
+        R8_UEP3_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+        break;
+    case 0x03: /* endpoint 3 OUT */
+        R8_UEP3_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+        break;
+    case 0x84: /* endpoint 4 IN */
+        R16_UEP4_T_LEN = 0;
+        R8_UEP4_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+        break;
+    case 0x04: /* endpoint 4 OUT */
+        R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+        break;
+    case 0x85: /* endpoint 5 IN */
+        R16_UEP5_T_LEN = 0;
+        R8_UEP5_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+        break;
+    case 0x05: /* endpoint 5 OUT */
+        R8_UEP5_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+        break;
+    case 0x86: /* endpoint 6 IN */
+        R16_UEP6_T_LEN = 0;
+        R8_UEP6_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+        break;
+    case 0x06: /* endpoint 6 OUT */
+        R8_UEP6_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+        break;
+    case 0x87: /* endpoint 7 IN */
+        R16_UEP7_T_LEN = 0;
+        R8_UEP7_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_0;
+        break;
+    case 0x07: /* endpoint 7 OUT */
+        R8_UEP7_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+        break;
+    default:
+        log_to_evaluator("ERROR: endpoint_clear() invalid argument");
+        break;
+    }
+}
+
+/* @fn      usb20_endpoint_nak
+ *
+ * @brief   Set response to NAK for the given endpoint
+ *
+ * @warning It only NAK one endpoint, do NOT give multiples !
+ * 
+ * @return  None
+ */
+void
+usb20_endpoint_nak(uint8_t endpointToNAK)
+{
+    switch (endpointToNAK) {
     case 0x81: /* endpoint 1 IN */
         R16_UEP1_T_LEN = 0;
         R8_UEP1_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
     case 0x01: /* endpoint 1 OUT */
-        R8_UEP1_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
+        R8_UEP1_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_0;
         break;
     case 0x82: /* endpoint 2 IN */
         R16_UEP2_T_LEN = 0;
         R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
     case 0x02: /* endpoint 2 OUT */
-        R8_UEP2_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
+        R8_UEP2_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_0;
         break;
     case 0x83: /* endpoint 3 IN */
         R16_UEP3_T_LEN = 0;
         R8_UEP3_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
     case 0x03: /* endpoint 3 OUT */
-        R8_UEP3_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
+        R8_UEP3_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_0;
         break;
     case 0x84: /* endpoint 4 IN */
         R16_UEP4_T_LEN = 0;
         R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
     case 0x04: /* endpoint 4 OUT */
-        R8_UEP4_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
+        R8_UEP4_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_0;
         break;
     case 0x85: /* endpoint 5 IN */
         R16_UEP5_T_LEN = 0;
         R8_UEP5_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
     case 0x05: /* endpoint 5 OUT */
-        R8_UEP5_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
+        R8_UEP5_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_0;
         break;
     case 0x86: /* endpoint 6 IN */
         R16_UEP6_T_LEN = 0;
         R8_UEP6_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
     case 0x06: /* endpoint 6 OUT */
-        R8_UEP6_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
+        R8_UEP6_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_0;
         break;
     case 0x87: /* endpoint 7 IN */
         R16_UEP7_T_LEN = 0;
         R8_UEP7_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
         break;
     case 0x07: /* endpoint 7 OUT */
-        R8_UEP7_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
+        R8_UEP7_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_0;
         break;
     default:
         log_to_evaluator("ERROR: endpoint_clear() invalid argument");
