@@ -20,9 +20,10 @@
 #define USB20_EP1_MAX_SIZE  512
 
 #define INTERFACE 1
-#define EP1OUT      0x01
-#define EP1IN       0x81
-#define EP_DEBUG    0x87
+#define EP1OUT                  0x01
+#define EP1IN                   0x81
+#define EP_DEBUG_BOARD_TOP      0x86
+#define EP_DEBUG_BOARD_BOTTOM   0x87
 
 /* enums */
 enum BbioCommand {
@@ -180,7 +181,8 @@ usb_log_print(unsigned char *buffer, int capBuffer)
 {
     int retCode;
 
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP_DEBUG, buffer, capBuffer, NULL, 0);
+    // Retrieve top board log
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP_DEBUG_BOARD_TOP, buffer, capBuffer, NULL, 0);
     buffer[capBuffer-1] = 0; // Force null terminating the string
     if (retCode == 0) {
         // If we received something
@@ -190,7 +192,19 @@ usb_log_print(unsigned char *buffer, int capBuffer)
     } else {
         printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
     }
+    memset(buffer, 0, capBuffer);
 
+    // Retrieve bottom board log
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer, NULL, 0);
+    buffer[capBuffer-1] = 0; // Force null terminating the string
+    if (retCode == 0) {
+        // If we received something
+        if (buffer[0] != 0) {
+            printf("%s", buffer);
+        }
+    } else {
+        printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
+    }
     memset(buffer, 0, capBuffer);
 }
 
