@@ -10,7 +10,15 @@
 #include "hspi.h"
 #include "usb20.h"
 
-#include "rot13-example.h" // Included only for the example, used in ep1_transceive_and_update()
+
+/* variables */
+extern uint16_t sizeEndp6LoggingBuff;
+extern const uint16_t capacityEndp6LoggingBuff;
+extern uint8_t *endp6LoggingBuff;
+
+extern uint16_t sizeEndp7LoggingBuff;
+extern const uint16_t capacityEndp7LoggingBuff;
+extern uint8_t *endp7LoggingBuff;
 
 /* functions declaration */
 
@@ -41,6 +49,17 @@
 void epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
+ * Function Name  : ep1_transmit_keyboard
+ * Description    : NOT USED, only given as a reference
+ *                  Handle the "command" on endpoint 1 when behaving as a
+ *                  keyboard, here it means anwsering to interrupt request with
+ *                  the appropriate key sequence
+ * Input          : None
+ * Return         : None
+ *******************************************************************************/
+void ep1_transmit_keyboard(void);
+
+/*******************************************************************************
  * Function Name  : ep1_transceive_and_update
  * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
  *                  and update the buffer accordingly
@@ -63,15 +82,27 @@ void ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_
 void ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep1_transmit_keyboard
- * Description    : NOT USED, only given as a reference
- *                  Handle the "command" on endpoint 1 when behaving as a
- *                  keyboard, here it means anwsering to interrupt request with
- *                  the appropriate key sequence
- * Input          : None
+ * Function Name  : ep6_transmit_and_update
+ * Description    : Handle the "command" on endpoint 6 (transmit debug of top
+ *                  board) and update the buffer accordingly
+ *
+ * Input          : - uisToken is the bmRequestType field of the Setup Packet
+ *                  - pBuffer and pSizeBuffer are the buffer to transceive and
+ *                    the associated size
  * Return         : None
  *******************************************************************************/
-void ep1_transmit_keyboard(void);
+void ep6_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+
+/*******************************************************************************
+ * Function Name  : ep7_transmit_and_update
+ * Description    : Handle the "command" on endpoint 7 (transmit debug of
+ *                  bottom board) and update the buffer accordingly
+ * Input          : - uisToken is the bmRequestType field of the Setup Packet
+ *                  - pBuffer and pSizeBuffer are the buffer to transceive and
+ *                    the associated size
+ * Return         : None
+ *******************************************************************************/
+void ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 
 #endif /* USB20_ENDPOINTS_H */

@@ -2,6 +2,21 @@
 
 #include "log.h"
 
+
+#include "rot13-example.h"  // Included only for the rot13 example, TODO: remove
+
+/* variables */
+uint16_t sizeEndp6LoggingBuff = 0;
+const uint16_t capacityEndp6LoggingBuff = 4096;
+__attribute__((aligned(16))) uint8_t endp6LoggingBuffRaw[4096] __attribute__((section(".DMADATA")));
+uint8_t *endp6LoggingBuff = endp6LoggingBuffRaw;
+
+uint16_t sizeEndp7LoggingBuff = 0;
+const uint16_t capacityEndp7LoggingBuff = 4096;
+__attribute__((aligned(16))) uint8_t endp7LoggingBuffRaw[4096] __attribute__((section(".DMADATA")));
+uint8_t *endp7LoggingBuff = endp7LoggingBuffRaw;
+
+
 /* functions implementation */
 
 /*******************************************************************************
@@ -188,6 +203,88 @@ ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *
     default:
         log_to_evaluator("ERROR: ep1_transceive_and_update default!");
         break;
+    }
+}
+
+/* @fn      ep6_transmit_and_update
+ *
+ * @brief   Handle the "command" on endpoint 6 (transmit debug of bottom board)
+ *          and update the buffer accordingly
+ *
+ * @return  None
+ */
+void
+ep6_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer != 0x0000) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP6_MAXSIZE);
+            memcpy(endp6Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP6_T_LEN = sizeCurrentTransaction;
+            R8_UEP6_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP6_TX_CTRL = (R8_UEP6_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)pBuffer += U20_UEP6_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            R16_UEP6_T_LEN = 0;
+            R8_UEP6_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP6_TX_CTRL = (R8_UEP6_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        }
+        break;
+        default:
+            log_to_evaluator("ERROR: ep6_transmit_and_update default!");
+            break;
+    }
+}
+
+/* @fn      ep7_transmit_and_update
+ *
+ * @brief   Handle the "command" on endpoint 7 (transmit debug of bottom board)
+ *          and update the buffer accordingly
+ *
+ * @return  None
+ */
+void
+ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+{
+    static uint8_t *bufferResetValue = NULL;
+    if (bufferResetValue == NULL) {
+        bufferResetValue = *pBuffer;
+    }
+
+    switch (uisToken) {
+    case UIS_TOKEN_IN:
+        if (*pSizeBuffer != 0x0000) {
+            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP7_MAXSIZE);
+            memcpy(endp7Tbuff, *pBuffer, sizeCurrentTransaction);
+
+            R16_UEP7_T_LEN = sizeCurrentTransaction;
+            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+
+            *pSizeBuffer -= sizeCurrentTransaction;
+            *(uint32_t *)pBuffer += U20_UEP7_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value */
+        } else {
+            *pBuffer = bufferResetValue;
+
+            R16_UEP7_T_LEN = 0;
+            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        }
+        break;
+        default:
+            log_to_evaluator("ERROR: ep7_transmit_and_update default!");
+            break;
     }
 }
 

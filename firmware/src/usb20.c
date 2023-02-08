@@ -15,11 +15,6 @@ uint8_t *g_descriptorDevice = NULL;
 uint8_t *g_descriptorConfig = NULL;
 uint8_t **g_descriptorStrings = NULL;
 
-uint16_t sizeEndp7LoggingBuff = 0;
-const uint16_t capacityEndp7LoggingBuff = 4096;
-__attribute__((aligned(16))) uint8_t endp7LoggingBuffRaw[4096];
-uint8_t *endp7LoggingBuff = endp7LoggingBuffRaw;
-
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
 __attribute__((aligned(16))) uint8_t endp1Rbuff[4096] __attribute__((section(".DMADATA"))); // Endpoint 1 data recceiver buffer.
 __attribute__((aligned(16))) uint8_t endp1Tbuff[4096] __attribute__((section(".DMADATA"))); // Endpoint 1 data transmitter buffer.
@@ -473,47 +468,6 @@ usb20_ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *p
     }
 }
 
-/* @fn      usb20_ep7_transmit_and_update
- *
- * @brief   Handle the "command" on endpoint 7 (transmit debug) and update the
- *          buffer accordingly
- *
- * @return  None
- */
-void
-usb20_ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
-{
-    static uint8_t *bufferResetValue = NULL;
-    if (bufferResetValue == NULL) {
-        bufferResetValue = *pBuffer;
-    }
-
-    switch (uisToken) {
-    case UIS_TOKEN_IN:
-        if (*pSizeBuffer != 0x0000) {
-            uint16_t sizeCurrentTransaction = min(*pSizeBuffer, U20_UEP7_MAXSIZE);
-            memcpy(endp7Tbuff, *pBuffer, sizeCurrentTransaction);
-
-            R16_UEP7_T_LEN = sizeCurrentTransaction;
-            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
-            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
-
-            *pSizeBuffer -= sizeCurrentTransaction;
-            *(uint32_t *)pBuffer += U20_UEP7_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value */
-        } else {
-            *pBuffer = bufferResetValue;
-
-            R16_UEP7_T_LEN = 0;
-            R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
-            R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
-        }
-        break;
-        default:
-            log_to_evaluator("ERROR: ep7_transmit_and_update default!");
-            break;
-    }
-}
-
 /* @fn      usb20_log
  *
  * @brief   Function used to log data to the Host computer over USB
@@ -521,23 +475,47 @@ usb20_ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSi
  * @return  None
  */
 void
-usb20_log(const char *fmt, ...)
+usb20_log(enum Endpoint endp, const char *fmt, ...)
 {
+    va_list ap;
+
+    uint8_t *loggingbuff = NULL;
+    uint16_t *pSizeLoggingBuff = NULL;
+    uint16_t capLoggingBuff = 0;
+
+    uint16_t sizeLeft;
+    int bytesWritten;
+
+    switch (endp) {
+    case Ep6Mask:
+        loggingbuff = endp6LoggingBuff;
+        pSizeLoggingBuff = &sizeEndp6LoggingBuff;
+        capLoggingBuff = capacityEndp6LoggingBuff;
+        break;
+    case Ep7Mask:
+        loggingbuff = endp7LoggingBuff;
+        pSizeLoggingBuff = &sizeEndp7LoggingBuff;
+        capLoggingBuff = capacityEndp7LoggingBuff;
+        break;
+    default:
+        log_to_evaluator("ERROR: usb20_log() cannot log on given endpoint (%x)\r\n", endp);
+        return;
+    }
+
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
     // overwritten
-    va_list ap;
     bsp_disable_interrupt();
     va_start(ap, fmt);
-    uint16_t sizeLeft = capacityEndp7LoggingBuff - sizeEndp7LoggingBuff;
+    sizeLeft = capLoggingBuff - *pSizeLoggingBuff;
     
-    if (sizeEndp7LoggingBuff >= capacityEndp7LoggingBuff) {
-        log_to_evaluator("ERROR: Buffer already filled!");
+    if (*pSizeLoggingBuff >= capLoggingBuff) {
+        log_to_evaluator("ERROR: usb20_log() buffer already filled!");
         sizeLeft = 0;
     }
     
-    int bytesWritten = vsnprintf(endp7LoggingBuff + sizeEndp7LoggingBuff, sizeLeft, fmt, ap);
-    sizeEndp7LoggingBuff += bytesWritten;
+    bytesWritten = vsnprintf(loggingbuff + *pSizeLoggingBuff, sizeLeft, fmt, ap);
+    *pSizeLoggingBuff += bytesWritten;
     bsp_enable_interrupt();
 }
 /* @fn      usb20_vlog
@@ -548,21 +526,44 @@ usb20_log(const char *fmt, ...)
  * @return  None
  */
 void
-usb20_vlog(const char *fmt, va_list vargs)
+usb20_vlog(enum Endpoint endp, const char *fmt, va_list ap)
 {
+    uint8_t *loggingbuff = NULL;
+    uint16_t *pSizeLoggingBuff = NULL;
+    uint16_t capLoggingBuff = 0;
+
+    uint16_t sizeLeft;
+    int bytesWritten;
+
+    switch (endp) {
+    case Ep6Mask:
+        loggingbuff = endp6LoggingBuff;
+        pSizeLoggingBuff = &sizeEndp6LoggingBuff;
+        capLoggingBuff = capacityEndp6LoggingBuff;
+        break;
+    case Ep7Mask:
+        loggingbuff = endp7LoggingBuff;
+        pSizeLoggingBuff = &sizeEndp7LoggingBuff;
+        capLoggingBuff = capacityEndp7LoggingBuff;
+        break;
+    default:
+        log_to_evaluator("ERROR: usb20_log() cannot log on given endpoint (%x)\r\n", endp);
+        return;
+    }
+
     // Critical section, if we print something (outside of an interrrupt) and an
     // interrupt is called and do a print, then the first print is partially
     // overwritten
     bsp_disable_interrupt();
-    uint16_t sizeLeft = capacityEndp7LoggingBuff - sizeEndp7LoggingBuff;
+    sizeLeft = capLoggingBuff - *pSizeLoggingBuff;
     
-    if (sizeEndp7LoggingBuff >= capacityEndp7LoggingBuff) {
-        log_to_evaluator("ERROR: Buffer already filled!");
+    if (*pSizeLoggingBuff >= capLoggingBuff) {
+        log_to_evaluator("ERROR: usb20_log() buffer already filled!");
         sizeLeft = 0;
     }
     
-    int bytesWritten = vsnprintf(endp7LoggingBuff + sizeEndp7LoggingBuff, sizeLeft, fmt, vargs);
-    sizeEndp7LoggingBuff += bytesWritten;
+    bytesWritten = vsnprintf(loggingbuff + *pSizeLoggingBuff, sizeLeft, fmt, ap);
+    *pSizeLoggingBuff += bytesWritten;
     bsp_enable_interrupt();
 }
 

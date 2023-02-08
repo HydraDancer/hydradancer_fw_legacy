@@ -13,6 +13,7 @@
 #define U20_MAXPACKET_LEN (512)                                                                     
 #define U20_UEP0_MAXSIZE  (64)  // Change accordingly to USB mode (Here HS)
 #define U20_UEP1_MAXSIZE  (512) // Change accordingly to USB mode (Here HS)
+#define U20_UEP6_MAXSIZE  (512) // Change accordingly to USB mode (Here HS)
 #define U20_UEP7_MAXSIZE  (512) // Change accordingly to USB mode (Here HS)
 #define UsbSetupBuf       ((PUSB_SETUP)endp0RTbuff)                                                 
 
@@ -40,10 +41,6 @@ extern uint16_t g_descriptorConfigCustomSize;
 extern uint8_t *g_descriptorDevice;
 extern uint8_t *g_descriptorConfig;
 extern uint8_t **g_descriptorStrings;
-
-extern uint16_t sizeEndp7LoggingBuff;
-extern const uint16_t capacityEndp7LoggingBuff;
-extern uint8_t *endp7LoggingBuff;
 
 extern uint8_t endp0RTbuff[]; // Endpoint 0 data transceiver buffer
 extern uint8_t endp1Rbuff[];  // Endpoint 1 data receiver buffer
@@ -113,7 +110,7 @@ void usb20_endpoint_halt(uint8_t endpointToHalt);
 void usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep0_transceive_and_update
+ * Function Name  : usb20_ep0_transceive_and_update
  * Description    : Handle the "command" on endpoint 0 (mainly receive/transmit)
  *                  and update the buffer accordingly
  * Input          : - uisToken is the bmRequestType field of the Setup Packet
@@ -124,32 +121,23 @@ void usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t 
 void usb20_ep0_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep7_transmit_and_update
- * Description    : Handle the "command" on endpoint 7 (transmit debug) and
- *                  update the buffer accordingly
- * Input          : - uisToken is the bmRequestType field of the Setup Packet
- *                  - pBuffer and pSizeBuffer are the buffer to transceive and
- *                    the associated size
- * Return         : None
- *******************************************************************************/
-void usb20_ep7_transmit_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
-
-/*******************************************************************************
- * Function Name  : usb_log
+ * Function Name  : usb20_log
  * Description    : Function used to log data to the Host computer over USB
  * Input          : Variadic function, same arguments as you would give to
  *                  printf()
+ *                  endp is an enum corresponding to the endpoint to log to
  * Return         : None
  *******************************************************************************/
-void usb20_log(const char *fmt, ...);
+void usb20_log(enum Endpoint endp, const char *fmt, ...);
 
 /*******************************************************************************
- * Function Name  : usb_vlog
+ * Function Name  : usb20_vlog
  * Description    : Function used to log data to the Host computer over USB
  * Input          : A format string and the associated va_list
+ *                  endp is an enum corresponding to the endpoint to log to
  * Return         : None
  *******************************************************************************/
-void usb20_vlog(const char *fmt, va_list args);
+void usb20_vlog(enum Endpoint endp, const char *fmt, va_list ap);
 
 
 

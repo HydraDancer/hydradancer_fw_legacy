@@ -53,7 +53,7 @@ main(void)
     /* USB Init */
     if (bsp_switch()) {
         g_usb20Speed = SpeedHigh;
-        g_usb20EpInMask  = Ep1Mask | Ep7Mask;
+        g_usb20EpInMask  = Ep1Mask | Ep6Mask| Ep7Mask;
         g_usb20EpOutMask = Ep1Mask;
 
         // Filling structures "describing" our USB peripheral
@@ -402,8 +402,11 @@ USBHS_IRQHandler(void)
                 ep1_transceive_and_update_target(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
             }
             break;
+        case 6:
+            ep6_transmit_and_update(uisToken, (uint8_t **)&endp6LoggingBuff, &sizeEndp6LoggingBuff);
+            break;
         case 7:
-            usb20_ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
+            ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
             break;
         default:
             log_to_evaluator("ERROR: USBHS_IRQHandler() endpoint requested (%d) has no handler associated\r\n", endpNum);
