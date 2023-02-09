@@ -158,18 +158,26 @@ SERDES_IRQHandler(void)
             }
             break;
         case SerdesMagicNumberRetCode:
+            cprintf("Got a return code from BBIO\r\n");
+            log_to_evaluator("Got a return code\r\n");
             // Handle the return code received from bbio_*()
 
             /* As mentionned in HSPI_IRQHandler(), if the transaction is
              * faulted, we set the bit 0x80
              */
             if (SerDes_StatusIT() & SDS_RX_ERR_FLG) {
-                serdesDmaAddr ^= 0x80;
+                serdesDmaAddr[0] ^= 0x80;
             }
 
+            serdesDmaAddr[0] ^= 0x30;
+
             // fill ep1 with bbio return code
+            endp1Tbuff[0] = serdesDmaAddr[0];
 
             // re enable ack for ep1 IN
+            cprintf("Setting to ACK (endp1Tbuff[0]: 0x%02X)\r\n", endp1Tbuff[0]);
+            usb20_endpoint_ack(0x81);
+            R16_UEP1_T_LEN = 1; /* The call to usb20_endpoint_ack() reset R16_UEP1_T_LEN to 0 */
 
             break;
         default:
@@ -243,8 +251,6 @@ HSPI_IRQHandler(void)
         } else {
             log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
         }
-        // Clear the interrupt before sending the bbioRetCode via SerDes
-        R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
 
         /* Some documentation about bbioRetCode :
          * - if 0x80 is set, the SerDes transaction was faulted
@@ -256,8 +262,11 @@ HSPI_IRQHandler(void)
         }
         serdesDmaAddr[0] = bbioRetCode;
         SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberRetCode);
+        cprintf("Send something over SerDes\r\n");
         SerDes_DMA_Tx();
         SerDes_Wait_Txdone();
+        // Clear the interrupt before sending the bbioRetCode via SerDes
+        R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
         R8_HSPI_INT_FLAG = RB_HSPI_IF_FIFO_OV;
@@ -266,7 +275,9 @@ HSPI_IRQHandler(void)
         R8_HSPI_INT_FLAG = RB_HSPI_IF_B_DONE;
         break;
     default:
-        cprintf("default\r\n");
+        R8_HSPI_INT_FLAG = R8_HSPI_INT_FLAG & HSPI_INT_FLAG;
+        log_to_evaluator("ERROR: HSPI_IRQHandler() switch hits default\r\n");
+        cprintf("ERROR: HSPI_IRQHandler() switch hits default\r\n");
         break;
     }
 }
@@ -425,10 +436,6 @@ USBHS_IRQHandler(void)
             break;
         case 1:
             if (g_isHost) {
-                /* We NAK IN transactions until we receive the return value
-                 * from bbio_*()
-                 */
-                usb20_endpoint_nak(0x81);
                 ep1_transceive_and_update_host(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
             } else {
                 ep1_transceive_and_update_target(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
