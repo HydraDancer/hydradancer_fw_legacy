@@ -160,9 +160,6 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
         memcpy(hspi_get_buffer_next_tx(), endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
         HSPI_DMA_Tx();
 
-        // R16_UEP1_T_LEN = 0;
-        // R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-        // R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
         R8_UEP1_RX_CTRL ^= RB_UEP_R_TOG_1;
         R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
         break;
