@@ -153,7 +153,6 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
         /* We NAK IN transactions until we receive the return value
          * from bbio_*()
          */
-        cprintf("Setting to NAK\r\n");
         usb20_endpoint_nak(0x81);
 
         log_to_evaluator("Received USB request (OUT)\r\n");
@@ -169,7 +168,6 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
         break;
     case UIS_TOKEN_IN:
         // TODO: Sort this and fix this
-        cprintf("Inside ep1_handler IN\r\n");
         R16_UEP1_T_LEN = 1;
         R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
         R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;

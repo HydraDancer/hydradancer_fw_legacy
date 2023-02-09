@@ -158,7 +158,6 @@ SERDES_IRQHandler(void)
             }
             break;
         case SerdesMagicNumberRetCode:
-            cprintf("Got a return code from BBIO\r\n");
             log_to_evaluator("Got a return code\r\n");
             // Handle the return code received from bbio_*()
 
@@ -175,7 +174,6 @@ SERDES_IRQHandler(void)
             endp1Tbuff[0] = serdesDmaAddr[0];
 
             // re enable ack for ep1 IN
-            cprintf("Setting to ACK (endp1Tbuff[0]: 0x%02X)\r\n", endp1Tbuff[0]);
             usb20_endpoint_ack(0x81);
             R16_UEP1_T_LEN = 1; /* The call to usb20_endpoint_ack() reset R16_UEP1_T_LEN to 0 */
 
@@ -262,7 +260,6 @@ HSPI_IRQHandler(void)
         }
         serdesDmaAddr[0] = bbioRetCode;
         SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberRetCode);
-        cprintf("Send something over SerDes\r\n");
         SerDes_DMA_Tx();
         SerDes_Wait_Txdone();
         // Clear the interrupt before sending the bbioRetCode via SerDes
@@ -277,7 +274,6 @@ HSPI_IRQHandler(void)
     default:
         R8_HSPI_INT_FLAG = R8_HSPI_INT_FLAG & HSPI_INT_FLAG;
         log_to_evaluator("ERROR: HSPI_IRQHandler() switch hits default\r\n");
-        cprintf("ERROR: HSPI_IRQHandler() switch hits default\r\n");
         break;
     }
 }
