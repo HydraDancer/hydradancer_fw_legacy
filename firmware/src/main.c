@@ -160,7 +160,6 @@ SERDES_IRQHandler(void)
             }
             break;
         case SerdesMagicNumberRetCode:
-            log_to_evaluator("Got a return code\r\n");
             // Handle the return code received from bbio_*()
 
             /* As mentionned in HSPI_IRQHandler(), if the transaction is
