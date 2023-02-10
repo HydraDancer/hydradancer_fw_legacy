@@ -317,6 +317,10 @@ main(int argc, char *argv[])
             // when there is data to transmit)
             memset(buffer, 0, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
+            usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
+            printf("--------------------\n");
+            memset(buffer, 0, capBuffer);
+            usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             break;
         // - get log infinite loop
@@ -331,6 +335,13 @@ main(int argc, char *argv[])
         case 3:
             // Fill Device Descriptor of the ToE board
             usb_descriptor_set(BbioSubSetDescrDevice, 0, g_descriptorDevice, sizeof(g_descriptorDevice));
+
+            memset(buffer, 0, capBuffer);
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, buffer, 128, NULL, 0);
+            if (retCode) {
+                printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
+            }
+            printf("bbio return code: 0x%02X\n", buffer[0]);
             break;
         // - Send Config Descriptor
         case 4:

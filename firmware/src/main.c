@@ -152,7 +152,6 @@ SERDES_IRQHandler(void)
 
         switch(SDS->SDS_DATA0 & SerdesMagicNumberMask) {
         case SerdesMagicNumberLog:
-            log_to_evaluator("From bottom board: %s", serdesDmaAddr);
             // Handle log received from bottom board
             logLen = strnlen(serdesDmaAddr, SERDES_DMA_LEN);
             if (sizeEndp7LoggingBuff + logLen <= capacityEndp7LoggingBuff) {
@@ -261,7 +260,6 @@ HSPI_IRQHandler(void)
         if (hspiRtxStatus) {
             bbioRetCode ^= 0x40;
         }
-        log_to_evaluator("Sending return code (0x%02X)\r\n", serdesDmaAddr[0]);
         serdesDmaAddr[0] = bbioRetCode;
         SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberRetCode);
         SerDes_DMA_Tx();
