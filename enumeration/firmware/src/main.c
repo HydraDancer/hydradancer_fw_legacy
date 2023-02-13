@@ -411,35 +411,60 @@ USBHS_IRQHandler(void)
         uint8_t endpNum = R8_USB_INT_ST & RB_DEV_ENDP_MASK;
         uint8_t uisToken = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK);
 
-        switch (endpNum) {
-        case 0:
-            if (SetupReq == USB_SET_ADDRESS) {
-                R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
+        if (g_isHost) {
+            switch (endpNum) {
+            case 0:
+                if (SetupReq == USB_SET_ADDRESS) {
+                    R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
 
-                pDataToWrite = NULL;
-                R16_UEP0_T_LEN = 0;
-                R8_UEP0_TX_CTRL = 0;
-                R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
-            } else {
-                usb20_ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
-            }
-            break;
-        case 1:
-            if (g_isHost) {
+                    pDataToWrite = NULL;
+                    R16_UEP0_T_LEN = 0;
+                    R8_UEP0_TX_CTRL = 0;
+                    R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+                } else {
+                    usb20_ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
+                }
+                break;
+            case 1:
                 ep1_transceive_and_update_host(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
-            } else {
-                ep1_transceive_and_update_target(uisToken, (uint8_t **)&endp1Buff, &sizeEndp1Buff);
+                break;
+            case 6:
+                ep6_transmit_and_update(uisToken, (uint8_t **)&endp6LoggingBuff, &sizeEndp6LoggingBuff);
+                break;
+            case 7:
+                ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
+                break;
+            default:
+                log_to_evaluator("ERROR: USBHS_IRQHandler() endpoint requested (%d) has no handler associated\r\n", endpNum);
+                break;
             }
-            break;
-        case 6:
-            ep6_transmit_and_update(uisToken, (uint8_t **)&endp6LoggingBuff, &sizeEndp6LoggingBuff);
-            break;
-        case 7:
-            ep7_transmit_and_update(uisToken, (uint8_t **)&endp7LoggingBuff, &sizeEndp7LoggingBuff);
-            break;
-        default:
-            log_to_evaluator("ERROR: USBHS_IRQHandler() endpoint requested (%d) has no handler associated\r\n", endpNum);
-            break;
+        } else {
+            switch (endpNum) {
+            case 0:
+                if (SetupReq == USB_SET_ADDRESS) {
+                    R8_USB_DEV_AD = UsbSetupBuf->wValue.bw.bb1;
+
+                    pDataToWrite = NULL;
+                    R16_UEP0_T_LEN = 0;
+                    R8_UEP0_TX_CTRL = 0;
+                    R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+                } else {
+                    usb20_ep0_transceive_and_update(uisToken, &pDataToWrite, &bytesToWrite);
+                }
+                break;
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                epX_handler_toe(uisToken, endpNum);
+                break;
+            default:
+                log_to_evaluator("ERROR: USBHS_IRQHandler() endpoint requested (%d) has no handler associated\r\n", endpNum);
+                break;
+            }
         }
 
         R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear int flag

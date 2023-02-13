@@ -188,7 +188,7 @@ epX_handler_toe(uint8_t uisToken, uint8_t endpoint)
                 R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
                 break;
             default:
-                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (OUT)\r\n")
+                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (OUT)\r\n");
                 return 0;
             }
         break;
@@ -223,7 +223,7 @@ epX_handler_toe(uint8_t uisToken, uint8_t endpoint)
                 R8_UEP7_RX_CTRL = (R8_UEP7_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
                 break;
             default:
-                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (IN)\r\n")
+                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (IN)\r\n");
                 return 0;
             }
         break;
