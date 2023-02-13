@@ -97,7 +97,7 @@ epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 
 
 /*******************************************************************************
-/* @fn      ep1_transceive_and_update
+/* @fn      ep1_transceive_and_update_host
  *
  * @brief   Handle the "command" on endpoint 1 (mainly receive/transmit) and 
  *          update the buffer accordingly
@@ -139,40 +139,100 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
     }
 }
 
-
 /*******************************************************************************
-/* @fn      ep1_transceive_and_update
+/* @fn      epX_handler_toe
  *
- * @brief   Handle the "command" on endpoint 1 (mainly receive/transmit) and 
- *          update the buffer accordingly
+ * @brief   Dummy endpoint handler for ToE board
  *
- * @return  None
+ * @return  1 if request is valid, 0 else
  */
-void
-ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+uint8_t
+epX_handler_toe(uint8_t uisToken, uint8_t endpoint)
 {
-    static uint8_t *bufferResetValue = NULL;
-    if (bufferResetValue == NULL) {
-        bufferResetValue = *pBuffer;
-    }
-
     switch (uisToken) {
-    case UIS_TOKEN_OUT:
-        // Not implemented yet
-
-        R16_UEP1_T_LEN = 0;
-        R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-        R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
-        R8_UEP1_RX_CTRL ^= RB_UEP_R_TOG_1;
-        R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+        case UIS_TOKEN_OUT:
+            switch (endpoint) {
+            case 1:
+                R16_UEP1_T_LEN = 0;
+                R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 2:
+                R16_UEP2_T_LEN = 0;
+                R8_UEP2_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP2_TX_CTRL = (R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 3:
+                R16_UEP3_T_LEN = 0;
+                R8_UEP3_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP3_TX_CTRL = (R8_UEP3_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 4:
+                R16_UEP4_T_LEN = 0;
+                R8_UEP4_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP4_TX_CTRL = (R8_UEP4_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 5:
+                R16_UEP5_T_LEN = 0;
+                R8_UEP5_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP5_TX_CTRL = (R8_UEP5_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 6:
+                R16_UEP6_T_LEN = 0;
+                R8_UEP6_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP6_TX_CTRL = (R8_UEP6_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 7:
+                R16_UEP7_T_LEN = 0;
+                R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            default:
+                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (OUT)\r\n")
+                return 0;
+            }
         break;
     case UIS_TOKEN_IN:
-        // Not implemented yet
+            switch (endpoint) {
+            case 1:
+                R8_UEP1_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 2:
+                R8_UEP2_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP2_RX_CTRL = (R8_UEP2_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 3:
+                R8_UEP3_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP3_RX_CTRL = (R8_UEP3_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 4:
+                R8_UEP4_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP4_RX_CTRL = (R8_UEP4_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 5:
+                R8_UEP5_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP5_RX_CTRL = (R8_UEP5_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 6:
+                R8_UEP6_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP6_RX_CTRL = (R8_UEP6_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 7:
+                R8_UEP7_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP7_RX_CTRL = (R8_UEP7_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            default:
+                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (IN)\r\n")
+                return 0;
+            }
         break;
     default:
-        log_to_evaluator("ERROR: ep1_transceive_and_update default!");
-        break;
+        log_to_evaluator("ERROR: epX_handler_toe() default!\r\n");
+        return 0;
     }
+
+    return 1;
 }
 
 /* @fn      ep6_transmit_and_update

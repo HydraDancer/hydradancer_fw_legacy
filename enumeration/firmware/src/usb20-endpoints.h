@@ -60,15 +60,13 @@ void epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
 void ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep1_transceive_and_update_target
- * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
- *                  and update the buffer accordingly
+ * Function Name  : epX_handler_toe
+ * Description    : Dummy endpoint handler for ToE board
  * Input          : - uisToken is the bmRequestType field of the Setup Packet
- *                  - pBuffer and pSizeBuffer are the buffer to transceive and
- *                    the associated size
- * Return         : None
+ *                  - the endpoint requested
+ * Return         : 1 if request is valid, 0 else
  *******************************************************************************/
-void ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+uint8_t epX_handler_toe(uint8_t uisToken, uint8_t endpoint);
 
 /*******************************************************************************
  * Function Name  : ep6_transmit_and_update
