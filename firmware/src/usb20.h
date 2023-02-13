@@ -81,14 +81,23 @@ void usb20_registers_init(enum Speed sp);
 void usb20_endpoints_init(enum Endpoint endpointsInMask, enum Endpoint endpointsOutMask);
 
 /*******************************************************************************
- * Function Name  : usb20_endpoint_clear
- * Description    : Reset the given endpoint
- * Warning        : DEPRECATED !
- * Warning        : It only reset one endpoint, do NOT give multiples !
+ * Function Name  : usb20_endpoint_ack
+ * Description    : Set response to ACK for the given endpoint
+ * Warning        : It only ACK one endpoint, do NOT give multiples !
  * Input          : The endpoint to reset
  * Return         : None
  *******************************************************************************/
-void usb20_endpoint_clear(uint8_t endpointToClear);
+void usb20_endpoint_ack(uint8_t endpointToACK);
+
+
+/*******************************************************************************
+ * Function Name  : usb20_endpoint_nak
+ * Description    : Set response to NAK for the given endpoint
+ * Warning        : It only NAK one endpoint, do NOT give multiples !
+ * Input          : The endpoint to reset
+ * Return         : None
+ *******************************************************************************/
+void usb20_endpoint_nak(uint8_t endpointToNAK);
 
 /*******************************************************************************
  * Function Name  : usb20_endpoint_halt

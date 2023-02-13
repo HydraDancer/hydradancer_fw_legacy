@@ -41,8 +41,8 @@ struct __PACKED DescriptorConfigComplete_t {
     USB_ITF_DESCR itfDescr;
     USB_ENDP_DESCR endpDescr1In;
     USB_ENDP_DESCR endpDescr1Out;
-    USB_ENDP_DESCR endpDescr6Out;
-    USB_ENDP_DESCR endpDescr7Out;
+    USB_ENDP_DESCR endpDescr6In;
+    USB_ENDP_DESCR endpDescr7In;
 };
 
 static struct DescriptorConfigComplete_t stBoardTopConfigurationDescriptor = {
@@ -85,7 +85,7 @@ static struct DescriptorConfigComplete_t stBoardTopConfigurationDescriptor = {
         .wMaxPacketSizeH = 0x02,                /* Here 512 bytes */
         .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0 */
     },
-    .endpDescr6Out = {
+    .endpDescr6In = {
         .bLength = sizeof(USB_ENDP_DESCR),
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x86,               /* In endpoint (MSB set to 1) */
@@ -94,7 +94,7 @@ static struct DescriptorConfigComplete_t stBoardTopConfigurationDescriptor = {
         .wMaxPacketSizeH = 0x02,                /* Here 512 bytes */
         .bInterval = 0,                         /* Polling interval, 1 for isochronous, else 0 */
     },
-    .endpDescr7Out = {
+    .endpDescr7In = {
         .bLength = sizeof(USB_ENDP_DESCR),
         .bDescriptorType = USB_DESCR_TYP_ENDP,
         .bEndpointAddress = 0x87,               /* In endpoint (MSB set to 1) */

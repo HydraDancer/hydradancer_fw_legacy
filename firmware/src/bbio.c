@@ -51,7 +51,7 @@ static uint16_t _descrSize       = 0;
 uint8_t
 bbio_command_decode(uint8_t *command)
 {
-    log_to_evaluator("bbio_command_decode()\r\n");
+    // log_to_evaluator("bbio_command_decode()\r\n");
    /* Reminder of the structure of a bbio command :
     * command[0] = BbioCommand
     * command[1] = BbioSubCommand                   Valid only when BbioCommand = BbioSetDescr
@@ -106,7 +106,7 @@ bbio_command_decode(uint8_t *command)
 uint8_t
 bbio_command_handle(uint8_t *bufferData)
 {
-    log_to_evaluator("bbio_command_handle()\r\n");
+    // log_to_evaluator("bbio_command_handle()\r\n");
     switch (_command) {
     case BbioMainMode:
         /* Not implemented yet */
@@ -149,6 +149,7 @@ bbio_command_handle(uint8_t *bufferData)
 uint8_t
 bbio_command_set_descriptor_handle(uint8_t *bufferData)
 {
+    // log_to_evaluator("bbio_command_set_descriptor_handle()\r\n");
     // Safeguards
     if (_descriptorsStoreCursor + _descrSize > _descriptorsStore + _DESCRIPTOR_STORE_SIZE) {
         log_to_evaluator("ERROR: bbio_handle_command() No space left in the descriptor store\r\n");
@@ -193,6 +194,7 @@ bbio_command_set_descriptor_handle(uint8_t *bufferData)
 uint8_t
 bbio_command_set_endpoints_handle(uint8_t *bufferEndpoints)
 {
+    // log_to_evaluator("bbio_command_set_endpoints_handle()\r\n");
     // This function will enable endpoints with the right mode
     // (isochronous/bulk/interrupt)
     // The data is encoded in 1 byte :

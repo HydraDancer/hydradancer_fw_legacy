@@ -147,7 +147,6 @@ SERDES_IRQHandler(void)
         log_to_evaluator("SDS_RX_INT_FLG | SDS_RX_ERR_FLG\r\n");
         // No breaks, the handling is the same for both interrupts
     case SDS_RX_INT_FLG:
-
         switch(SDS->SDS_DATA0 & SerdesMagicNumberMask) {
         case SerdesMagicNumberLog:
             // Handle log received from bottom board
@@ -158,6 +157,22 @@ SERDES_IRQHandler(void)
             }
             break;
         case SerdesMagicNumberRetCode:
+            // Handle the return code received from bbio_*()
+
+            /* As mentionned in HSPI_IRQHandler(), if the transaction is
+             * faulted, we set the bit 0x80
+             */
+            if (SerDes_StatusIT() & SDS_RX_ERR_FLG) {
+                serdesDmaAddr[0] ^= 0x80;
+            }
+
+            // fill ep1 with bbio return code
+            endp1Tbuff[0] = serdesDmaAddr[0];
+
+            // re enable ack for ep1 IN
+            usb20_endpoint_ack(0x81);
+            R16_UEP1_T_LEN = 1; /* The call to usb20_endpoint_ack() reset R16_UEP1_T_LEN to 0 */
+
             break;
         default:
             log_to_evaluator("ERROR: SERDES_IRQHandler() unknown magic number\r\n");
@@ -194,6 +209,7 @@ HSPI_IRQHandler(void)
     // 2) Datas associated to the instruction previously received
     // Thus the following static var is used to track which part we are in
     static uint8_t currentStep = 0;
+    uint8_t bbioRetCode = 0;
 
     uint8_t hspiRtxStatus;
     uint8_t *hspiRxBuffer;
@@ -202,7 +218,7 @@ HSPI_IRQHandler(void)
     case RB_HSPI_IF_T_DONE:
         hspiRtxStatus = hspi_get_rtx_status();
         if (hspiRtxStatus) {
-            log_to_evaluator("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            log_to_evaluator("[Interrupt HSPI]   Error transmitting: %s\r\n", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
@@ -210,19 +226,17 @@ HSPI_IRQHandler(void)
         hspiRtxStatus = hspi_get_rtx_status();
         hspiRxBuffer = hspi_get_buffer_rx();
         if (hspiRtxStatus) {
-            log_to_evaluator("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            log_to_evaluator("[Interrupt HSPI]   Error receiving: %s\r\n", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
         // Business logic goes here
-        log_to_evaluator("Received HSPI\r\n");
-
         if (currentStep == 0) {
-            bbio_command_decode(hspiRxBuffer);
+            bbioRetCode = bbio_command_decode(hspiRxBuffer);
 
             // Epilog
             currentStep ^= 1;
         } else if (currentStep == 1) {
-            bbio_command_handle(hspiRxBuffer);
+            bbioRetCode = bbio_command_handle(hspiRxBuffer);
 
             // Epilog
             currentStep ^= 1;
@@ -230,6 +244,19 @@ HSPI_IRQHandler(void)
             log_to_evaluator("ERROR: Bottom board HSPI Handler current step: %x\r\n", currentStep);
         }
 
+        /* Some documentation about bbioRetCode :
+         * - if 0x80 is set, the SerDes transaction was faulted
+         * - if 0x40 is set, the HSPI transaction was faulted
+         * - 0x0F bits correspond to the return value from bbio_*()
+         */
+        if (hspiRtxStatus) {
+            bbioRetCode ^= 0x40;
+        }
+        serdesDmaAddr[0] = bbioRetCode;
+        SerDes_DMA_Tx_CFG((uint32_t)serdesDmaAddr, SERDES_DMA_LEN, SerdesMagicNumberRetCode);
+        SerDes_DMA_Tx();
+        SerDes_Wait_Txdone();
+        // Clear the interrupt before sending the bbioRetCode via SerDes
         R8_HSPI_INT_FLAG = RB_HSPI_IF_R_DONE;
         break;
     case RB_HSPI_IF_FIFO_OV:
@@ -239,7 +266,8 @@ HSPI_IRQHandler(void)
         R8_HSPI_INT_FLAG = RB_HSPI_IF_B_DONE;
         break;
     default:
-        cprintf("default\r\n");
+        R8_HSPI_INT_FLAG = R8_HSPI_INT_FLAG & HSPI_INT_FLAG;
+        log_to_evaluator("ERROR: HSPI_IRQHandler() switch hits default\r\n");
         break;
     }
 }
@@ -292,7 +320,8 @@ USBHS_IRQHandler(void)
                 /* Not implemented */
                 break;
             case USB_REQ_RECIP_ENDP:
-                usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
+                /* Not implemented */
+                // usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
                 break;
             default:
                 log_to_evaluator("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");

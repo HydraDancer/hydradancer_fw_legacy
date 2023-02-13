@@ -27,12 +27,14 @@
 
 /* enums */
 enum BbioCommand {
-    BbioMainMode      = 0b00000000,
-    BbioIdentifMode   = 0b00000001,
-    BbioSetDescr      = 0b00000010,
-    BbioSetEndp       = 0b00000011,
-    BbioConnect       = 0b00000100,
+    BbioMainMode      = 0b00000001,
+    BbioIdentifMode   = 0b00000010,
+    BbioSetDescr      = 0b00000011,
+    BbioSetEndp       = 0b00000100,
+    BbioConnect       = 0b00000101,
+    BbioDisconnect    = 0b00000110,
 };
+
 enum BbioSubCommand {
     BbioSubSetDescrDevice      = 0b00000001,
     BbioSubSetDescrConfig      = 0b00000010,
@@ -250,7 +252,7 @@ bbio_command_sub_send(enum BbioCommand bbioCommand, enum BbioSubCommand bbioSubC
     /* Safeguards */
     assert(indexDescriptor <= 16 && "bbio_command_send() index > 16");
     assert(sizeDescriptor <= UINT16_MAX && "Desciptor size > UINT16_MAX\n");
-    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "usb_descriptor_set(): Descriptor is too big for the buffer\n");
+    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "bbio_command_sub_send(): Descriptor is too big for the buffer\n");
     int retCode;
     unsigned char bbioBuffer[5];
 
@@ -267,6 +269,25 @@ bbio_command_sub_send(enum BbioCommand bbioCommand, enum BbioSubCommand bbioSubC
 }
 
 
+unsigned char
+bbio_get_return_code(void)
+{
+    int retCode;
+    unsigned char bbioRetCode;
+
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, &bbioRetCode, 1, NULL, 0);
+    if (retCode) {
+        printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
+    }
+
+    if (bbioRetCode) {
+        printf("bbio return code: 0x%02X\n", bbioRetCode);
+    }
+
+    return bbioRetCode;
+}
+
+
 void
 usb_descriptor_set(enum BbioSubCommand bbioSubCommand, int indexDescriptor, unsigned char *descriptor, int sizeDescriptor)
 {
@@ -274,12 +295,14 @@ usb_descriptor_set(enum BbioSubCommand bbioSubCommand, int indexDescriptor, unsi
 
     // Send BBIO command
     bbio_command_sub_send(BbioSetDescr, bbioSubCommand, indexDescriptor, sizeDescriptor);
+    bbio_get_return_code();
 
     // Send descriptor
     retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptor, sizeDescriptor, NULL, 0);
     if (retCode) {
         printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
     }
+    bbio_get_return_code();
 }
 
 /*******************************************************************************
@@ -317,6 +340,10 @@ main(int argc, char *argv[])
             // when there is data to transmit)
             memset(buffer, 0, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
+            usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
+            printf("--------------------\n");
+            memset(buffer, 0, capBuffer);
+            usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             break;
         // - get log infinite loop
@@ -331,6 +358,7 @@ main(int argc, char *argv[])
         case 3:
             // Fill Device Descriptor of the ToE board
             usb_descriptor_set(BbioSubSetDescrDevice, 0, g_descriptorDevice, sizeof(g_descriptorDevice));
+
             break;
         // - Send Config Descriptor
         case 4:
@@ -341,21 +369,25 @@ main(int argc, char *argv[])
         case 5:
             // Connect to the target
             bbio_command_send(BbioSetEndp);
+            bbio_get_return_code();
 
             // endpoint 1 Out
             char buffEndpoints[] = {0x01, 0x00};
             libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buffEndpoints, 2, NULL, 0);
+            bbio_get_return_code();
 
             break;
         // - Connect to the target
         case 6:
             // Connect to the target
             bbio_command_send(BbioConnect);
+            bbio_get_return_code();
 
             // We need to send a packet to trigger the second step, no matter
             // the content of the packet
             char buff[] = "toto";
             libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buff, 5, NULL, 0);
+            bbio_get_return_code();
 
             break;
         // - exit
