@@ -132,7 +132,7 @@ bbio_command_handle(uint8_t *bufferData)
         usb20_registers_init(g_usb20Speed);
         return 0;
     case BbioDisconnect:
-        /* Not implemented yet */
+        usb20_registers_deinit();
         return 3;
     default:
         log_to_evaluator("ERROR: bbio_command_handle() unknown command\r\n");

@@ -152,6 +152,7 @@ menu_print(void)
     printf("4) Send descriptor configuration\n");
     printf("5) Set endpoints\n");
     printf("6) Connect\n");
+    printf("7) Disconnect\n");
     printf("\n");
     printf("9) Exit\n");
     printf("> ");
@@ -292,6 +293,9 @@ main(int argc, char *argv[])
     unsigned char buffer[4096];
     const int capBuffer = 4096;
 
+    char dummyPacket[] = "toto";
+    int dummyPacketSize = sizeof(dummyPacket);
+
     signal(SIGINT, handler_sigint);
 
     usb_init_verbose();
@@ -329,7 +333,6 @@ main(int argc, char *argv[])
         case 3:
             // Fill Device Descriptor of the ToE board
             usb_descriptor_set(BbioSubSetDescrDevice, 0, g_descriptorDevice, sizeof(g_descriptorDevice));
-
             break;
         // - Send Config Descriptor
         case 4:
@@ -346,7 +349,6 @@ main(int argc, char *argv[])
             char buffEndpoints[] = {0x01, 0x00};
             libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buffEndpoints, 2, NULL, 0);
             bbio_get_return_code();
-
             break;
         // - Connect to the target
         case 6:
@@ -356,10 +358,19 @@ main(int argc, char *argv[])
 
             // We need to send a packet to trigger the second step, no matter
             // the content of the packet
-            char buff[] = "toto";
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buff, 5, NULL, 0);
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+            bbio_get_return_code();
+            break;
+        // - Disconnect
+        case 7:
+            // Disconnect to the target
+            bbio_command_send(BbioDisconnect);
             bbio_get_return_code();
 
+            // We need to send a packet to trigger the second step, no matter
+            // the content of the packet
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+            bbio_get_return_code();
             break;
         // - exit
         case 9:
