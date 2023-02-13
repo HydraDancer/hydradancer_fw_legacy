@@ -53,7 +53,7 @@ _array_addr_len(void **array)
 
 /* @fn      usb20_registers_init
  *
- * @brief   Initialise registers and enable interrupt related to USB 2.0
+ * @brief   Initialize registers and enable interrupt related to USB 2.0
  *
  * @return  None
  */
@@ -75,6 +75,19 @@ usb20_registers_init(enum Speed sp)
 
     R8_USB_INT_EN = RB_USB_IE_ISOACT | RB_USB_IE_SETUPACT | RB_USB_IE_FIFOOV
                     | RB_USB_IE_SUSPEND | RB_USB_IE_TRANS | RB_USB_IE_BUSRST;
+}
+
+/* @fn      usb20_registers_deinit
+ *
+ * @brief   Deinitialize registers and related to USB 2.0 (act like a physical
+ *          disconnect)
+ *
+ * @return  None
+ */
+void
+usb20_registers_deinit(void)
+{
+    R8_USB_CTRL = RB_USB_CLR_ALL | RB_USB_RESET_SIE;
 }
 
 /* @fn      usb20_endpoints_init

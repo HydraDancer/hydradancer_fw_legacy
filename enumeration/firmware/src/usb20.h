@@ -65,11 +65,20 @@ extern uint8_t endp7Tbuff[];  // Endpoint 7 data transmitter buffer
 
 /*******************************************************************************
  * Function Name  : usb20_registers_init
- * Description    : Initialise registers and enable interrupt related to USB 2.0
+ * Description    : Initialize registers and enable interrupt related to USB 2.0
  * Input          : Desired USB 2.0 speed, see enum Speed
  * Return         : None
  *******************************************************************************/
 void usb20_registers_init(enum Speed sp);
+
+/*******************************************************************************
+ * Function Name  : usb20_registers_init
+ * Description    : Deinitialize registers and related to USB 2.0 (act like a
+ *                  physical disconnect)
+ * Input          : Desired USB 2.0 speed, see enum Speed
+ * Return         : None
+ *******************************************************************************/
+void usb20_registers_deinit(void);
 
 /*******************************************************************************
  * Function Name  : usb20_endpoints_init
