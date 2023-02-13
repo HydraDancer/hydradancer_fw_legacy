@@ -2,21 +2,6 @@
 #define USB20_CONFIG_H
 
 /* variables */
-static uint8_t keyboardReportDescriptor[] = {
-	0x05, 0x01,		// Usage Page (Generic Desktop)
-	0x09, 0x06,		// Usage (Keyboard)
-	0xA1, 0x01,		// Collection (Application)
-	0x95, 0x04,		// Report Count (4)
-	0x75, 0x08,		// Report Size (8)
-	0x15, 0x00,		// Logical Minimum (0)
-	0x25, 0x65,		// Logical Maximum(101)
-	0x05, 0x07,		// Usage Page (Key Codes)
-	0x19, 0x00,		// Usage Minimum (0)
-	0x29, 0x65,		// Usage Maximum (101)
-	0x81, 0x00,		// Input (Data, Array)   ; Key arrays (4 bytes)
-	0xC0,		    // End Collection
-};
-
 static USB_DEV_DESCR stBoardTopDeviceDescriptor = {
     .bLength = sizeof(USB_DEV_DESCR),
     .bDescriptorType = USB_DESCR_TYP_DEVICE,

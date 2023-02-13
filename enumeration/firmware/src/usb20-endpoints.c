@@ -97,42 +97,6 @@ epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 
 
 /*******************************************************************************
-/* @fn      ep1_transmit_keyboard
- *
- * @brief   Handle the "command" on endpoint 1 when behaving as a keyboard
- *          Here it means anwsering to interrupt request with the appropriate
- *          key sequence
- *          Not used, only given as a reference
- *
- * @return  None
- */
-void
-ep1_transmit_keyboard(void)
-{
-    /* Link to USB HID Keyboard scan codes :
-     * https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2 */
-    static uint8_t keyboard_payload[] = { 0x17, 0x08, 0x16, 0x17, 0x28 };
-    static uint8_t i = 0;
-    uint8_t modulus = 4;
-
-    /* Keyboard input crafting */
-    uint8_t output[] = { 0x00, 0x00, 0x00, 0x00 };
-    if (i%modulus == 0) {
-        output[0] = keyboard_payload[i/modulus];
-    }
-    i++;
-    if (i == (modulus*sizeof(keyboard_payload))-1) {
-        i = 0;
-    }
-
-    memcpy(endp1Tbuff, output, sizeof(output));
-    R16_UEP1_T_LEN = sizeof(output);
-    R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-    R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
-}
-
-
-/*******************************************************************************
 /* @fn      ep1_transceive_and_update
  *
  * @brief   Handle the "command" on endpoint 1 (mainly receive/transmit) and 

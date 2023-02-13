@@ -49,18 +49,7 @@ extern uint8_t *endp7LoggingBuff;
 void epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep1_transmit_keyboard
- * Description    : NOT USED, only given as a reference
- *                  Handle the "command" on endpoint 1 when behaving as a
- *                  keyboard, here it means anwsering to interrupt request with
- *                  the appropriate key sequence
- * Input          : None
- * Return         : None
- *******************************************************************************/
-void ep1_transmit_keyboard(void);
-
-/*******************************************************************************
- * Function Name  : ep1_transceive_and_update
+ * Function Name  : ep1_transceive_and_update_host
  * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
  *                  and update the buffer accordingly
  * Input          : - uisToken is the bmRequestType field of the Setup Packet
@@ -71,7 +60,7 @@ void ep1_transmit_keyboard(void);
 void ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep1_transceive_and_update
+ * Function Name  : ep1_transceive_and_update_target
  * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
  *                  and update the buffer accordingly
  * Input          : - uisToken is the bmRequestType field of the Setup Packet
