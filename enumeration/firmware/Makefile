@@ -15,19 +15,19 @@ BUILD_DIR = ./build
 
 PROJECT = $(BUILD_DIR)/hydrausb3-keyboard
 
-RVMSIS_DIR  = ../wch-ch56x-bsp/rvmsis
+RVMSIS_DIR  = ../../../wch-ch56x-bsp/rvmsis
 RVMSIS_SRCS = $(wildcard $(RVMSIS_DIR)/*.c)
 OBJS       += $(patsubst $(RVMSIS_DIR)/%.c,$(BUILD_DIR)/%.o,$(RVMSIS_SRCS))
 
-DRV_DIR   = ../wch-ch56x-bsp/drv
+DRV_DIR   = ../../../wch-ch56x-bsp/drv
 DRV_SRCS  = $(wildcard $(DRV_DIR)/*.c)
 OBJS     += $(patsubst $(DRV_DIR)/%.c,$(BUILD_DIR)/%.o,$(DRV_SRCS))
 
-BOARD_DIR   = ../wch-ch56x-bsp/board
-BOARD_SRCS  = ../wch-ch56x-bsp/board/hydrausb3_v1.c
+BOARD_DIR   = ../../../wch-ch56x-bsp/board
+BOARD_SRCS  = ../../../wch-ch56x-bsp/board/hydrausb3_v1.c
 OBJS     += $(patsubst $(BOARD_DIR)/%.c,$(BUILD_DIR)/%.o,$(BOARD_SRCS))
 
-USB_DIR   = ../wch-ch56x-bsp/usb/usb_devbulk
+USB_DIR   = ../../../wch-ch56x-bsp/usb/usb_devbulk
 # USB_SRCS  = $(wildcard $(USB_DIR)/*.c)
 # OBJS        += $(patsubst $(USB_DIR)/%.c,$(BUILD_DIR)/%.o,$(USB_SRCS))
 
@@ -74,7 +74,7 @@ $(BUILD_DIR)%/.:
 
 .SECONDEXPANSION:
 
-$(BUILD_DIR)/startup_CH56x.o: ../wch-ch56x-bsp/startup/startup_CH56x.S | $$(@D)/.
+$(BUILD_DIR)/startup_CH56x.o: ../../../wch-ch56x-bsp/startup/startup_CH56x.S | $$(@D)/.
 	@echo 'Building file: $<'
 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -x assembler -c -o "$@" "$<"
 	@echo ' '
@@ -85,22 +85,22 @@ $(BUILD_DIR)/%.o: ./src/%.c | $$(@D)/.
 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
 	@echo ' '
 
-$(BUILD_DIR)/%.o: ../wch-ch56x-bsp/rvmsis/%.c | $$(@D)/.
+$(BUILD_DIR)/%.o: ../../../wch-ch56x-bsp/rvmsis/%.c | $$(@D)/.
 	@echo 'Building file: $<'
 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
 	@echo ' '
 
-$(BUILD_DIR)/%.o: ../wch-ch56x-bsp/drv/%.c | $$(@D)/.
+$(BUILD_DIR)/%.o: ../../../wch-ch56x-bsp/drv/%.c | $$(@D)/.
 	@echo 'Building file: $<'
 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
 	@echo ' '
 
-$(BUILD_DIR)/%.o: ../wch-ch56x-bsp/board/%.c | $$(@D)/.
+$(BUILD_DIR)/%.o: ../../../wch-ch56x-bsp/board/%.c | $$(@D)/.
 	@echo 'Building file: $<'
 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
 	@echo ' '
 
-# $(BUILD_DIR)/%.o: ../wch-ch56x-bsp/usb/usb_devbulk/%.c | $$(@D)/.
+# $(BUILD_DIR)/%.o: ../../../wch-ch56x-bsp/usb/usb_devbulk/%.c | $$(@D)/.
 # 	@echo 'Building file: $<'
 # 	mkdir -p $(@D)
 # 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
