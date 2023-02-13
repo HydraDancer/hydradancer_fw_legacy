@@ -27,12 +27,14 @@
 
 /* enums */
 enum BbioCommand {
-    BbioMainMode      = 0b00000000,
-    BbioIdentifMode   = 0b00000001,
-    BbioSetDescr      = 0b00000010,
-    BbioSetEndp       = 0b00000011,
-    BbioConnect       = 0b00000100,
+    BbioMainMode      = 0b00000001,
+    BbioIdentifMode   = 0b00000010,
+    BbioSetDescr      = 0b00000011,
+    BbioSetEndp       = 0b00000100,
+    BbioConnect       = 0b00000101,
+    BbioDisconnect    = 0b00000110,
 };
+
 enum BbioSubCommand {
     BbioSubSetDescrDevice      = 0b00000001,
     BbioSubSetDescrConfig      = 0b00000010,
@@ -250,7 +252,7 @@ bbio_command_sub_send(enum BbioCommand bbioCommand, enum BbioSubCommand bbioSubC
     /* Safeguards */
     assert(indexDescriptor <= 16 && "bbio_command_send() index > 16");
     assert(sizeDescriptor <= UINT16_MAX && "Desciptor size > UINT16_MAX\n");
-    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "usb_descriptor_set(): Descriptor is too big for the buffer\n");
+    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "bbio_command_sub_send(): Descriptor is too big for the buffer\n");
     int retCode;
     unsigned char bbioBuffer[5];
 
@@ -271,15 +273,29 @@ void
 usb_descriptor_set(enum BbioSubCommand bbioSubCommand, int indexDescriptor, unsigned char *descriptor, int sizeDescriptor)
 {
     int retCode;
+    int capBuffer = 4096;
+    char buffer[4096];
 
     // Send BBIO command
     bbio_command_sub_send(BbioSetDescr, bbioSubCommand, indexDescriptor, sizeDescriptor);
+            memset(buffer, 0, capBuffer);
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, buffer, 128, NULL, 0);
+            if (retCode) {
+                printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
+            }
+            printf("bbio return code: 0x%02X\n", buffer[0]);
 
     // Send descriptor
     retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptor, sizeDescriptor, NULL, 0);
     if (retCode) {
         printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
     }
+            memset(buffer, 0, capBuffer);
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, buffer, 128, NULL, 0);
+            if (retCode) {
+                printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
+            }
+            printf("bbio return code: 0x%02X\n", buffer[0]);
 }
 
 /*******************************************************************************
@@ -336,12 +352,6 @@ main(int argc, char *argv[])
             // Fill Device Descriptor of the ToE board
             usb_descriptor_set(BbioSubSetDescrDevice, 0, g_descriptorDevice, sizeof(g_descriptorDevice));
 
-            memset(buffer, 0, capBuffer);
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, buffer, 128, NULL, 0);
-            if (retCode) {
-                printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
-            }
-            printf("bbio return code: 0x%02X\n", buffer[0]);
             break;
         // - Send Config Descriptor
         case 4:
