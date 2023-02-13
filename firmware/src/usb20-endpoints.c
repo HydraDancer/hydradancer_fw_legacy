@@ -155,7 +155,6 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
          */
         usb20_endpoint_nak(0x81);
 
-        log_to_evaluator("Received USB request (OUT)\r\n");
         // Transmit data to second board via HSPI
         memcpy(hspi_get_buffer_next_tx(), endp1Rbuff, min(HSPI_DMA_LEN, U20_UEP1_MAXSIZE));
         HSPI_DMA_Tx();

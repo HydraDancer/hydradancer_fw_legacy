@@ -147,9 +147,6 @@ SERDES_IRQHandler(void)
         log_to_evaluator("SDS_RX_INT_FLG | SDS_RX_ERR_FLG\r\n");
         // No breaks, the handling is the same for both interrupts
     case SDS_RX_INT_FLG:
-
-        log_to_evaluator("Serdes interrupt (0x%08X)\r\n", SDS->SDS_DATA0 & SerdesMagicNumberMask);
-
         switch(SDS->SDS_DATA0 & SerdesMagicNumberMask) {
         case SerdesMagicNumberLog:
             // Handle log received from bottom board
@@ -221,7 +218,7 @@ HSPI_IRQHandler(void)
     case RB_HSPI_IF_T_DONE:
         hspiRtxStatus = hspi_get_rtx_status();
         if (hspiRtxStatus) {
-            log_to_evaluator("[Interrupt HSPI]   Error transmitting: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            log_to_evaluator("[Interrupt HSPI]   Error transmitting: %s\r\n", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
         R8_HSPI_INT_FLAG = RB_HSPI_IF_T_DONE;
         break;
@@ -229,12 +226,10 @@ HSPI_IRQHandler(void)
         hspiRtxStatus = hspi_get_rtx_status();
         hspiRxBuffer = hspi_get_buffer_rx();
         if (hspiRtxStatus) {
-            log_to_evaluator("[Interrupt HSPI]   Error receiving: %s", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
+            log_to_evaluator("[Interrupt HSPI]   Error receiving: %s\r\n", hspiRtxStatus&RB_HSPI_CRC_ERR? "CRC_ERR" : "NUM_MIS");
         }
 
         // Business logic goes here
-        log_to_evaluator("Received HSPI\r\n");
-
         if (currentStep == 0) {
             bbioRetCode = bbio_command_decode(hspiRxBuffer);
 
