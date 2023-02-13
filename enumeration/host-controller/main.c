@@ -12,6 +12,9 @@
 
 #include "usb_descriptors.h"
 
+// TODOO: Add doxygen signature for each function
+// TODO: Refactor in multiple file ?
+
 /* macros */
 #define ID_VENDOR  0x1337
 #define ID_PRODUCT 0x1337
@@ -54,7 +57,6 @@ void usb_close(void);
 void menu_print(void);
 int menu_get_input(void);
 void usb_log_print(char endpoint, unsigned char *buffer, int capBuffer);
-void usb_bulk_rot13(unsigned char *buffer, int capBuffer);
 
 
 /* functions implementation */
@@ -131,6 +133,7 @@ usb_close(void)
     libusb_close(g_deviceHandle);
     libusb_exit(NULL);
 }
+
 /*******************************************************************************
  * @fn      menu_print
  *
@@ -153,6 +156,7 @@ menu_print(void)
     printf("9) Exit\n");
     printf("> ");
 }
+
 /*******************************************************************************
  * @fn      menu_get_input
  *
@@ -194,40 +198,6 @@ usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
         printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
     }
     memset(buffer, 0, capBuffer);
-}
-
-/*******************************************************************************
- * @fn      usb_bulk_rot13
- *
- * @brief   Send the message to cypher to the board and print the received
- *          cyphered message
- *
- * @return  None
- */
-void
-usb_bulk_rot13(unsigned char *buffer, int capBuffer)
-{
-    int retCode;
-
-    // Send the message
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (unsigned char *)buffer, capBuffer, NULL, 0);
-    buffer[capBuffer-1] = 0;
-    if (retCode) {
-        printf("[ERROR]\tData NOT transmitted successfully: %s\n", libusb_strerror(retCode));
-    }
-
-    memset(buffer, 0, capBuffer);
-
-    // Wait for the message to come back
-    while (buffer[0] == 0) {
-        retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, buffer, capBuffer, NULL, 0);
-        buffer[capBuffer-1] = 0; // Force null terminating the string
-        if (retCode) {
-            printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
-        }
-    }
-
-    printf("%s\n", buffer);
 }
 
 
@@ -339,9 +309,10 @@ main(int argc, char *argv[])
             // TODOO: Fix bug where the first IN bulk transfer is empty (even
             // when there is data to transmit)
             memset(buffer, 0, capBuffer);
+            printf("Top Board:\n");
             usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
-            printf("--------------------\n");
+            printf("Bottom Board:\n");
             memset(buffer, 0, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
@@ -351,7 +322,7 @@ main(int argc, char *argv[])
             while (1) {
                 usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
                 usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
-                usleep(10000);
+                usleep(100000);
             }
             break;
         // - Send Device Descriptor
