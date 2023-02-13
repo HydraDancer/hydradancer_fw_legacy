@@ -169,8 +169,6 @@ SERDES_IRQHandler(void)
                 serdesDmaAddr[0] ^= 0x80;
             }
 
-            serdesDmaAddr[0] ^= 0x30;
-
             // fill ep1 with bbio return code
             endp1Tbuff[0] = serdesDmaAddr[0];
 

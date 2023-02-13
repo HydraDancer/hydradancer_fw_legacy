@@ -269,33 +269,40 @@ bbio_command_sub_send(enum BbioCommand bbioCommand, enum BbioSubCommand bbioSubC
 }
 
 
+unsigned char
+bbio_get_return_code(void)
+{
+    int retCode;
+    unsigned char bbioRetCode;
+
+    retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, &bbioRetCode, 1, NULL, 0);
+    if (retCode) {
+        printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
+    }
+
+    if (bbioRetCode) {
+        printf("bbio return code: 0x%02X\n", bbioRetCode);
+    }
+
+    return bbioRetCode;
+}
+
+
 void
 usb_descriptor_set(enum BbioSubCommand bbioSubCommand, int indexDescriptor, unsigned char *descriptor, int sizeDescriptor)
 {
     int retCode;
-    int capBuffer = 4096;
-    char buffer[4096];
 
     // Send BBIO command
     bbio_command_sub_send(BbioSetDescr, bbioSubCommand, indexDescriptor, sizeDescriptor);
-            memset(buffer, 0, capBuffer);
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, buffer, 128, NULL, 0);
-            if (retCode) {
-                printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
-            }
-            printf("bbio return code: 0x%02X\n", buffer[0]);
+    bbio_get_return_code();
 
     // Send descriptor
     retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptor, sizeDescriptor, NULL, 0);
     if (retCode) {
         printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
     }
-            memset(buffer, 0, capBuffer);
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, buffer, 128, NULL, 0);
-            if (retCode) {
-                printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
-            }
-            printf("bbio return code: 0x%02X\n", buffer[0]);
+    bbio_get_return_code();
 }
 
 /*******************************************************************************
@@ -362,21 +369,25 @@ main(int argc, char *argv[])
         case 5:
             // Connect to the target
             bbio_command_send(BbioSetEndp);
+            bbio_get_return_code();
 
             // endpoint 1 Out
             char buffEndpoints[] = {0x01, 0x00};
             libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buffEndpoints, 2, NULL, 0);
+            bbio_get_return_code();
 
             break;
         // - Connect to the target
         case 6:
             // Connect to the target
             bbio_command_send(BbioConnect);
+            bbio_get_return_code();
 
             // We need to send a packet to trigger the second step, no matter
             // the content of the packet
             char buff[] = "toto";
             libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buff, 5, NULL, 0);
+            bbio_get_return_code();
 
             break;
         // - exit
