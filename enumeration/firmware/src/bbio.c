@@ -6,8 +6,6 @@
 
 #include "bbio.h"
 
-// TODOOO: Add reset feature
-
 
 /* macros */
 #define _DESCRIPTOR_STORE_CAPACITY (4096)
@@ -15,15 +13,7 @@
 
 /* variables */
 
-/* _descriptorsStore is our "free store", it is a memory pool dedicated to
- * descriptors the user will load
- * In the future we will have a dedicated memory allocator to manage this free
- * store
- * This free store is always hidden to the user, hence the underscore as a
- * prefix
- */
-static uint8_t _descriptorsStore[_DESCRIPTOR_STORE_CAPACITY];
-static uint8_t *_descriptorsStoreCursor = _descriptorsStore;
+bool g_doesToeSupportCurrentDevice = false;
 
 // TODO: Use structs instead of a variable for the array and a variable for the
 // size, is it worth ?
@@ -40,6 +30,17 @@ static uint8_t _command          = 0;   // 0 : If not set, else the value of the
 static uint8_t _subCommand       = 0;   // 0 : If not set, else the value of the enum BbioSubCommand
 static uint8_t _descrStringIndex = 0;
 static uint16_t _descrSize       = 0;
+
+/* _descriptorsStore is our "free store", it is a memory pool dedicated to
+ * descriptors the user will load
+ * In the future we will have a dedicated memory allocator to manage this free
+ * store
+ * This free store is always hidden to the user, hence the underscore as a
+ * prefix
+ */
+static uint8_t _descriptorsStore[_DESCRIPTOR_STORE_CAPACITY];
+static uint8_t *_descriptorsStoreCursor = _descriptorsStore;
+
 
 /* functions implementation */
 

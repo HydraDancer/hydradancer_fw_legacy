@@ -31,6 +31,10 @@ enum BbioSubCommand {
 
 /* variables */
 
+/* Variable used to determine if the ToE USB's stack support our device, see
+ * Issue #45 for more details */
+extern bool g_doesToeSupportCurrentDevice;
+
 /* The following global variables are pointers to structures loaded by the user
  */
 extern uint8_t *g_bbioDescriptorDevice;

@@ -370,6 +370,15 @@ USBHS_IRQHandler(void)
             break;
         case USB_SET_CONFIGURATION:
             /* As of now there is only one configuration */
+            if (!g_isHost) {
+                /* As mentionned in Issue #45 :
+                 * After giving an address to the device and getting its
+                 * descriptors, the last step is to set a configuration
+                 * Thus, when a configuration is set we can assume that the
+                 * device is supported by the ToE's USB stack
+                 */
+                g_doesToeSupportCurrentDevice = true;   /* From src/bbio.h */
+            }
             break;
         case USB_GET_INTERFACE:
             /* We have only one interface, hardcoded for now */
