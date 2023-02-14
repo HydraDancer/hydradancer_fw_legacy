@@ -37,6 +37,7 @@ enum BbioCommand {
     BbioConnect       = 0b00000101,
     BbioGetStatus     = 0b00000110,
     BbioDisconnect    = 0b00000111,
+    BbioResetDescr    = 0b00001000,
 };
 
 enum BbioSubCommand {
@@ -155,6 +156,7 @@ menu_print(void)
     printf("6) Connect\n");
     printf("7) Get status\n");
     printf("8) Disconnect\n");
+    printf("9) Reset descriptors\n");
     printf("\n");
     printf("0) Exit\n");
     printf("> ");
@@ -381,6 +383,17 @@ main(int argc, char *argv[])
         case 8:
             // Disconnect to the target
             bbio_command_send(BbioDisconnect);
+            bbio_get_return_code();
+
+            // We need to send a packet to trigger the second step, no matter
+            // the content of the packet
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+            bbio_get_return_code();
+            break;
+        // - Reset descriptors
+        case 9:
+            // Reset descriptors on TOE board
+            bbio_command_send(BbioResetDescr);
             bbio_get_return_code();
 
             // We need to send a packet to trigger the second step, no matter
