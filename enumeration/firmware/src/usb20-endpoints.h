@@ -20,6 +20,8 @@ extern uint16_t sizeEndp7LoggingBuff;
 extern const uint16_t capacityEndp7LoggingBuff;
 extern uint8_t *endp7LoggingBuff;
 
+extern bool g_doesToeSupportCurrentDevice;
+
 /* functions declaration */
 
 /*******************************************************************************
@@ -49,18 +51,7 @@ extern uint8_t *endp7LoggingBuff;
 void epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep1_transmit_keyboard
- * Description    : NOT USED, only given as a reference
- *                  Handle the "command" on endpoint 1 when behaving as a
- *                  keyboard, here it means anwsering to interrupt request with
- *                  the appropriate key sequence
- * Input          : None
- * Return         : None
- *******************************************************************************/
-void ep1_transmit_keyboard(void);
-
-/*******************************************************************************
- * Function Name  : ep1_transceive_and_update
+ * Function Name  : ep1_transceive_and_update_host
  * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
  *                  and update the buffer accordingly
  * Input          : - uisToken is the bmRequestType field of the Setup Packet
@@ -71,15 +62,13 @@ void ep1_transmit_keyboard(void);
 void ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
 
 /*******************************************************************************
- * Function Name  : ep1_transceive_and_update
- * Description    : Handle the "command" on endpoint 1 (mainly receive/transmit)
- *                  and update the buffer accordingly
+ * Function Name  : epX_handler_toe
+ * Description    : Dummy endpoint handler for ToE board
  * Input          : - uisToken is the bmRequestType field of the Setup Packet
- *                  - pBuffer and pSizeBuffer are the buffer to transceive and
- *                    the associated size
+ *                  - the endpoint requested
  * Return         : None
  *******************************************************************************/
-void ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer);
+void epX_handler_toe(uint8_t uisToken, uint8_t endpoint);
 
 /*******************************************************************************
  * Function Name  : ep6_transmit_and_update

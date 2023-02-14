@@ -16,7 +16,8 @@ enum BbioCommand {
     BbioSetDescr      = 0b00000011,
     BbioSetEndp       = 0b00000100,
     BbioConnect       = 0b00000101,
-    BbioDisconnect    = 0b00000110,
+    BbioGetStatus     = 0b00000110,
+    BbioDisconnect    = 0b00000111,
 };
 
 enum BbioSubCommand {

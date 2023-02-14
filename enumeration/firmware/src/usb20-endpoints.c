@@ -16,6 +16,14 @@ const uint16_t capacityEndp7LoggingBuff = 4096;
 __attribute__((aligned(16))) uint8_t endp7LoggingBuffRaw[4096] __attribute__((section(".DMADATA")));
 uint8_t *endp7LoggingBuff = endp7LoggingBuffRaw;
 
+/* To know if a device is supported by the ToE, getting the descriptors queried
+ * is not enough
+ * We wait for a request on an endpoint, if a request is sent to us after the
+ * "authentication" (everything that happen on ep0) on an endpoint, we consider
+ * that our current device is supported
+ */
+bool g_doesToeSupportCurrentDevice = false;
+
 
 /* functions implementation */
 
@@ -97,43 +105,7 @@ epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
 
 
 /*******************************************************************************
-/* @fn      ep1_transmit_keyboard
- *
- * @brief   Handle the "command" on endpoint 1 when behaving as a keyboard
- *          Here it means anwsering to interrupt request with the appropriate
- *          key sequence
- *          Not used, only given as a reference
- *
- * @return  None
- */
-void
-ep1_transmit_keyboard(void)
-{
-    /* Link to USB HID Keyboard scan codes :
-     * https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2 */
-    static uint8_t keyboard_payload[] = { 0x17, 0x08, 0x16, 0x17, 0x28 };
-    static uint8_t i = 0;
-    uint8_t modulus = 4;
-
-    /* Keyboard input crafting */
-    uint8_t output[] = { 0x00, 0x00, 0x00, 0x00 };
-    if (i%modulus == 0) {
-        output[0] = keyboard_payload[i/modulus];
-    }
-    i++;
-    if (i == (modulus*sizeof(keyboard_payload))-1) {
-        i = 0;
-    }
-
-    memcpy(endp1Tbuff, output, sizeof(output));
-    R16_UEP1_T_LEN = sizeof(output);
-    R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-    R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
-}
-
-
-/*******************************************************************************
-/* @fn      ep1_transceive_and_update
+/* @fn      ep1_transceive_and_update_host
  *
  * @brief   Handle the "command" on endpoint 1 (mainly receive/transmit) and 
  *          update the buffer accordingly
@@ -175,40 +147,99 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
     }
 }
 
-
 /*******************************************************************************
-/* @fn      ep1_transceive_and_update
+/* @fn      epX_handler_toe
  *
- * @brief   Handle the "command" on endpoint 1 (mainly receive/transmit) and 
- *          update the buffer accordingly
+ * @brief   Dummy endpoint handler for ToE board
  *
  * @return  None
  */
 void
-ep1_transceive_and_update_target(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBuffer)
+epX_handler_toe(uint8_t uisToken, uint8_t endpoint)
 {
-    static uint8_t *bufferResetValue = NULL;
-    if (bufferResetValue == NULL) {
-        bufferResetValue = *pBuffer;
-    }
-
     switch (uisToken) {
-    case UIS_TOKEN_OUT:
-        // Not implemented yet
-
-        R16_UEP1_T_LEN = 0;
-        R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
-        R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
-        R8_UEP1_RX_CTRL ^= RB_UEP_R_TOG_1;
-        R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+        case UIS_TOKEN_OUT:
+            switch (endpoint) {
+            case 1:
+                R16_UEP1_T_LEN = 0;
+                R8_UEP1_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP1_TX_CTRL = (R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 2:
+                R16_UEP2_T_LEN = 0;
+                R8_UEP2_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP2_TX_CTRL = (R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 3:
+                R16_UEP3_T_LEN = 0;
+                R8_UEP3_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP3_TX_CTRL = (R8_UEP3_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 4:
+                R16_UEP4_T_LEN = 0;
+                R8_UEP4_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP4_TX_CTRL = (R8_UEP4_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 5:
+                R16_UEP5_T_LEN = 0;
+                R8_UEP5_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP5_TX_CTRL = (R8_UEP5_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 6:
+                R16_UEP6_T_LEN = 0;
+                R8_UEP6_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP6_TX_CTRL = (R8_UEP6_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 7:
+                R16_UEP7_T_LEN = 0;
+                R8_UEP7_TX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP7_TX_CTRL = (R8_UEP7_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            default:
+                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (OUT)\r\n");
+                return;
+            }
         break;
     case UIS_TOKEN_IN:
-        // Not implemented yet
+            switch (endpoint) {
+            case 1:
+                R8_UEP1_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP1_RX_CTRL = (R8_UEP1_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 2:
+                R8_UEP2_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP2_RX_CTRL = (R8_UEP2_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 3:
+                R8_UEP3_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP3_RX_CTRL = (R8_UEP3_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 4:
+                R8_UEP4_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP4_RX_CTRL = (R8_UEP4_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 5:
+                R8_UEP5_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP5_RX_CTRL = (R8_UEP5_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 6:
+                R8_UEP6_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP6_RX_CTRL = (R8_UEP6_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            case 7:
+                R8_UEP7_RX_CTRL ^= RB_UEP_T_TOG_1;
+                R8_UEP7_RX_CTRL = (R8_UEP7_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+                break;
+            default:
+                log_to_evaluator("ERROR: epX_handler_toe() invalid endpoint (IN)\r\n");
+                return;
+            }
         break;
     default:
-        log_to_evaluator("ERROR: ep1_transceive_and_update default!");
-        break;
+        log_to_evaluator("ERROR: epX_handler_toe() default!\r\n");
+        return;
     }
+    g_doesToeSupportCurrentDevice = true;
 }
 
 /* @fn      ep6_transmit_and_update

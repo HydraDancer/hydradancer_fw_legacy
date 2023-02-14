@@ -35,7 +35,8 @@ enum BbioCommand {
     BbioSetDescr      = 0b00000011,
     BbioSetEndp       = 0b00000100,
     BbioConnect       = 0b00000101,
-    BbioDisconnect    = 0b00000110,
+    BbioGetStatus     = 0b00000110,
+    BbioDisconnect    = 0b00000111,
 };
 
 enum BbioSubCommand {
@@ -152,9 +153,10 @@ menu_print(void)
     printf("4) Send descriptor configuration\n");
     printf("5) Set endpoints\n");
     printf("6) Connect\n");
-    printf("7) Disconnect\n");
+    printf("7) Get status\n");
+    printf("8) Disconnect\n");
     printf("\n");
-    printf("9) Exit\n");
+    printf("0) Exit\n");
     printf("> ");
 }
 
@@ -361,8 +363,22 @@ main(int argc, char *argv[])
             libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
             bbio_get_return_code();
             break;
-        // - Disconnect
+        // - Get status
         case 7:
+            // Is the current device supported by the ToE ?
+            bbio_command_send(BbioGetStatus);
+            bbio_get_return_code();
+
+            // We need to send a packet to trigger the second step, no matter
+            // the content of the packet
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+            retCode = bbio_get_return_code();
+            if (retCode) {
+                printf("Device is supported!\n");
+            }
+            break;
+        // - Disconnect
+        case 8:
             // Disconnect to the target
             bbio_command_send(BbioDisconnect);
             bbio_get_return_code();
@@ -373,7 +389,7 @@ main(int argc, char *argv[])
             bbio_get_return_code();
             break;
         // - exit
-        case 9:
+        case 0:
             exit = true;
             break;
         default:
