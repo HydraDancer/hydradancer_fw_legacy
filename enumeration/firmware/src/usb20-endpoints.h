@@ -20,6 +20,8 @@ extern uint16_t sizeEndp7LoggingBuff;
 extern const uint16_t capacityEndp7LoggingBuff;
 extern uint8_t *endp7LoggingBuff;
 
+extern bool g_doesToeSupportCurrentDevice;
+
 /* functions declaration */
 
 /*******************************************************************************
@@ -64,9 +66,9 @@ void ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_
  * Description    : Dummy endpoint handler for ToE board
  * Input          : - uisToken is the bmRequestType field of the Setup Packet
  *                  - the endpoint requested
- * Return         : 1 if request is valid, 0 else
+ * Return         : None
  *******************************************************************************/
-uint8_t epX_handler_toe(uint8_t uisToken, uint8_t endpoint);
+void epX_handler_toe(uint8_t uisToken, uint8_t endpoint);
 
 /*******************************************************************************
  * Function Name  : ep6_transmit_and_update

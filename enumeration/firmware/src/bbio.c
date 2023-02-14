@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <string.h>
 
 #include "log.h"
@@ -129,14 +130,18 @@ bbio_command_handle(uint8_t *bufferData)
         g_descriptorConfig  = g_descriptorConfig;
         g_descriptorStrings = g_descriptorStrings;
 
+        g_doesToeSupportCurrentDevice = false;  // Reset the value
         usb20_registers_init(g_usb20Speed);
         return 0;
+    case BbioGetStatus:
+        return g_doesToeSupportCurrentDevice;
     case BbioDisconnect:
+        g_doesToeSupportCurrentDevice = false;
         usb20_registers_deinit();
-        return 3;
+        return 0;
     default:
         log_to_evaluator("ERROR: bbio_command_handle() unknown command\r\n");
-        return 4;
+        return 3;
     }
 }
 
