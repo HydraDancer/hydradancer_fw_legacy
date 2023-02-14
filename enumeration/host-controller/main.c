@@ -10,54 +10,24 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "bbio.h"
+#include "menu.h"
 #include "usb_descriptors.h"
+#include "usb.h"
 
 // TODOO: Add doxygen signature for each function
 // TODO: Refactor in multiple file ?
 
 /* macros */
-#define ID_VENDOR  0x1337
-#define ID_PRODUCT 0x1337
 
-#define TRANSFER_SIZE       64 /* Currently doing USB HS */
-#define USB20_EP1_MAX_SIZE  512
-
-#define INTERFACE 1
-#define EP1OUT                  0x01
-#define EP1IN                   0x81
-#define EP_DEBUG_BOARD_TOP      0x86
-#define EP_DEBUG_BOARD_BOTTOM   0x87
-
-/* enums */
-enum BbioCommand {
-    BbioMainMode      = 0b00000001,
-    BbioIdentifMode   = 0b00000010,
-    BbioSetDescr      = 0b00000011,
-    BbioSetEndp       = 0b00000100,
-    BbioConnect       = 0b00000101,
-    BbioGetStatus     = 0b00000110,
-    BbioDisconnect    = 0b00000111,
-    BbioResetDescr    = 0b00001000,
-};
-
-enum BbioSubCommand {
-    BbioSubSetDescrDevice      = 0b00000001,
-    BbioSubSetDescrConfig      = 0b00000010,
-    BbioSubSetDescrInterface   = 0b00000011,
-    BbioSubSetDescrEndpoint    = 0b00000100,
-    BbioSubSetDescrString      = 0b00000101,
-};
 
 /* variables */
-struct libusb_device_handle *g_deviceHandle = NULL;
 
 
 /* functions declaration */
 void handler_sigint(int sig);
 int usb_init_verbose(void);
 void usb_close(void);
-void menu_print(void);
-int menu_get_input(void);
 void usb_log_print(char endpoint, unsigned char *buffer, int capBuffer);
 
 
@@ -136,49 +106,6 @@ usb_close(void)
     libusb_exit(NULL);
 }
 
-/*******************************************************************************
- * @fn      menu_print
- *
- * @brief   Print the main selection menu
- *
- * @return  None
- */
-void
-menu_print(void)
-{
-    printf("HydraDancer host controller\n");
-    printf("Select your action:\n");
-    printf("1) Log once\n");
-    printf("2) Log infinite loop\n");
-    printf("3) Send descriptor device\n");
-    printf("4) Send descriptor configuration\n");
-    printf("5) Set endpoints\n");
-    printf("6) Connect\n");
-    printf("7) Get status\n");
-    printf("8) Disconnect\n");
-    printf("9) Reset descriptors\n");
-    printf("\n");
-    printf("0) Exit\n");
-    printf("> ");
-}
-
-/*******************************************************************************
- * @fn      menu_get_input
- *
- * @brief   Getthe user input and returns it
- *
- * @return  A number corresponding to the user input
- */
-int
-menu_get_input(void)
-{
-    int userChoice = 0;
-    scanf("%d", &userChoice);
-
-    while (!getchar());
-
-    return userChoice;
-}
 
 /*******************************************************************************
  * @fn      usb_log_print
@@ -205,62 +132,6 @@ usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
     memset(buffer, 0, capBuffer);
 }
 
-
-void
-bbio_command_send(enum BbioCommand bbioCommand)
-{
-    int retCode;
-    unsigned char bbioBuffer[1];
-
-    bbioBuffer[0] = bbioCommand;
-
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, bbioBuffer, 1, NULL, 0);
-    if (retCode) {
-        printf("[ERROR]\t bbio_command_send(): bulk transfer failed");
-    }
-}
-
-
-void
-bbio_command_sub_send(enum BbioCommand bbioCommand, enum BbioSubCommand bbioSubCommand, int indexDescriptor, int sizeDescriptor)
-{
-    /* Safeguards */
-    assert(indexDescriptor <= 16 && "bbio_command_send() index > 16");
-    assert(sizeDescriptor <= UINT16_MAX && "Desciptor size > UINT16_MAX\n");
-    assert(sizeDescriptor <= USB20_EP1_MAX_SIZE && "bbio_command_sub_send(): Descriptor is too big for the buffer\n");
-    int retCode;
-    unsigned char bbioBuffer[5];
-
-    bbioBuffer[0] = bbioCommand;
-    bbioBuffer[1] = bbioSubCommand;
-    bbioBuffer[2] = indexDescriptor;
-    bbioBuffer[3] = sizeDescriptor % 256;   // Lower byte
-    bbioBuffer[4] = sizeDescriptor / 256;   // Higher Byte
-
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, bbioBuffer, 5, NULL, 0);
-    if (retCode) {
-        printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
-    }
-}
-
-
-unsigned char
-bbio_get_return_code(void)
-{
-    int retCode;
-    unsigned char bbioRetCode;
-
-    retCode = libusb_bulk_transfer(g_deviceHandle, EP1IN, &bbioRetCode, 1, NULL, 0);
-    if (retCode) {
-        printf("[ERROR]\t bbio_command_sub_send(): bulk transfer failed");
-    }
-
-    if (bbioRetCode) {
-        printf("bbio return code: 0x%02X\n", bbioRetCode);
-    }
-
-    return bbioRetCode;
-}
 
 
 void
