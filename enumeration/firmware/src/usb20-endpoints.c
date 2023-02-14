@@ -16,14 +16,6 @@ const uint16_t capacityEndp7LoggingBuff = 4096;
 __attribute__((aligned(16))) uint8_t endp7LoggingBuffRaw[4096] __attribute__((section(".DMADATA")));
 uint8_t *endp7LoggingBuff = endp7LoggingBuffRaw;
 
-/* To know if a device is supported by the ToE, getting the descriptors queried
- * is not enough
- * We wait for a request on an endpoint, if a request is sent to us after the
- * "authentication" (everything that happen on ep0) on an endpoint, we consider
- * that our current device is supported
- */
-bool g_doesToeSupportCurrentDevice = false;
-
 
 /* functions implementation */
 
@@ -150,7 +142,7 @@ ep1_transceive_and_update_host(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pS
 /*******************************************************************************
 /* @fn      epX_handler_toe
  *
- * @brief   Dummy endpoint handler for ToE board
+ * @brief   Dummy endpoint handler for ToE board, just ACK the request
  *
  * @return  None
  */
@@ -239,7 +231,6 @@ epX_handler_toe(uint8_t uisToken, uint8_t endpoint)
         log_to_evaluator("ERROR: epX_handler_toe() default!\r\n");
         return;
     }
-    g_doesToeSupportCurrentDevice = true;
 }
 
 /* @fn      ep6_transmit_and_update
