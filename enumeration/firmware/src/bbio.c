@@ -10,7 +10,7 @@
 
 
 /* macros */
-#define _DESCRIPTOR_STORE_SIZE (4096)
+#define _DESCRIPTOR_STORE_CAPACITY (4096)
 #define _DESCRIPTOR_STRING_CAPACITY (10)
 
 /* variables */
@@ -22,7 +22,7 @@
  * This free store is always hidden to the user, hence the underscore as a
  * prefix
  */
-static uint8_t _descriptorsStore[_DESCRIPTOR_STORE_SIZE];
+static uint8_t _descriptorsStore[_DESCRIPTOR_STORE_CAPACITY];
 static uint8_t *_descriptorsStoreCursor = _descriptorsStore;
 
 // TODO: Use structs instead of a variable for the array and a variable for the
@@ -67,7 +67,7 @@ bbio_command_decode(uint8_t *command)
     _descrSize = 0;
 
         // Safeguard
-    if (command[0] >= BbioMainMode && command[0] <= BbioDisconnect) {
+    if (command[0] >= BbioMainMode && command[0] <= BbioResetDescr) {
         _command = command[0];
     } else {
         log_to_evaluator("ERROR: bbio_decode_command() unknown command\r\n");
@@ -139,6 +139,19 @@ bbio_command_handle(uint8_t *bufferData)
         g_doesToeSupportCurrentDevice = false;
         usb20_registers_deinit();
         return 0;
+    case BbioResetDescr:
+        g_descriptorDevice  = NULL;
+        g_descriptorConfig  = NULL;
+        g_descriptorStrings = NULL;
+
+        g_bbioDescriptorDevice = NULL;
+        g_bbioDescriptorConfiguration = NULL;
+        for (uint8_t i = 0; i < _DESCRIPTOR_STRING_CAPACITY; ++i) {
+            g_bbioDescriptorsString[i] = NULL;
+        }
+
+        memset(_descriptorsStore, 0, _DESCRIPTOR_STORE_CAPACITY);
+        return 0;
     default:
         log_to_evaluator("ERROR: bbio_command_handle() unknown command\r\n");
         return 3;
@@ -156,7 +169,7 @@ bbio_command_set_descriptor_handle(uint8_t *bufferData)
 {
     // log_to_evaluator("bbio_command_set_descriptor_handle()\r\n");
     // Safeguards
-    if (_descriptorsStoreCursor + _descrSize > _descriptorsStore + _DESCRIPTOR_STORE_SIZE) {
+    if (_descriptorsStoreCursor + _descrSize > _descriptorsStore + _DESCRIPTOR_STORE_CAPACITY) {
         log_to_evaluator("ERROR: bbio_handle_command() No space left in the descriptor store\r\n");
         return 1;
     }
