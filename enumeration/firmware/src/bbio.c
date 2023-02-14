@@ -126,9 +126,9 @@ bbio_command_handle(uint8_t *bufferData)
         g_usb20Speed = SpeedHigh;
 
         // Filling structures "describing" our USB peripheral
-        g_descriptorDevice  = g_descriptorDevice;
-        g_descriptorConfig  = g_descriptorConfig;
-        g_descriptorStrings = g_descriptorStrings;
+        g_descriptorDevice  = g_bbioDescriptorDevice;
+        g_descriptorConfig  = g_bbioDescriptorConfiguration;
+        g_descriptorStrings = g_bbioDescriptorsString;
 
         g_doesToeSupportCurrentDevice = false;  // Reset the value
         usb20_registers_init(g_usb20Speed);
