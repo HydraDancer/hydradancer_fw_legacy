@@ -26,6 +26,7 @@ menu_print(void)
     printf("7) Get status\n");
     printf("8) Disconnect\n");
     printf("9) Reset descriptors\n");
+    printf("10) Auto mode\n");
     printf("\n");
     printf("0) Exit\n");
     printf("> ");
