@@ -1,11 +1,8 @@
 #include <libusb-1.0/libusb.h>
 
-#include <assert.h>
-#include <ctype.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -15,8 +12,6 @@
 #include "usb_descriptors.h"
 #include "usb.h"
 
-// TODOO: Add doxygen signature for each function
-// TODO: Refactor in multiple file ?
 
 /* macros */
 
