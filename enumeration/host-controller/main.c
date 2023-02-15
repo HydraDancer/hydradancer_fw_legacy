@@ -254,12 +254,11 @@ main(int argc, char *argv[])
                 bbio_get_return_code();
                 libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
                 retCode = bbio_get_return_code();
-                printf("%d:\t0x%X\n", i, retCode);
                 if (retCode == 1) {
                     isDeviceSupported = true;
                     break;
                 }
-                usleep(1000);
+                usleep(10000);
             }
 
             // Print the result
