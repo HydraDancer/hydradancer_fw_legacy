@@ -14,7 +14,7 @@
 
 
 /* macros */
-
+#define TIMEOUT 1000
 
 /* variables */
 
@@ -212,7 +212,63 @@ main(int argc, char *argv[])
             break;
         // Auto mode
         case 10:
-            printf("AUTOMODE IS SUPPORTED!\n");
+            bool isDeviceSupported = false;
+
+            // Reset the board
+            bbio_command_send(BbioDisconnect);
+            bbio_get_return_code();
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+            bbio_get_return_code();
+
+            // Reset descriptors
+            bbio_command_send(BbioResetDescr);
+            bbio_get_return_code();
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+            bbio_get_return_code();
+
+            // Send device descriptor
+            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sizeof(g_descriptorDevice));
+            bbio_get_return_code();
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorDevice, sizeof(g_descriptorDevice), NULL, 0);
+            if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+            bbio_get_return_code();
+
+            // Send configuration descriptor
+            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sizeof(g_descriptorConfig));
+            bbio_get_return_code();
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorConfig, sizeof(g_descriptorConfig), NULL, 0);
+            if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+            bbio_get_return_code();
+
+            // No necessity to enable endpoints according to the descriptor
+
+            // Connect the device
+            bbio_command_send(BbioConnect);
+            bbio_get_return_code();
+            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+            bbio_get_return_code();
+
+            // Wait to see if our device is supported
+            for (int i = 0; i < TIMEOUT; ++i) {
+                bbio_command_send(BbioGetStatus);
+                bbio_get_return_code();
+                libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+                retCode = bbio_get_return_code();
+                printf("%d:\t0x%X\n", i, retCode);
+                if (retCode == 1) {
+                    isDeviceSupported = true;
+                    break;
+                }
+                usleep(1000);
+            }
+
+            // Print the result
+            if (isDeviceSupported) {
+                printf("Class 0xFF (Vendor specific) is supported\n");
+            } else {
+                printf("Class 0xFF (Vendor specific) is NOT supported\n");
+            }
+
             break;
         // - exit
         case 0:
