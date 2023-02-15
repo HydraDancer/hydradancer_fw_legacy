@@ -81,6 +81,7 @@ main(int argc, char *argv[])
 {
     bool exit = false;
     int retCode;
+    int bbioRetCode;
     int userChoice;
 
     unsigned char buffer[4096];
@@ -215,46 +216,66 @@ main(int argc, char *argv[])
             bool isDeviceSupported = false;
 
             // Reset the board
-            bbio_command_send(BbioDisconnect);
-            bbio_get_return_code();
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-            bbio_get_return_code();
+            do {
+                printf("Resetting board\n");
+                bbio_command_send(BbioDisconnect);
+                bbioRetCode = bbio_get_return_code();
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode |= bbio_get_return_code();
+            } while (bbioRetCode);
 
             // Reset descriptors
-            bbio_command_send(BbioResetDescr);
-            bbio_get_return_code();
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-            bbio_get_return_code();
+            do {
+                printf("Resetting descriptors\n");
+                bbio_command_send(BbioResetDescr);
+                bbioRetCode = bbio_get_return_code();
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode |= bbio_get_return_code();
+            } while (bbioRetCode);
 
             // Send device descriptor
-            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sizeof(g_descriptorDevice));
-            bbio_get_return_code();
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorDevice, sizeof(g_descriptorDevice), NULL, 0);
-            if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
-            bbio_get_return_code();
+            do {
+                printf("Setting device descriptor\n");
+                bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sizeof(g_descriptorDevice));
+                bbioRetCode = bbio_get_return_code();
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorDevice, sizeof(g_descriptorDevice), NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode |= bbio_get_return_code();
+            } while (bbioRetCode);
 
             // Send configuration descriptor
-            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sizeof(g_descriptorConfig));
-            bbio_get_return_code();
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorConfig, sizeof(g_descriptorConfig), NULL, 0);
-            if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
-            bbio_get_return_code();
+            do {
+                printf("Setting configuration descriptor\n");
+                bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sizeof(g_descriptorConfig));
+                bbioRetCode = bbio_get_return_code();
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorConfig, sizeof(g_descriptorConfig), NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode |= bbio_get_return_code();
+            } while (bbioRetCode);
 
             // No necessity to enable endpoints according to the descriptor
 
             // Connect the device
-            bbio_command_send(BbioConnect);
-            bbio_get_return_code();
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-            bbio_get_return_code();
+            do {
+                printf("Connecting the device\n");
+                bbio_command_send(BbioConnect);
+                bbioRetCode = bbio_get_return_code();
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode |= bbio_get_return_code();
+            } while (bbioRetCode);
 
             // Wait to see if our device is supported
             for (int i = 0; i < TIMEOUT; ++i) {
                 bbio_command_send(BbioGetStatus);
                 bbio_get_return_code();
-                libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-                retCode = bbio_get_return_code();
-                if (retCode == 1) {
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode = bbio_get_return_code();
+                printf("%d, 0x%X\n", i, bbioRetCode);
+                if (bbioRetCode == 1) {
                     isDeviceSupported = true;
                     break;
                 }
