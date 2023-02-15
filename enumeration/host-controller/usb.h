@@ -26,5 +26,22 @@ extern struct libusb_device_handle *g_deviceHandle;
 /* functions declaration */
 
 
+/*******************************************************************************
+ * Function Name  : usb_init_verbose
+ * Description    : Initialise the USB connection to the board
+ * Input          : None
+ * Return         : 0 if success, else an integer indicating the stage that failed
+ *******************************************************************************/
+int usb_init_verbose(void);
+
+/*******************************************************************************
+ * Function Name  : usb_close
+ * Description    : Close the USB connection to the board
+ * Input          : None
+ * Return         : None
+ *******************************************************************************/
+void usb_close(void);
+
+
 #endif /* USB_H */
 
