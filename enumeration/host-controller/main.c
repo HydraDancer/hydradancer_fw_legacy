@@ -220,97 +220,21 @@ main(int argc, char *argv[])
                 usleep(100000);
             }
             break;
-        // - Send Device Descriptor
+        // - Enumerate Vendor Specific
         case 3:
-            // Fill Device Descriptor of the ToE board
-
-            // Send BBIO command with sub command and underlying fields
-            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sizeof(_vendorDescriptorDevice));
-            bbio_get_return_code();
-
-            // Send descriptor
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, _vendorDescriptorDevice, sizeof(_vendorDescriptorDevice), NULL, 0);
-            if (retCode) {
-                printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
-            }
-            bbio_get_return_code();
-            break;
-        // - Send Config Descriptor
-        case 4:
-            // Fill Config Descriptor of the ToE board
-
-            // Send BBIO command with sub command and underlying fields
-            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sizeof(_vendorDescriptorConfig));
-            bbio_get_return_code();
-
-            // Send descriptor
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, _vendorDescriptorConfig, sizeof(_vendorDescriptorConfig), NULL, 0);
-            if (retCode) {
-                printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
-            }
-            bbio_get_return_code();
-            break;
-        // - Set endpoints
-        case 5:
-            // Connect to the target
-            bbio_command_send(BbioSetEndp);
-            bbio_get_return_code();
-
-            // endpoint 1 Out
-            char buffEndpoints[] = {0x01, 0x00};
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)buffEndpoints, 2, NULL, 0);
-            bbio_get_return_code();
-            break;
-        // - Connect to the target
-        case 6:
-            // Connect to the target
-            bbio_command_send(BbioConnect);
-            bbio_get_return_code();
-
-            // We need to send a packet to trigger the second step, no matter
-            // the content of the packet
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-            bbio_get_return_code();
-            break;
-        // - Get status
-        case 7:
-            // Is the current device supported by the ToE ?
-            bbio_command_send(BbioGetStatus);
-            bbio_get_return_code();
-
-            // We need to send a packet to trigger the second step, no matter
-            // the content of the packet
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-            retCode = bbio_get_return_code();
-            if (retCode) {
-                printf("Device is supported!\n");
-            }
-            break;
-        // - Disconnect
-        case 8:
-            // Disconnect to the target
-            bbio_command_send(BbioDisconnect);
-            bbio_get_return_code();
-
-            // We need to send a packet to trigger the second step, no matter
-            // the content of the packet
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-            bbio_get_return_code();
-            break;
-        // - Reset descriptors
-        case 9:
-            // Reset descriptors on TOE board
-            bbio_command_send(BbioResetDescr);
-            bbio_get_return_code();
-
-            // We need to send a packet to trigger the second step, no matter
-            // the content of the packet
-            libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
-            bbio_get_return_code();
-            break;
-        // Auto mode
-        case 10:
             enumerate_device(g_deviceVendor);
+            break;
+        // - Enumerate Audio
+        case 4:
+            enumerate_device(g_deviceAudio);
+            break;
+        // - Enumerate CDC
+        case 5:
+            enumerate_device(g_deviceCdc);
+            break;
+        // - Enumerate Physical
+        case 6:
+            enumerate_device(g_devicePhysical);
             break;
         // - exit
         case 0:
