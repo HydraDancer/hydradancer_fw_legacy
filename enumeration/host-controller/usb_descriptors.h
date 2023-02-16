@@ -1,11 +1,21 @@
 #ifndef USB_DESCRIPTORS_H
 #define USB_DESCRIPTORS_H
 
+
+/* enums */
+struct Device_t {
+    char *s_name;
+    unsigned char *descriptorDevice;
+    unsigned char *descriptorConfig;
+};
+
+/* variables */
+
 unsigned char g_descriptorDevice[] = {
     18,     // bLength
     1,      // bDescriptorType
     0x00,   // bcdUSB (low)
-    0x20,   // bcdUSB (high)
+    0x02,   // bcdUSB (high)
     0x00,   // bDeviceClass (Defined in the interface descriptor)
     0x00,   // bDeviceSubClass
     0x00,   // bDeviceProtocol
