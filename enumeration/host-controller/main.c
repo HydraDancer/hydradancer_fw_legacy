@@ -85,8 +85,10 @@ enumerate_device(struct Device_t device)
 
     unsigned char *descriptorDevice = device.descriptorDevice;
     unsigned char *descriptorConfig = device.descriptorConfig;
+    unsigned char *descriptorHidReport = device.descriptorHidReport;
     int sz_descriptorDevice = descriptorDevice[0];
-    int sz_descriptorConfig = (descriptorConfig[3] << 8) + descriptorConfig[2]; // From 2 char to short
+    int sz_descriptorConfig = (descriptorConfig[3] << 8) + descriptorConfig[2];         // From 2 char to short
+    int sz_descriptorHidReport = (descriptorConfig[26] << 8) + descriptorConfig[25];    // From 2 char to short
 
     // Reset the board
     do {
@@ -127,6 +129,19 @@ enumerate_device(struct Device_t device)
         if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
         bbioRetCode |= bbio_get_return_code();
     } while (bbioRetCode);
+
+    // if it exists
+    if (descriptorHidReport) {
+        // Send HID report descriptor
+        do {
+            printf("Setting configuration descriptor\n");
+            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHidReport, 0, sz_descriptorHidReport);
+            bbioRetCode = bbio_get_return_code();
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptorHidReport, sz_descriptorHidReport, NULL, 0);
+            if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+            bbioRetCode |= bbio_get_return_code();
+        } while (bbioRetCode);
+    }
 
     // No necessity to enable endpoints according to the descriptor
 
@@ -222,19 +237,19 @@ main(int argc, char *argv[])
             break;
         // - Enumerate Vendor Specific
         case 3:
-            enumerate_device(g_deviceVendor);
+            enumerate_device(g_deviceKeyboard);
             break;
         // - Enumerate Audio
         case 4:
-            enumerate_device(g_deviceAudio);
+            enumerate_device(g_deviceGeneric);
             break;
         // - Enumerate CDC
         case 5:
-            enumerate_device(g_deviceCdc);
+            enumerate_device(g_deviceGeneric);
             break;
         // - Enumerate Physical
         case 6:
-            enumerate_device(g_devicePhysical);
+            enumerate_device(g_deviceGeneric);
             break;
         // - exit
         case 0:
