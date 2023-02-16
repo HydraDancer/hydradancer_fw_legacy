@@ -74,7 +74,7 @@ usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
 // TODOO: Use struct rather than multiple arguments tied together
 // TODO: Header doc
 bool
-enumerate_device(unsigned char *descriptorDevice, int sz_descriptorDevice, unsigned char *descriptorConfig, int sz_descriptorConfig)
+enumerate_device(struct Device_t device)
 {
     int retCode;
     int bbioRetCode;
@@ -82,6 +82,11 @@ enumerate_device(unsigned char *descriptorDevice, int sz_descriptorDevice, unsig
 
     char dummyPacket[] = "toto";
     int dummyPacketSize = sizeof(dummyPacket);
+
+    unsigned char *descriptorDevice = device.descriptorDevice;
+    unsigned char *descriptorConfig = device.descriptorConfig;
+    int sz_descriptorDevice = descriptorDevice[0];
+    int sz_descriptorConfig = (descriptorConfig[3] << 8) + descriptorConfig[2]; // From 2 char to short
 
     // Reset the board
     do {
@@ -152,10 +157,10 @@ enumerate_device(unsigned char *descriptorDevice, int sz_descriptorDevice, unsig
 
     // Print the result
     if (isDeviceSupported) {
-        printf("Class 0xFF (Vendor specific) is supported\n");
+        printf("Class 0x%02X 0x%02X (%s) is supported\n", descriptorDevice[4], descriptorConfig[14], device.s_name);
         return true;
     } else {
-        printf("Class 0xFF (Vendor specific) is NOT supported\n");
+        printf("Class 0x%02X 0x%02X (%s) is NOT supported\n", descriptorDevice[4], descriptorConfig[14], device.s_name);
         return false;
     }
 }
@@ -220,11 +225,11 @@ main(int argc, char *argv[])
             // Fill Device Descriptor of the ToE board
 
             // Send BBIO command with sub command and underlying fields
-            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sizeof(g_descriptorDevice));
+            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sizeof(_vendorDescriptorDevice));
             bbio_get_return_code();
 
             // Send descriptor
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorDevice, sizeof(g_descriptorDevice), NULL, 0);
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, _vendorDescriptorDevice, sizeof(_vendorDescriptorDevice), NULL, 0);
             if (retCode) {
                 printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
             }
@@ -235,11 +240,11 @@ main(int argc, char *argv[])
             // Fill Config Descriptor of the ToE board
 
             // Send BBIO command with sub command and underlying fields
-            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sizeof(g_descriptorConfig));
+            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sizeof(_vendorDescriptorConfig));
             bbio_get_return_code();
 
             // Send descriptor
-            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, g_descriptorConfig, sizeof(g_descriptorConfig), NULL, 0);
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, _vendorDescriptorConfig, sizeof(_vendorDescriptorConfig), NULL, 0);
             if (retCode) {
                 printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed");
             }
@@ -305,7 +310,7 @@ main(int argc, char *argv[])
             break;
         // Auto mode
         case 10:
-            enumerate_device(g_descriptorDevice, sizeof(g_descriptorDevice), g_descriptorConfig, sizeof(g_descriptorConfig));
+            enumerate_device(g_deviceVendor);
             break;
         // - exit
         case 0:

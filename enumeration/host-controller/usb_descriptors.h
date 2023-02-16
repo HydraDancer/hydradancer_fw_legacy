@@ -11,7 +11,9 @@ struct Device_t {
 
 /* variables */
 
-unsigned char g_descriptorDevice[] = {
+char _vendorName[] = "Vendor specific";
+
+unsigned char _vendorDescriptorDevice[] = {
     18,     // bLength
     1,      // bDescriptorType
     0x00,   // bcdUSB (low)
@@ -32,7 +34,7 @@ unsigned char g_descriptorDevice[] = {
     1,      // bNumConfigurations
 };
 
-unsigned char g_descriptorConfig[] = {
+unsigned char _vendorDescriptorConfig[] = {
     //  Descriptor Config
 	0x09, // bLength
 	0x02, // bDescriptorType
@@ -62,5 +64,7 @@ unsigned char g_descriptorConfig[] = {
 	0x02, // wMaxPacketSizeH
 	0x00, // bInterval
 };
+
+struct Device_t g_deviceVendor = { _vendorName, _vendorDescriptorDevice, _vendorDescriptorConfig };
 
 #endif /* USB_DESCRIPTORS_H */
