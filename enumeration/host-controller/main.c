@@ -237,11 +237,11 @@ main(int argc, char *argv[])
             break;
         // - Enumerate Vendor Specific
         case 3:
-            enumerate_device(g_deviceKeyboard);
+            enumerate_device(g_deviceAudio);
             break;
         // - Enumerate Audio
         case 4:
-            enumerate_device(g_deviceGeneric);
+            enumerate_device(g_deviceKeyboard);
             break;
         // - Enumerate CDC
         case 5:

@@ -19,10 +19,10 @@ menu_print(void)
     printf("Select your action:\n");
     printf("1) Log once\n");
     printf("2) Log infinite loop\n");
-    printf("3) Enumerate vendor specific\n");
-    printf("4) Enumerate audio\n");
-    printf("5) Enumerate CDC\n");
-    printf("6) Enumerate physical\n");
+    printf("3) Enumerate Audio\n");
+    printf("4) Enumerate HID\n");
+    printf("5) NOT WORKING!  Enumerate CDC\n");
+    printf("6) NOT WORKING!  Enumerate physical\n");
     printf("\n");
     printf("0) Exit\n");
     printf("> ");

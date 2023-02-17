@@ -19,8 +19,10 @@ struct DeviceConfig_t {
 
 /* variables */
 extern struct Device_t g_deviceGeneric;
+extern struct Device_t g_deviceAudio;
 extern struct Device_t g_deviceKeyboard;
 
-extern struct DeviceConfig_t g_audioDeviceConfig;
+extern struct DeviceConfig_t g_genericDeviceConfig;
+
 
 #endif /* USB_DESCRIPTORS_H */
