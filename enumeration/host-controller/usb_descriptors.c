@@ -247,25 +247,25 @@ unsigned char _keyboardDescriptorDevice[] = {
 
 unsigned char _keyboardDescriptorConfig[] = {
     //  Descriptor Config
-	0x09, // bLength
-	0x02, // bDescriptorType
-	0x22, // wTotalLengthL
-	0x00, // wTotalLengthH
-	0x01, // bNumInterfaces
-	0x01, // bConfigurationValue
-	0x00, // iConfiguration
-	0x80, // bmAttributes
-	0x64, // MaxPower
+    0x09, // bLength
+    0x02, // bDescriptorType
+    0x22, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
     //  Descriptor Interace
-	0x09, // bLength
-	0x04, // bDescriptorType
-	0x00, // bInterfaceNumber
-	0x00, // bAlternateSetting
-	0x01, // bNumEndpoint
-	0x03, // bInterfaceClass
-	0x00, // bInterfaceSubClass
-	0x01, // bInterfaceProtocol
-	0x00, // iInterface
+    0x09, // bLength
+    0x04, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x01, // bNumEndpoint
+    0x03, // bInterfaceClass
+    0x00, // bInterfaceSubClass
+    0x01, // bInterfaceProtocol
+    0x00, // iInterface
     //  Descriptor HID
     0x09, // bLength
     0x21, // bDescriptorType
@@ -277,13 +277,13 @@ unsigned char _keyboardDescriptorConfig[] = {
     0x17, // wDescriptorLengthL
     0x00, // wDescriptorLengthH
     //  Descriptor Endpoint
-	0x07, // bLength
-	0x05, // bDescriptorType
-	0x81, // bEndpointAddress (IN)
-	0x03, // bmAttributes
-	0x04, // wMaxPacketSizeL
-	0x00, // wMaxPacketSizeH
-	0x01, // bInterval
+    0x07, // bLength
+    0x05, // bDescriptorType
+    0x81, // bEndpointAddress (IN)
+    0x03, // bmAttributes
+    0x04, // wMaxPacketSizeL
+    0x00, // wMaxPacketSizeH
+    0x01, // bInterval
 };
 
 unsigned char _keyboardDescriptorHidReport[] = {

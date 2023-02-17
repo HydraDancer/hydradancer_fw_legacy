@@ -156,6 +156,7 @@ enumerate_device(struct Device_t device)
     } while (bbioRetCode);
 
     // Wait to see if our device is supported
+    printf("Querying results...\n");
     for (int i = 0; i < TIMEOUT; ++i) {
         bbio_command_send(BbioGetStatus);
         bbio_get_return_code();
