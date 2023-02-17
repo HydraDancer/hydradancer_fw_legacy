@@ -11,9 +11,10 @@
 // If this variable is != 0 then use this size rather than .wTotalLength
 uint16_t g_descriptorConfigCustomSize = 0;
 
-uint8_t *g_descriptorDevice = NULL;
-uint8_t *g_descriptorConfig = NULL;
-uint8_t **g_descriptorStrings = NULL;
+uint8_t *g_descriptorDevice     = NULL;
+uint8_t *g_descriptorConfig     = NULL;
+uint8_t *g_descriptorHidReport  = NULL;
+uint8_t **g_descriptorStrings   = NULL;
 
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
 __attribute__((aligned(16))) uint8_t endp1Rbuff[4096] __attribute__((section(".DMADATA"))); // Endpoint 1 data recceiver buffer.
@@ -449,11 +450,11 @@ usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBu
         *pBuffer = g_descriptorConfig;
         // If the descriptor type is custom we can not trust its .wTotalLength
         // field
-            if (g_descriptorConfigCustomSize != 0) {
-                *pSizeBuffer = g_descriptorConfigCustomSize;
-            } else {
-                *pSizeBuffer = ((USB_CFG_DESCR *)g_descriptorConfig)->wTotalLength;
-            }
+        if (g_descriptorConfigCustomSize != 0) {
+            *pSizeBuffer = g_descriptorConfigCustomSize;
+        } else {
+            *pSizeBuffer = ((USB_CFG_DESCR *)g_descriptorConfig)->wTotalLength;
+        }
         break;
     case USB_DESCR_TYP_STRING: {
         uint8_t i = descritorRequested.bw.bb1;
@@ -480,9 +481,10 @@ usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBu
         // *pSizeBuffer = stHidDescriptor.bLength;
         break;
     case USB_DESCR_TYP_REPORT:
-        // TODOOO: Implement
-        // *pBuffer = (uint8_t *)reportDescriptor;
-        // *pSizeBuffer = stHidDescriptor.wDescriptorLengthL;
+        // WARNING! To get the size we reconstruct the uint16_t from the
+        // configuration descriptor
+        *pBuffer = g_descriptorHidReport;
+        *pSizeBuffer = (g_descriptorConfig[26] << 8) + g_descriptorConfig[25];
         break;
     default:
         log_to_evaluator("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");

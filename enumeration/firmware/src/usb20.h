@@ -40,6 +40,7 @@ enum Endpoint g_usb20EpOutMask;
 extern uint16_t g_descriptorConfigCustomSize;
 extern uint8_t *g_descriptorDevice;
 extern uint8_t *g_descriptorConfig;
+extern uint8_t *g_descriptorHidReport;
 extern uint8_t **g_descriptorStrings;
 
 extern uint8_t endp0RTbuff[]; // Endpoint 0 data transceiver buffer

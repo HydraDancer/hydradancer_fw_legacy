@@ -18,8 +18,9 @@ enum BbioSubCommand {
     BbioSubSetDescrDevice      = 0b00000001,
     BbioSubSetDescrConfig      = 0b00000010,
     BbioSubSetDescrInterface   = 0b00000011,
-    BbioSubSetDescrEndpoint    = 0b00000100,
-    BbioSubSetDescrString      = 0b00000101,
+    BbioSubSetDescrHidReport   = 0b00000100,
+    BbioSubSetDescrEndpoint    = 0b00000101,
+    BbioSubSetDescrString      = 0b00000110,
 };
 
 /* variables */

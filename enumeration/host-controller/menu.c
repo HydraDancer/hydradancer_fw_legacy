@@ -19,14 +19,10 @@ menu_print(void)
     printf("Select your action:\n");
     printf("1) Log once\n");
     printf("2) Log infinite loop\n");
-    printf("3) Send descriptor device\n");
-    printf("4) Send descriptor configuration\n");
-    printf("5) Set endpoints\n");
-    printf("6) Connect\n");
-    printf("7) Get status\n");
-    printf("8) Disconnect\n");
-    printf("9) Reset descriptors\n");
-    printf("10) Auto mode\n");
+    printf("3) Enumerate Audio\n");
+    printf("4) Enumerate HID\n");
+    printf("5) NOT WORKING!  Enumerate CDC\n");
+    printf("6) NOT WORKING!  Enumerate physical\n");
     printf("\n");
     printf("0) Exit\n");
     printf("> ");

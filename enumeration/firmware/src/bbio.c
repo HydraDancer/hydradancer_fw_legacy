@@ -19,10 +19,12 @@ bool g_doesToeSupportCurrentDevice = false;
 // size, is it worth ?
 uint8_t *g_bbioDescriptorDevice;
 uint8_t *g_bbioDescriptorConfiguration;
+uint8_t *g_bbioDescriptorHidReport;
 uint8_t *g_bbioDescriptorsString[_DESCRIPTOR_STRING_CAPACITY];
 
 uint16_t g_bbioDescriptorDeviceSize;
 uint16_t g_bbioDescriptorConfigurationSize;
+uint16_t g_bbioDescriptorHidReportSize;
 uint16_t g_bbioDescriptorsStringSizes[_DESCRIPTOR_STRING_CAPACITY];
 
 /* internal variables */
@@ -127,9 +129,10 @@ bbio_command_handle(uint8_t *bufferData)
         g_usb20Speed = SpeedHigh;
 
         // Filling structures "describing" our USB peripheral
-        g_descriptorDevice  = g_bbioDescriptorDevice;
-        g_descriptorConfig  = g_bbioDescriptorConfiguration;
-        g_descriptorStrings = g_bbioDescriptorsString;
+        g_descriptorDevice    = g_bbioDescriptorDevice;
+        g_descriptorConfig    = g_bbioDescriptorConfiguration;
+        g_descriptorHidReport = g_bbioDescriptorHidReport;
+        g_descriptorStrings   = g_bbioDescriptorsString;
 
         g_doesToeSupportCurrentDevice = false;  // Reset the value
         usb20_registers_init(g_usb20Speed);
@@ -188,6 +191,11 @@ bbio_command_set_descriptor_handle(uint8_t *bufferData)
         // Config descriptor
         g_bbioDescriptorConfiguration     = _descriptorsStoreCursor;
         g_bbioDescriptorConfigurationSize = _descrSize;
+    }
+    else if (_subCommand == BbioSubSetDescrHidReport) { 
+        // HID Report descriptor
+        g_bbioDescriptorHidReport     = _descriptorsStoreCursor;
+        g_bbioDescriptorHidReportSize = _descrSize;
     }
     else if (_subCommand == BbioSubSetDescrString) { 
         // String descriptor
