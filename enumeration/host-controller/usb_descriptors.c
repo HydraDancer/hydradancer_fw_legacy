@@ -3,12 +3,45 @@
 #include "usb_descriptors.h"
 
 
+/* macros */
+/* USB descriptor type */
+#define DEV_DESCR_DEVICE  0x01
+#define DEV_DESCR_CONFIG  0x02
+#define DEV_DESCR_STRING  0x03
+#define DEV_DESCR_INTERF  0x04
+#define DEV_DESCR_ENDP    0x05
+#define DEV_DESCR_QUALIF  0x06
+#define DEV_DESCR_SPEED   0x07
+#define DEV_DESCR_OTG     0x09
+#define DEV_DESCR_HID     0x21
+#define DEV_DESCR_REPORT  0x22
+#define DEV_DESCR_PHYSIC  0x23
+#define DEV_DESCR_CS_INTF 0x24
+#define DEV_DESCR_CS_ENDP 0x25
+#define DEV_DESCR_HUB     0x29
+
+/* USB device class */
+#define DEV_CLASS_RESERVED  0x00
+#define DEV_CLASS_AUDIO     0x01
+#define DEV_CLASS_CDC_CTRL  0x02
+#define DEV_CLASS_HID       0x03
+#define DEV_CLASS_PHYSIC_IF 0x05
+#define DEV_CLASS_IMAGE     0x06
+#define DEV_CLASS_PRINTER   0x07
+#define DEV_CLASS_STORAGE   0x08
+#define DEV_CLASS_HUB       0x09
+#define DEV_CLASS_CDC_DATA  0x0A
+#define DEV_CLASS_VEN_SPEC  0xFF
+
+
+/* variables */
+
 /*******************************************************************************
  * DEVICE GENERIC
  */
 unsigned char _genericDescriptorDevice[] = {
     0x12,   // bLength
-    0x01,   // bDescriptorType
+    DEV_DESCR_DEVICE,   // bDescriptorType
     0x00,   // bcdUSB (low)
     0x02,   // bcdUSB (high)
     0x00,   // bDeviceClass (Defined in the interface descriptor)
@@ -30,7 +63,7 @@ unsigned char _genericDescriptorDevice[] = {
 unsigned char _genericDescriptorConfig[] = {
     //  Descriptor Config
 	0x09, // bLength
-	0x02, // bDescriptorType
+	DEV_DESCR_CONFIG, // bDescriptorType
 	0x19, // wTotalLengthL
 	0x00, // wTotalLengthH
 	0x01, // bNumInterfaces
@@ -40,7 +73,7 @@ unsigned char _genericDescriptorConfig[] = {
 	0x64, // MaxPower
     //  Descriptor Interface
 	0x09, // bLength
-	0x04, // bDescriptorType
+	DEV_DESCR_INTERF, // bDescriptorType
 	0x00, // bInterfaceNumber
 	0x00, // bAlternateSetting
 	0x01, // bNumEndpoint
@@ -50,7 +83,7 @@ unsigned char _genericDescriptorConfig[] = {
 	0x00, // iInterface
     //  Descriptor Endpoint
 	0x07, // bLength
-	0x05, // bDescriptorType
+	DEV_DESCR_ENDP, // bDescriptorType
 	0x01, // bEndpointAddress (OUT)
 	0x02, // bmAttributes
 	0x00, // wMaxPacketSizeL
@@ -75,7 +108,7 @@ struct DeviceConfig_t g_genericDeviceConfig = { "Generic Config", 0x00, 0x00, 0x
 unsigned char _audioDescriptorDevice[] = {
     // Table B-1: USB Microphone Device Descriptor
     0x12, // bLength                Size of this descriptor, in bytes.
-    0x01, // bDescriptorType        DEVICE descriptor.
+    DEV_DESCR_DEVICE, // bDescriptorType        DEVICE descriptor.
     0x00, // bcdUSBL                1.00 - current revision of USB specification.
     0x02, // bcdUSBH                1.00 - current revision of USB specification.
     0x00, // bDeviceClass           Device defined at Interface level.
@@ -97,7 +130,7 @@ unsigned char _audioDescriptorDevice[] = {
 unsigned char _audioDescriptorConfig[] = {
     // Table B-2: USB Microphone Configuration Descriptor
     0x09, //  bLength                 Size of this descriptor, in bytes.
-    0x02, //  bDescriptorType         CONFIGURATION descriptor.
+    DEV_DESCR_CONFIG, //  bDescriptorType         CONFIGURATION descriptor.
     0x64, //  wTotalLengthL           Length of the total configuration block, including this descriptor, in bytes.
     0x00, //  wTotalLengthH           Length of the total configuration block, including this descriptor, in bytes.
     0x02, //  bNumInterfaces          Two interfaces.
@@ -108,18 +141,18 @@ unsigned char _audioDescriptorConfig[] = {
 
     // Table B-3: USB Microphone Standard AC Interface Descriptor
     0x09, //  bLength             Size of this descriptor, in bytes.
-    0x04, //  bDescriptorType     INTERFACE descriptor.
+    DEV_DESCR_INTERF, //  bDescriptorType     INTERFACE descriptor.
     0x00, //  bInterfaceNumber    Index of this interface.
     0x00, //  bAlternateSetting   Index of this setting.
     0x00, //  bNumEndpoints       0 endpoints.
-    0x01, //  bInterfaceClass     AUDIO.
+    DEV_CLASS_AUDIO, //  bInterfaceClass     AUDIO.
     0x01, //  bInterfaceSubclass  AUDIO_CONTROL.
     0x00, //  bInterfaceProtocol  Unused.
     0x00, //  iInterface          Unused.
 
     // Table B-4: USB Microphone Class-specific AC Interface Descriptor
     0x09, //  bLength             Size of this descriptor, in bytes.
-    0x24, //  bDescriptorType     CS_INTERFACE.
+    DEV_DESCR_CS_INTF, //  bDescriptorType     CS_INTERFACE.
     0x01, //  bDescriptorSubtype  HEADER subtype.
     0x00, //  bcdADCL             Revision of class specification - 1.0
     0x01, //  bcdADCH             Revision of class specification - 1.0
@@ -130,7 +163,7 @@ unsigned char _audioDescriptorConfig[] = {
 
     // Table B-5: USB Microphone Input Terminal Descriptor
     0x0C, //  bLength             Size of this descriptor, in bytes.
-    0x24, //  bDescriptorType     CS_INTERFACE.
+    DEV_DESCR_CS_INTF, //  bDescriptorType     CS_INTERFACE.
     0x02, //  bDescriptorSubtype  INPUT_TERMINAL subtype.
     0x01, //  bTerminalID         ID of this Input Terminal.
     0x01, //  wTerminalTypeL      Terminal is Microphone.
@@ -144,7 +177,7 @@ unsigned char _audioDescriptorConfig[] = {
 
     // Table B-6: USB Microphone Output Terminal Descriptor
     0x09, //  bLength             Size of this descriptor, in bytes.
-    0x24, //  bDescriptorType     CS_INTERFACE.
+    DEV_DESCR_CS_INTF, //  bDescriptorType     CS_INTERFACE.
     0x03, //  bDescriptorSubtype  OUTPUT_TERMINAL subtype.
     0x02, //  bTerminalID         ID of this Output Terminal.
     0x01, //  wTerminalTypeL      USB Streaming.
@@ -155,29 +188,29 @@ unsigned char _audioDescriptorConfig[] = {
 
     // Table B-7: USB Microphone Standard AS Interface Descriptor (Alt. Set. 0)
     0x09, //  bLength             Size of this descriptor, in bytes.
-    0x04, //  bDescriptorType     INTERFACE descriptor.
+    DEV_DESCR_INTERF, //  bDescriptorType     INTERFACE descriptor.
     0x01, //  bInterfaceNumber    Index of this interface.
     0x00, //  bAlternateSetting   Index of this alternate setting.
     0x00, //  bNumEndpoints       0 endpoints.
-    0x01, //  bInterfaceClass     AUDIO.
+    DEV_CLASS_AUDIO, //  bInterfaceClass     AUDIO.
     0x02, //  bInterfaceSubclass  AUDIO_STREAMING.
     0x00, //  bInterfaceProtocol  Unused.
     0x00, //  iInterface          Unused.
 
     // Table B-8: USB Microphone Standard AS Interface Descriptor
     0x09, //  bLength             Size of this descriptor, in bytes.
-    0x04, //  bDescriptorType     INTERFACE descriptor.
+    DEV_DESCR_INTERF, //  bDescriptorType     INTERFACE descriptor.
     0x01, //  bInterfaceNumber    Index of this interface.
     0x01, //  bAlternateSetting   Index of this alternate setting.
     0x01, //  bNumEndpoints       One endpoint.
-    0x01, //  bInterfaceClass     AUDIO.
+    DEV_CLASS_AUDIO, //  bInterfaceClass     AUDIO.
     0x02, //  bInterfaceSubclass  AUDIO_STREAMING.
     0x00, //  bInterfaceProtocol  Unused.
     0x00, //  iInterface          Unused.
 
     // Table B-9: USB Microphone Class-specific AS General Interface Descriptor
     0x07, //  bLength             Size of this descriptor, in bytes.
-    0x24, //  bDescriptorType     CS_INTERFACE descriptor.
+    DEV_DESCR_CS_INTF, //  bDescriptorType     CS_INTERFACE descriptor.
     0x01, //  bDescriptorSubtype  GENERAL subtype.
     0x02, //  bTerminalLink       Unit ID of the Output Terminal.
     0x01, //  bDelay              Interface delay.
@@ -186,7 +219,7 @@ unsigned char _audioDescriptorConfig[] = {
 
     // Table B-10: USB Microphone Type I Format Type Descriptor
     0x0B, //  bLength             Size of this descriptor, in bytes.
-    0x24, //  bDescriptorType     CS_INTERFACE descriptor.
+    DEV_DESCR_CS_INTF, //  bDescriptorType     CS_INTERFACE descriptor.
     0x02, //  bDescriptorSubtype  FORMAT_TYPE subtype.
     0x01, //  bFormatType         FORMAT_TYPE_I.
     0x01, //  bNrChannels         One channel.
@@ -199,7 +232,7 @@ unsigned char _audioDescriptorConfig[] = {
 
     // Table B-11: USB Microphone Standard Endpoint Descriptor
     0x09, //  bLength           Size of this descriptor, in bytes.
-    0x05, //  bDescriptorType   ENDPOINT descriptor.
+    DEV_DESCR_ENDP, //  bDescriptorType   ENDPOINT descriptor.
     0x81, //  bEndpointAddress  IN Endpoint 1.
     0x01, //  bmAttributes      Isochronous, not shared.
     0x10, //  wMaxPacketSizeL   16 bytes per packet.
@@ -210,7 +243,7 @@ unsigned char _audioDescriptorConfig[] = {
 
     // Table B-12: USB Microphone Class-specific Isoc. Audio Data Endpoint Descriptor
     0x07, //  bLength             Size of this descriptor, in bytes.
-    0x25, //  bDescriptorType     CS_ENDPOINT descriptor
+    DEV_DESCR_CS_ENDP, //  bDescriptorType     CS_ENDPOINT descriptor
     0x01, //  bDescriptorSubtype  GENERAL subtype.
     0x00, //  bmAttributes        No sampling frequency control, no pitch control, no packet padding.
     0x00, //  bLockDelayUnits     Unused.
@@ -229,10 +262,10 @@ struct Device_t g_deviceAudio = { "Audio", _audioDescriptorDevice, _audioDescrip
  */
 unsigned char _cdcDescriptorDevice[] = {
     18,     // bLength
-    1,      // bDescriptorType
+    DEV_DESCR_DEVICE,      // bDescriptorType
     0x00,   // bcdUSB (low)
     0x02,   // bcdUSB (high)
-    0x02,   // bDeviceClass
+    DEV_CLASS_CDC_CTRL,   // bDeviceClass
     0x00,   // bDeviceSubClass
     0x00,   // bDeviceProtocol
     64,     // bMaxPacketSize0
@@ -251,7 +284,7 @@ unsigned char _cdcDescriptorDevice[] = {
 unsigned char _cdcDescriptorConfig[] = {
     //  Descriptor Config
     0x09, // bLength
-    0x02, // bDescriptorType
+    DEV_DESCR_CONFIG, // bDescriptorType
     0x43, // wTotalLengthL
     0x00, // wTotalLengthH
     0x02, // bNumInterfaces
@@ -261,41 +294,41 @@ unsigned char _cdcDescriptorConfig[] = {
     0x64, // MaxPower
     //  Descriptor Interface 0 (Communication Class)
     0x09, // bLength
-    0x04, // bDescriptorType
+    DEV_DESCR_INTERF, // bDescriptorType
     0x00, // bInterfaceNumber
     0x00, // bAlternateSetting
     0x01, // bNumEndpoint
-    0x02, // bInterfaceClass        (Communication Interface Class)
+    DEV_CLASS_CDC_CTRL, // bInterfaceClass        (Communication Interface Class)
     0x02, // bInterfaceSubClass     (Abstract Control Model)
     0x01, // bInterfaceProtocol     (AT Commands V.250)
     0x00, // iInterface
         //  Descriptors Functional
         //  Descriptor Functional Header
         0x05, // bLength
-        0x24, // bDescriptorType
+        DEV_DESCR_CS_INTF, // bDescriptorType
         0x00, // bDescriptorSubtype (Header FD)
         0x10, // bcdCDCL
         0x01, // bcdCDCH
         //  Descriptor Functional Abstract Control Model
         0x04, // bLength
-        0x24, // bDescriptorType
+        DEV_DESCR_CS_INTF, // bDescriptorType
         0x02, // bDescriptorSubtype (ACM-FD)
         0x02, // bmCapabilities
         //  Descriptor Functional Union
         0x05, // bLength
-        0x24, // bDescriptorType
+        DEV_DESCR_CS_INTF, // bDescriptorType
         0x06, // bDescriptorSubtype (Union FD)
         0x00, // bControlInterface      (I/F# of Communication Class Interface)
         0x01, // bSubordinateInterface0 (I/F# of Data Class Interface)
         //  Descriptor Functional Call Management
         0x05, // bLength
-        0x24, // bDescriptorType
+        DEV_DESCR_CS_INTF, // bDescriptorType
         0x01, // bDescriptorSubtype (CM-FD)
         0x00, // bmCapabilities
         0x01, // bDataInterface
         //  Descriptor Endpoint 1
         0x07, // bLength
-        0x05, // bDescriptorType
+        DEV_DESCR_ENDP, // bDescriptorType
         0x81, // bEndpointAddress   (ep1 IN)
         0x03, // bmAttributes
         0x10, // wMaxPacketSizeL
@@ -303,17 +336,17 @@ unsigned char _cdcDescriptorConfig[] = {
         0x02, // bInterval
     //  Descriptor Interface 1 (Data Class)
     0x09, // bLength
-    0x04, // bDescriptorType
+    DEV_DESCR_INTERF, // bDescriptorType
     0x01, // bInterfaceNumber
     0x00, // bAlternateSetting
     0x02, // bNumEndpoint
-    0x0A, // bInterfaceClass        (CDC-Data)
+    DEV_CLASS_CDC_DATA, // bInterfaceClass        (CDC-Data)
     0x00, // bInterfaceSubClass
     0x00, // bInterfaceProtocol
     0x00, // iInterface
         //  Descriptor Endpoint 1
         0x07, // bLength
-        0x05, // bDescriptorType
+        DEV_DESCR_ENDP, // bDescriptorType
         0x01, // bEndpointAddress   (ep1 OUT)
         0x02, // bmAttributes
         0x40, // wMaxPacketSizeL
@@ -321,7 +354,7 @@ unsigned char _cdcDescriptorConfig[] = {
         0x00, // bInterval
         //  Descriptor Endpoint 8
         0x07, // bLength
-        0x05, // bDescriptorType
+        DEV_DESCR_ENDP, // bDescriptorType
         0x88, // bEndpointAddress   (ep8 IN)
         0x02, // bmAttributes
         0x00, // wMaxPacketSizeL
@@ -337,7 +370,7 @@ struct Device_t g_deviceCdc = { "CDC (Virtual COM Port)", _cdcDescriptorDevice, 
  */
 unsigned char _keyboardDescriptorDevice[] = {
     18,     // bLength
-    1,      // bDescriptorType
+    DEV_DESCR_DEVICE,      // bDescriptorType
     0x00,   // bcdUSB (low)
     0x02,   // bcdUSB (high)
     0x00,   // bDeviceClass (Defined in the interface descriptor)
@@ -359,7 +392,7 @@ unsigned char _keyboardDescriptorDevice[] = {
 unsigned char _keyboardDescriptorConfig[] = {
     //  Descriptor Config
     0x09, // bLength
-    0x02, // bDescriptorType
+    DEV_DESCR_CONFIG, // bDescriptorType
     0x22, // wTotalLengthL
     0x00, // wTotalLengthH
     0x01, // bNumInterfaces
@@ -369,17 +402,17 @@ unsigned char _keyboardDescriptorConfig[] = {
     0x64, // MaxPower
     //  Descriptor Interface
     0x09, // bLength
-    0x04, // bDescriptorType
+    DEV_DESCR_INTERF, // bDescriptorType
     0x00, // bInterfaceNumber
     0x00, // bAlternateSetting
     0x01, // bNumEndpoint
-    0x03, // bInterfaceClass
+    DEV_CLASS_HID, // bInterfaceClass
     0x00, // bInterfaceSubClass
     0x01, // bInterfaceProtocol
     0x00, // iInterface
     //  Descriptor HID
     0x09, // bLength
-    0x21, // bDescriptorType
+    DEV_DESCR_HID, // bDescriptorType
     0x11, // bcdHIDL = 0x11,
     0x01, // bcdHIDH = 0x01,
     0x08, // bCountryCode
@@ -389,7 +422,7 @@ unsigned char _keyboardDescriptorConfig[] = {
     0x00, // wDescriptorLengthH
     //  Descriptor Endpoint
     0x07, // bLength
-    0x05, // bDescriptorType
+    DEV_DESCR_ENDP, // bDescriptorType
     0x81, // bEndpointAddress (IN)
     0x03, // bmAttributes
     0x04, // wMaxPacketSizeL
@@ -422,7 +455,7 @@ struct Device_t g_deviceKeyboard = { "Keyboard", _keyboardDescriptorDevice, _key
  */
 unsigned char _imageDescriptorDevice[] = {
     18,     // bLength
-    1,      // bDescriptorType
+    DEV_DESCR_DEVICE,      // bDescriptorType
     0x00,   // bcdUSB (low)
     0x02,   // bcdUSB (high)
     0x00,   // bDeviceClass (Defined in the interface descriptor)
@@ -444,7 +477,7 @@ unsigned char _imageDescriptorDevice[] = {
 unsigned char _imageDescriptorConfig[] = {
     //  Descriptor Config
     0x09, // bLength
-    0x02, // bDescriptorType
+    DEV_DESCR_CONFIG, // bDescriptorType
     0x27, // wTotalLengthL
     0x00, // wTotalLengthH
     0x01, // bNumInterfaces
@@ -454,17 +487,17 @@ unsigned char _imageDescriptorConfig[] = {
     0x64, // MaxPower
     //  Descriptor Interface
     0x09, // bLength
-    0x04, // bDescriptorType
+    DEV_DESCR_INTERF, // bDescriptorType
     0x00, // bInterfaceNumber
     0x00, // bAlternateSetting
     0x03, // bNumEndpoint
-    0x06, // bInterfaceClass
+    DEV_CLASS_IMAGE, // bInterfaceClass
     0x01, // bInterfaceSubClass     (Still Image Capture Device)
     0x01, // bInterfaceProtocol     (PIMA 15740 compliant)
     0x00, // iInterface
     //  Descriptor Endpoint (1 OUT)
     0x07, // bLength
-    0x05, // bDescriptorType
+    DEV_DESCR_ENDP, // bDescriptorType
     0x01, // bEndpointAddress (OUT)
     0x02, // bmAttributes
     0x40, // wMaxPacketSizeL
@@ -472,7 +505,7 @@ unsigned char _imageDescriptorConfig[] = {
     0x00, // bInterval
     //  Descriptor Endpoint (1 IN)
     0x07, // bLength
-    0x05, // bDescriptorType
+    DEV_DESCR_ENDP, // bDescriptorType
     0x81, // bEndpointAddress (IN)
     0x02, // bmAttributes
     0x40, // wMaxPacketSizeL
@@ -480,7 +513,7 @@ unsigned char _imageDescriptorConfig[] = {
     0x00, // bInterval
     //  Descriptor Endpoint (7 OUT)
     0x07, // bLength
-    0x05, // bDescriptorType
+    DEV_DESCR_ENDP, // bDescriptorType
     0x07, // bEndpointAddress (OUT)
     0x03, // bmAttributes
     0x40, // wMaxPacketSizeL
@@ -499,7 +532,7 @@ struct Device_t g_deviceImage = { "Image", _imageDescriptorDevice, _imageDescrip
  */
 unsigned char _printerDescriptorDevice[] = {
     18,     // bLength
-    1,      // bDescriptorType
+    DEV_DESCR_DEVICE,      // bDescriptorType
     0x00,   // bcdUSB (low)
     0x02,   // bcdUSB (high)
     0x00,   // bDeviceClass (Defined in the interface descriptor)
@@ -521,7 +554,7 @@ unsigned char _printerDescriptorDevice[] = {
 unsigned char _printerDescriptorConfig[] = {
     //  Descriptor Config
     0x09, // bLength
-    0x02, // bDescriptorType
+    DEV_DESCR_CONFIG, // bDescriptorType
     0x19, // wTotalLengthL
     0x00, // wTotalLengthH
     0x01, // bNumInterfaces
@@ -531,17 +564,17 @@ unsigned char _printerDescriptorConfig[] = {
     0x64, // MaxPower
     //  Descriptor Interface
     0x09, // bLength
-    0x04, // bDescriptorType
+    DEV_DESCR_INTERF, // bDescriptorType
     0x00, // bInterfaceNumber
     0x00, // bAlternateSetting
     0x01, // bNumEndpoint
-    0x07, // bInterfaceClass
+    DEV_CLASS_PRINTER, // bInterfaceClass
     0x01, // bInterfaceSubClass
     0x01, // bInterfaceProtocol
     0x00, // iInterface
     //  Descriptor Endpoint (1 OUT)
     0x07, // bLength
-    0x05, // bDescriptorType
+    DEV_DESCR_ENDP, // bDescriptorType
     0x01, // bEndpointAddress (OUT)
     0x02, // bmAttributes
     0x40, // wMaxPacketSizeL
