@@ -491,3 +491,64 @@ unsigned char _imageDescriptorConfig[] = {
 struct Device_t g_deviceImage = { "Image", _imageDescriptorDevice, _imageDescriptorConfig, NULL };
 
 
+/* Printer descriptor is based on
+ * https://www.xmos.ai/download/AN00126:-USB-Printer-Device-Class(2.0.0rc3).pdf
+ */
+/*******************************************************************************
+ * DEVICE PRINTER
+ */
+unsigned char _printerDescriptorDevice[] = {
+    18,     // bLength
+    1,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x00,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _printerDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    0x02, // bDescriptorType
+    0x19, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface
+    0x09, // bLength
+    0x04, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x01, // bNumEndpoint
+    0x07, // bInterfaceClass
+    0x01, // bInterfaceSubClass     (Still Image Capture Device)
+    0x01, // bInterfaceProtocol     (PIMA 15740 compliant)
+    0x00, // iInterface
+    //  Descriptor Endpoint (1 OUT)
+    0x07, // bLength
+    0x05, // bDescriptorType
+    0x01, // bEndpointAddress (OUT)
+    0x02, // bmAttributes
+    0x40, // wMaxPacketSizeL
+    0x00, // wMaxPacketSizeH
+    0x01, // bInterval
+};
+
+struct Device_t g_devicePrinter = { "printer", _printerDescriptorDevice, _printerDescriptorConfig, NULL };
+
+

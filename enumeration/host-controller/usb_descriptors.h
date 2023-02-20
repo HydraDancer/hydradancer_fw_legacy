@@ -23,6 +23,7 @@ extern struct Device_t g_deviceAudio;
 extern struct Device_t g_deviceCdc;
 extern struct Device_t g_deviceKeyboard;
 extern struct Device_t g_deviceImage;
+extern struct Device_t g_devicePrinter;
 
 extern struct DeviceConfig_t g_genericDeviceConfig;
 
