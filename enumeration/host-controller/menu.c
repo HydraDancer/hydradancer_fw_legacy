@@ -23,6 +23,7 @@ menu_print(void)
     printf("4) Enumerate CDC\n");
     printf("5) Enumerate HID\n");
     printf("6) Enumerate Image\n");
+    printf("7) Enumerate Printer\n");
     printf("\n");
     printf("0) Exit\n");
     printf("> ");
