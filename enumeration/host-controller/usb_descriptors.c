@@ -232,7 +232,7 @@ unsigned char _cdcDescriptorDevice[] = {
     1,      // bDescriptorType
     0x00,   // bcdUSB (low)
     0x02,   // bcdUSB (high)
-    0x02,   // bDeviceClass (Defined in the interface descriptor)
+    0x02,   // bDeviceClass
     0x00,   // bDeviceSubClass
     0x00,   // bDeviceProtocol
     64,     // bMaxPacketSize0
@@ -536,8 +536,8 @@ unsigned char _printerDescriptorConfig[] = {
     0x00, // bAlternateSetting
     0x01, // bNumEndpoint
     0x07, // bInterfaceClass
-    0x01, // bInterfaceSubClass     (Still Image Capture Device)
-    0x01, // bInterfaceProtocol     (PIMA 15740 compliant)
+    0x01, // bInterfaceSubClass
+    0x01, // bInterfaceProtocol
     0x00, // iInterface
     //  Descriptor Endpoint (1 OUT)
     0x07, // bLength
