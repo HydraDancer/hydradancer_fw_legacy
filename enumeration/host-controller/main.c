@@ -168,7 +168,7 @@ enumerate_device(struct Device_t device)
             isDeviceSupported = true;
             break;
         }
-        usleep(10000);
+        usleep(100000);
     }
 
     // Print the result
