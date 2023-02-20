@@ -168,7 +168,7 @@ enumerate_device(struct Device_t device)
             isDeviceSupported = true;
             break;
         }
-        usleep(10000);
+        usleep(100000);
     }
 
     // Print the result
@@ -236,17 +236,17 @@ main(int argc, char *argv[])
                 usleep(100000);
             }
             break;
-        // - Enumerate Vendor Specific
+        // - Enumerate Audio
         case 3:
             enumerate_device(g_deviceAudio);
             break;
-        // - Enumerate Audio
-        case 4:
-            enumerate_device(g_deviceKeyboard);
-            break;
         // - Enumerate CDC
+        case 4:
+            enumerate_device(g_deviceCdc);
+            break;
+        // - Enumerate Keyboard
         case 5:
-            enumerate_device(g_deviceGeneric);
+            enumerate_device(g_deviceKeyboard);
             break;
         // - Enumerate Physical
         case 6:
