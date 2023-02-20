@@ -252,6 +252,10 @@ main(int argc, char *argv[])
         case 6:
             enumerate_device(g_deviceImage);
             break;
+        // - Enumerate Image
+        case 7:
+            enumerate_device(g_devicePrinter);
+            break;
         // - exit
         case 0:
             exit = true;
