@@ -248,9 +248,9 @@ main(int argc, char *argv[])
         case 5:
             enumerate_device(g_deviceKeyboard);
             break;
-        // - Enumerate Physical
+        // - Enumerate Image
         case 6:
-            enumerate_device(g_deviceGeneric);
+            enumerate_device(g_deviceImage);
             break;
         // - exit
         case 0:
