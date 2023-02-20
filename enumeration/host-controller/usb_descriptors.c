@@ -38,7 +38,7 @@ unsigned char _genericDescriptorConfig[] = {
 	0x00, // iConfiguration
 	0x80, // bmAttributes
 	0x64, // MaxPower
-    //  Descriptor Interace
+    //  Descriptor Interface
 	0x09, // bLength
 	0x04, // bDescriptorType
 	0x00, // bInterfaceNumber
@@ -221,6 +221,117 @@ unsigned char _audioDescriptorConfig[] = {
 struct Device_t g_deviceAudio = { "Audio", _audioDescriptorDevice, _audioDescriptorConfig, NULL };
 
 
+/* CDC descriptors is based on
+ * https://gist.github.com/tai/acd59b125a007ad47767
+ */
+/*******************************************************************************
+ * DEVICE CDC
+ */
+unsigned char _cdcDescriptorDevice[] = {
+    18,     // bLength
+    1,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x02,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _cdcDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    0x02, // bDescriptorType
+    0x43, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x02, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface 0 (Communication Class)
+    0x09, // bLength
+    0x04, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x01, // bNumEndpoint
+    0x02, // bInterfaceClass        (Communication Interface Class)
+    0x02, // bInterfaceSubClass     (Abstract Control Model)
+    0x01, // bInterfaceProtocol     (AT Commands V.250)
+    0x00, // iInterface
+        //  Descriptors Functional
+        //  Descriptor Functional Header
+        0x05, // bLength
+        0x24, // bDescriptorType
+        0x00, // bDescriptorSubtype (Header FD)
+        0x10, // bcdCDCL
+        0x01, // bcdCDCH
+        //  Descriptor Functional Abstract Control Model
+        0x04, // bLength
+        0x24, // bDescriptorType
+        0x02, // bDescriptorSubtype (ACM-FD)
+        0x02, // bmCapabilities
+        //  Descriptor Functional Union
+        0x05, // bLength
+        0x24, // bDescriptorType
+        0x06, // bDescriptorSubtype (Union FD)
+        0x00, // bControlInterface      (I/F# of Communication Class Interface)
+        0x01, // bSubordinateInterface0 (I/F# of Data Class Interface)
+        //  Descriptor Functional Call Management
+        0x05, // bLength
+        0x24, // bDescriptorType
+        0x01, // bDescriptorSubtype (CM-FD)
+        0x00, // bmCapabilities
+        0x01, // bDataInterface
+        //  Descriptor Endpoint 1
+        0x07, // bLength
+        0x05, // bDescriptorType
+        0x81, // bEndpointAddress   (ep1 IN)
+        0x03, // bmAttributes
+        0x10, // wMaxPacketSizeL
+        0x00, // wMaxPacketSizeH
+        0x02, // bInterval
+    //  Descriptor Interface 1 (Data Class)
+    0x09, // bLength
+    0x04, // bDescriptorType
+    0x01, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x02, // bNumEndpoint
+    0x0A, // bInterfaceClass        (CDC-Data)
+    0x00, // bInterfaceSubClass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+        //  Descriptor Endpoint 1
+        0x07, // bLength
+        0x05, // bDescriptorType
+        0x01, // bEndpointAddress   (ep1 OUT)
+        0x02, // bmAttributes
+        0x40, // wMaxPacketSizeL
+        0x00, // wMaxPacketSizeH
+        0x00, // bInterval
+        //  Descriptor Endpoint 8
+        0x07, // bLength
+        0x05, // bDescriptorType
+        0x88, // bEndpointAddress   (ep8 IN)
+        0x02, // bmAttributes
+        0x00, // wMaxPacketSizeL
+        0x02, // wMaxPacketSizeH
+        0x00, // bInterval
+};
+
+struct Device_t g_deviceCdc = { "CDC (Virtual COM Port)", _cdcDescriptorDevice, _cdcDescriptorConfig, NULL };
+
+
 /*******************************************************************************
  * DEVICE KEYBOARD
  */
@@ -256,7 +367,7 @@ unsigned char _keyboardDescriptorConfig[] = {
     0x00, // iConfiguration
     0x80, // bmAttributes
     0x64, // MaxPower
-    //  Descriptor Interace
+    //  Descriptor Interface
     0x09, // bLength
     0x04, // bDescriptorType
     0x00, // bInterfaceNumber

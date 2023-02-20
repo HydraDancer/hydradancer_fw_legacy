@@ -20,8 +20,8 @@ menu_print(void)
     printf("1) Log once\n");
     printf("2) Log infinite loop\n");
     printf("3) Enumerate Audio\n");
-    printf("4) Enumerate HID\n");
-    printf("5) NOT WORKING!  Enumerate CDC\n");
+    printf("4) Enumerate CDC\n");
+    printf("5) Enumerate HID\n");
     printf("6) NOT WORKING!  Enumerate physical\n");
     printf("\n");
     printf("0) Exit\n");
