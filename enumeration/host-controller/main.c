@@ -260,13 +260,13 @@ main(int argc, char *argv[])
         case 8:
             enumerate_device(g_deviceMassStorage);
             break;
-        // - Enumerate Mass Storage
+        // - Enumerate Smart Card
         case 9:
             enumerate_device(g_deviceSmartCard);
             break;
-        // - Enumerate Mass Storage
+        // - Disconnect Current Device 
         case 99:
-    // Reset the board
+            // Reset the board
             do {
                 printf("Resetting board\n");
                 bbio_command_send(BbioDisconnect);
