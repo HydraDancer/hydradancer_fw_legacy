@@ -589,7 +589,7 @@ struct Device_t g_devicePrinter = { "printer", _printerDescriptorDevice, _printe
  * https://www.xmos.ai/download/AN00125:-USB-Mass-Storage-Device-Class%282.0.0rc3%29.pdf
  */
 /*******************************************************************************
- * DEVICE PRINTER
+ * DEVICE MASS STORAGE
  */
 unsigned char _massStorageDescriptorDevice[] = {
     18,     // bLength
