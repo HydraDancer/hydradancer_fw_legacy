@@ -261,6 +261,10 @@ main(int argc, char *argv[])
             enumerate_device(g_deviceMassStorage);
             break;
         // - Enumerate Mass Storage
+        case 9:
+            enumerate_device(g_deviceSmartCard);
+            break;
+        // - Enumerate Mass Storage
         case 99:
     // Reset the board
             do {
