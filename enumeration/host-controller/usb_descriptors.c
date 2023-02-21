@@ -32,6 +32,7 @@
 #define DEV_CLASS_HUB           0x09
 #define DEV_CLASS_CDC_DATA      0x0A
 #define DEV_CLASS_SMART_CARD    0x0B
+#define DEV_CLASS_PHDC          0x0F
 #define DEV_CLASS_VEN_SPEC      0xFF
 
 
@@ -774,5 +775,90 @@ unsigned char _smartCardDescriptorConfig[] = {
 };
 
 struct Device_t g_deviceSmartCard = { "SmartCard", _smartCardDescriptorDevice, _smartCardDescriptorConfig, NULL };
+
+
+/*******************************************************************************
+ * DEVICE PERSONAL HEALTHCARE
+ */
+unsigned char _personalHealthcareDescriptorDevice[] = {
+    18,     // bLength
+    DEV_DESCR_DEVICE,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x00,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _personalHealthcareDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    DEV_DESCR_CONFIG, // bDescriptorType
+    0x2F, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x03, // bNumEndpoint
+    DEV_CLASS_PHDC, // bInterfaceClass
+    0x00, // bInterfaceSubClass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor PHDC Class Function
+    0x04, // bLength
+    0x20, // bDescriptorType
+    0x02, // bPHDCDataCode
+    0x00, // bmCapability
+    //  Descriptor PHDC QoS
+    0x04, // bLength
+    0x21, // bDescriptorType
+    0x01, // bQoSEncodingVersion
+    0x10, // bmLatencyReliability
+    //  Descriptor Endpoint (1 Bulk OUT)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x01, // bEndpointAddress (OUT)
+    0x02, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x00, // bInterval
+    //  Descriptor Endpoint (1 Bulk IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x81, // bEndpointAddress (IN)
+    0x02, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x00, // bInterval
+    //  Descriptor Endpoint (2 Interrupt IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x82, // bEndpointAddress (IN)
+    0x03, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x01, // bInterval
+};
+
+struct Device_t g_devicePersonalHealthcare = { "PersonalHealthcare", _personalHealthcareDescriptorDevice, _personalHealthcareDescriptorConfig, NULL };
+
 
 
