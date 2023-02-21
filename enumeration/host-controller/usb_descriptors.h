@@ -26,6 +26,7 @@ extern struct Device_t g_deviceImage;
 extern struct Device_t g_devicePrinter;
 extern struct Device_t g_deviceMassStorage;
 extern struct Device_t g_deviceSmartCard;
+extern struct Device_t g_devicePersonalHealthcare;
 
 extern struct DeviceConfig_t g_genericDeviceConfig;
 

@@ -264,6 +264,10 @@ main(int argc, char *argv[])
         case 9:
             enumerate_device(g_deviceSmartCard);
             break;
+        // - Enumerate Personal Healthcare
+        case 10:
+            enumerate_device(g_devicePersonalHealthcare);
+            break;
         // - Disconnect Current Device 
         case 99:
             // Reset the board
