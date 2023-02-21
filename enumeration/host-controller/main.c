@@ -260,6 +260,28 @@ main(int argc, char *argv[])
         case 8:
             enumerate_device(g_deviceMassStorage);
             break;
+        // - Enumerate Mass Storage
+        case 99:
+    // Reset the board
+            do {
+                printf("Resetting board\n");
+                bbio_command_send(BbioDisconnect);
+                bbioRetCode = bbio_get_return_code();
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode |= bbio_get_return_code();
+            } while (bbioRetCode);
+
+            // Reset descriptors
+            do {
+                printf("Resetting descriptors\n");
+                bbio_command_send(BbioResetDescr);
+                bbioRetCode = bbio_get_return_code();
+                retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+                if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+                bbioRetCode |= bbio_get_return_code();
+            } while (bbioRetCode);
+            break;
         // - exit
         case 0:
             exit = true;
