@@ -585,7 +585,7 @@ unsigned char _printerDescriptorConfig[] = {
 struct Device_t g_devicePrinter = { "printer", _printerDescriptorDevice, _printerDescriptorConfig, NULL };
 
 
-/* Printer descriptor is based on
+/* Mass Storage descriptor is based on
  * https://www.xmos.ai/download/AN00125:-USB-Mass-Storage-Device-Class%282.0.0rc3%29.pdf
  */
 /*******************************************************************************
