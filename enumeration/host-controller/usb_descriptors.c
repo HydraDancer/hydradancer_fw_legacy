@@ -628,9 +628,9 @@ unsigned char _massStorageDescriptorConfig[] = {
     DEV_DESCR_INTERF, // bDescriptorType
     0x00, // bInterfaceNumber
     0x00, // bAlternateSetting
-    0x01, // bNumEndpoint
+    0x02, // bNumEndpoint
     DEV_CLASS_STORAGE, // bInterfaceClass
-    0x00, // bInterfaceSubClass
+    0x06, // bInterfaceSubClass
     0x50, // bInterfaceProtocol
     0x00, // iInterface
     //  Descriptor Endpoint (1 OUT)
@@ -638,8 +638,16 @@ unsigned char _massStorageDescriptorConfig[] = {
     DEV_DESCR_ENDP, // bDescriptorType
     0x01, // bEndpointAddress (OUT)
     0x02, // bmAttributes
-    0x40, // wMaxPacketSizeL
-    0x00, // wMaxPacketSizeH
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x00, // bInterval
+    //  Descriptor Endpoint (1 IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x81, // bEndpointAddress (IN)
+    0x02, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
     0x00, // bInterval
 };
 
