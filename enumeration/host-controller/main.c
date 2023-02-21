@@ -256,7 +256,7 @@ main(int argc, char *argv[])
         case 7:
             enumerate_device(g_devicePrinter);
             break;
-        // - Enumerate Image
+        // - Enumerate Mass Storage
         case 8:
             enumerate_device(g_deviceMassStorage);
             break;
