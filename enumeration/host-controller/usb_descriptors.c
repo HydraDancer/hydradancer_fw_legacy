@@ -21,17 +21,18 @@
 #define DEV_DESCR_HUB     0x29
 
 /* USB device class */
-#define DEV_CLASS_RESERVED  0x00
-#define DEV_CLASS_AUDIO     0x01
-#define DEV_CLASS_CDC_CTRL  0x02
-#define DEV_CLASS_HID       0x03
-#define DEV_CLASS_PHYSIC_IF 0x05
-#define DEV_CLASS_IMAGE     0x06
-#define DEV_CLASS_PRINTER   0x07
-#define DEV_CLASS_STORAGE   0x08
-#define DEV_CLASS_HUB       0x09
-#define DEV_CLASS_CDC_DATA  0x0A
-#define DEV_CLASS_VEN_SPEC  0xFF
+#define DEV_CLASS_RESERVED      0x00
+#define DEV_CLASS_AUDIO         0x01
+#define DEV_CLASS_CDC_CTRL      0x02
+#define DEV_CLASS_HID           0x03
+#define DEV_CLASS_PHYSIC_IF     0x05
+#define DEV_CLASS_IMAGE         0x06
+#define DEV_CLASS_PRINTER       0x07
+#define DEV_CLASS_STORAGE       0x08
+#define DEV_CLASS_HUB           0x09
+#define DEV_CLASS_CDC_DATA      0x0A
+#define DEV_CLASS_SMART_CARD    0x0B
+#define DEV_CLASS_VEN_SPEC      0xFF
 
 
 /* variables */
@@ -652,5 +653,126 @@ unsigned char _massStorageDescriptorConfig[] = {
 };
 
 struct Device_t g_deviceMassStorage = { "MassStorage", _massStorageDescriptorDevice, _massStorageDescriptorConfig, NULL };
+
+
+/*******************************************************************************
+ * DEVICE SMART CARD
+ */
+unsigned char _smartCardDescriptorDevice[] = {
+    18,     // bLength
+    DEV_DESCR_DEVICE,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x00,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _smartCardDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    DEV_DESCR_CONFIG, // bDescriptorType
+    0x56, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x02, // bNumEndpoint
+    DEV_CLASS_SMART_CARD, // bInterfaceClass
+    0x00, // bInterfaceSubClass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor Smart Card Device Class
+    0x36, // bLength
+    0x21, // bDescriptorType    (Same as DEV_DESCR_HID ?)
+    0x10, // bcdCCIDL
+    0x01, // bcdCCIDH
+    0x00, // bMaxSlotIndex      (Here only one)
+    0x04, // bVoltageSupport
+    0x03, // dwProtocols0   (ProtocolL)
+    0x00, // dwProtocols1   (ProtocolH)
+    0x00, // dwProtocols2   (ReservedL)
+    0x00, // dwProtocols3   (ReservedH)
+    0xFC, // dwDefaultClock0    (3.58 MHz)
+    0x0D, // dwDefaultClock1
+    0x00, // dwDefaultClock2
+    0x00, // dwDefaultClock3
+    0xF0, // dwMaximumClock0    (14.32 MHz)
+    0x37, // dwMaximumClock1
+    0x00, // dwMaximumClock2
+    0x00, // dwMaximumClock3
+    0x00, // bNumClockSupported
+    0x80, // dwDataRate0        (9600 bauds)
+    0x25, // dwDataRate1
+    0x00, // dwDataRate2
+    0x00, // dwDataRate3
+    0x00, // dwMaxDataRate0     (115200 bauds)
+    0xC2, // dwMaxDataRate1
+    0x01, // dwMaxDataRate2
+    0x00, // dwMaxDataRate3
+    0x00, // bNumDataRatesSupported
+    0xFE, // dwMaxIFSD0
+    0x00, // dwMaxIFSD1
+    0x00, // dwMaxIFSD2
+    0x00, // dwMaxIFSD3
+    0x04, // dwSynchProtocols0
+    0x00, // dwSynchProtocols1
+    0x00, // dwSynchProtocols2
+    0x00, // dwSynchProtocols3
+    0x00, // dwMechanical0
+    0x00, // dwMechanical1
+    0x00, // dwMechanical2
+    0x00, // dwMechanical3
+    0x00, // dwFeatures0
+    0x00, // dwFeatures1
+    0x00, // dwFeatures2
+    0x00, // dwFeatures3
+    0x00, // dwMaxCCIDMessageLength0    (Careful! The minimum value is the wMaxPacketSize of endpoint Bulk OUT)
+    0x02, // dwMaxCCIDMessageLength1
+    0x00, // dwMaxCCIDMessageLength2
+    0x00, // dwMaxCCIDMessageLength3
+    0xFF, // bClassGetResponse
+    0xFF, // bClassEnvelope
+    0x00, // wLcdLayoutL
+    0x00, // wLcdLayoutH
+    0x00, // bPINSupport
+    0x01, // bMaxCCIDBusySlots
+    //  Descriptor Endpoint (1 OUT)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x01, // bEndpointAddress (OUT)
+    0x02, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x00, // bInterval
+    //  Descriptor Endpoint (1 IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x81, // bEndpointAddress (IN)
+    0x02, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x00, // bInterval
+};
+
+struct Device_t g_deviceSmartCard = { "SmartCard", _smartCardDescriptorDevice, _smartCardDescriptorConfig, NULL };
 
 
