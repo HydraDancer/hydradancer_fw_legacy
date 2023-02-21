@@ -24,6 +24,7 @@ menu_print(void)
     printf("5) Enumerate HID\n");
     printf("6) Enumerate Image\n");
     printf("7) Enumerate Printer\n");
+    printf("8) Enumerate Mass Storage\n");
     printf("\n");
     printf("0) Exit\n");
     printf("> ");

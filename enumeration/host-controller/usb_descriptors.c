@@ -585,3 +585,72 @@ unsigned char _printerDescriptorConfig[] = {
 struct Device_t g_devicePrinter = { "printer", _printerDescriptorDevice, _printerDescriptorConfig, NULL };
 
 
+/* Printer descriptor is based on
+ * https://www.xmos.ai/download/AN00125:-USB-Mass-Storage-Device-Class%282.0.0rc3%29.pdf
+ */
+/*******************************************************************************
+ * DEVICE PRINTER
+ */
+unsigned char _massStorageDescriptorDevice[] = {
+    18,     // bLength
+    DEV_DESCR_DEVICE,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x00,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _massStorageDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    DEV_DESCR_CONFIG, // bDescriptorType
+    0x20, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x02, // bNumEndpoint
+    DEV_CLASS_STORAGE, // bInterfaceClass
+    0x06, // bInterfaceSubClass
+    0x50, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor Endpoint (1 OUT)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x01, // bEndpointAddress (OUT)
+    0x02, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x00, // bInterval
+    //  Descriptor Endpoint (1 IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x81, // bEndpointAddress (IN)
+    0x02, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x02, // wMaxPacketSizeH
+    0x00, // bInterval
+};
+
+struct Device_t g_deviceMassStorage = { "MassStorage", _massStorageDescriptorDevice, _massStorageDescriptorConfig, NULL };
+
+
