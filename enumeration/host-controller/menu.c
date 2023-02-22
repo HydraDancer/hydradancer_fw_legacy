@@ -27,6 +27,7 @@ menu_print(void)
     printf("8)  Enumerate Mass Storage\n");
     printf("9)  Enumerate Smart Card\n");
     printf("10) Enumerate Personal Healthcare\n");
+    printf("11) Enumerate Video\n");
     printf("99) Disconnect Current Device\n");
     printf("\n");
     printf("0) Exit\n");
