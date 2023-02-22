@@ -5,20 +5,21 @@
 
 /* macros */
 /* USB descriptor type */
-#define DEV_DESCR_DEVICE  0x01
-#define DEV_DESCR_CONFIG  0x02
-#define DEV_DESCR_STRING  0x03
-#define DEV_DESCR_INTERF  0x04
-#define DEV_DESCR_ENDP    0x05
-#define DEV_DESCR_QUALIF  0x06
-#define DEV_DESCR_SPEED   0x07
-#define DEV_DESCR_OTG     0x09
-#define DEV_DESCR_HID     0x21
-#define DEV_DESCR_REPORT  0x22
-#define DEV_DESCR_PHYSIC  0x23
-#define DEV_DESCR_CS_INTF 0x24
-#define DEV_DESCR_CS_ENDP 0x25
-#define DEV_DESCR_HUB     0x29
+#define DEV_DESCR_DEVICE    0x01
+#define DEV_DESCR_CONFIG    0x02
+#define DEV_DESCR_STRING    0x03
+#define DEV_DESCR_INTERF    0x04
+#define DEV_DESCR_ENDP      0x05
+#define DEV_DESCR_QUALIF    0x06
+#define DEV_DESCR_SPEED     0x07
+#define DEV_DESCR_OTG       0x09
+#define DEV_DESCR_IF_ASSOC  0x0B
+#define DEV_DESCR_HID       0x21
+#define DEV_DESCR_REPORT    0x22
+#define DEV_DESCR_PHYSIC    0x23
+#define DEV_DESCR_CS_INTF   0x24
+#define DEV_DESCR_CS_ENDP   0x25
+#define DEV_DESCR_HUB       0x29
 
 /* USB device class */
 #define DEV_CLASS_RESERVED      0x00
@@ -32,6 +33,7 @@
 #define DEV_CLASS_HUB           0x09
 #define DEV_CLASS_CDC_DATA      0x0A
 #define DEV_CLASS_SMART_CARD    0x0B
+#define DEV_CLASS_VIDEO         0x0E
 #define DEV_CLASS_PHDC          0x0F
 #define DEV_CLASS_VEN_SPEC      0xFF
 
@@ -859,6 +861,228 @@ unsigned char _personalHealthcareDescriptorConfig[] = {
 };
 
 struct Device_t g_devicePersonalHealthcare = { "PersonalHealthcare", _personalHealthcareDescriptorDevice, _personalHealthcareDescriptorConfig, NULL };
+
+
+/*******************************************************************************
+ * DEVICE VIDEO
+ */
+
+/* Video descriptor is based on
+ * https://www.xmos.ai/download/AN00127:-USB-Video-Class-Device(2.0.1rc1).pdf
+ */
+unsigned char _videoDescriptorDevice[] = {
+    18,     // bLength
+    DEV_DESCR_DEVICE,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0xEF,   // bDeviceClass
+    0x02,   // bDeviceSubClass
+    0x01,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _videoDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    DEV_DESCR_CONFIG, // bDescriptorType
+    0xAE, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x02, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface Association
+    0x08, // bLength
+    DEV_DESCR_IF_ASSOC, // bDescriptorType
+    0x00, // bFirstInterface
+    0x02, // bInterfaceCount
+    0x0E, // bFunctionClass
+    0x03, // bFunctionSubClass
+    0x00, // bFunctionProtocol
+    0x00, // iFunction
+    //  Descriptor Video Control (VC) Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x01, // bNumEndpoint
+    DEV_CLASS_VIDEO, // bInterfaceClass
+    0x01, // bInterfaceSubClass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor Class-Specific VC Interface Header
+    0x0D, // bLength
+    DEV_DESCR_CS_INTF, // bDescriptorType
+    0x01, // bDescriptorSubtype
+    0x10, // bcdUVCL
+    0x01, // bcdUVCH
+    0x28, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x00, // dwClockFrequency0
+    0xe1, // dwClockFrequency1
+    0xf5, // dwClockFrequency2
+    0x05, // dwClockFrequency3
+    0x01, // bInCollection
+    0x01, // baInterfaceNr
+    //  Descriptor Input Terminal (Here a Camera)
+    0x12, // bLength
+    DEV_DESCR_CS_INTF, // bDescriptorType
+    0x02, // bDescriptorSubtype
+    0x01, // bTerminalID
+    0x01, // wTerminalTypeL
+    0x02, // wTerminalTypeH
+    0x00, // bAssocTerminal
+    0x00, // iTerminal
+    0x00, // wObjectiveFocalLengthMinL
+    0x00, // wObjectiveFocalLengthMinH
+    0x00, // wObjectiveFocalLengthMaxL
+    0x00, // wObjectiveFocalLengthMaxH
+    0x00, // wOcularFocalLengthL
+    0x00, // wOcularFocalLengthH
+    0x03, // bControlSize
+    0x00, // bmControlsL
+    0x00, // bmControlsM
+    0x00, // bmControlsH
+    //  Descriptor Output Terminal
+    0x09, // bLength
+    DEV_DESCR_CS_INTF, // bDescriptorType
+    0x03, // bDescriptorSubtype
+    0x02, // bTerminalID
+    0x01, // wTerminalTypeL
+    0x01, // wTerminalTypeH
+    0x00, // bAssocTerminal
+    0x01, // bSourceID
+    0x00, // iTerminal
+    //  Descriptor Endpoint (Interrupt IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x81, // bEndpointAddress
+    0x03, // bmAttributes
+    0x40, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x09, // bInterval
+    //  Descriptor Class-Specific (CS) Endpoint
+    0x05, // bLength
+    DEV_DESCR_CS_ENDP, // bDescriptorType
+    0x03, // bDescriptorSubtype
+    0x40, // wTotalLengthL
+    0x00, // wTotalLengthH
+    //  Descriptor Video Streaming (VS) Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x01, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x00, // bNumEndpoint
+    DEV_CLASS_VIDEO, // bInterfaceClass
+    0x02, // bInterfaceSubClass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor Class-Specific VS Interface Header
+    0x0E, // bLength
+    DEV_DESCR_CS_INTF, // bDescriptorType
+    0x01, // bDescriptorSubtype
+    0x01, // bNumFormats
+    0x47, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x82, // bEndpointAddress
+    0x00, // bmInfo
+    0x02, // bTerminalLink
+    0x01, // bStillCaptureMethod
+    0x00, // bTriggerSupport
+    0x00, // bTriggerUsage
+    0x01, // bControlSize
+    0x00, // bmaControls
+    //  Descriptor Class-Specific VS Format
+    0x1B, // bLength
+    DEV_DESCR_CS_INTF, // bDescriptorType
+    0x04, // bDescriptorSubtype
+    0x01, // bFormatIndex
+    0x01, // bFrameDescriptors
+    0x59, // guidFormat0 (YUY2 Video Format)
+    0x55, // guidFormat1
+    0x59, // guidFormat2
+    0x32, // guidFormat3
+    0x00, // guidFormat4
+    0x00, // guidFormat5
+    0x10, // guidFormat6
+    0x00, // guidFormat7
+    0x80, // guidFormat8
+    0x00, // guidFormat9
+    0x00, // guidFormat10
+    0xAA, // guidFormat11
+    0x00, // guidFormat12
+    0x38, // guidFormat13
+    0x9B, // guidFormat14
+    0x71, // guidFormat15
+    0x10, // bBitsPerPixel
+    0x01, // bDefaultFrameIndex
+    0x00, // bAspectRatioX
+    0x00, // bAspectRatioY
+    0x00, // bmInterlaceFlags
+    0x00, // bCopyProtect
+    //  Descriptor Class-Specific VS Frame
+    0x1E, // bLength
+    DEV_DESCR_CS_INTF, // bDescriptorType
+    0x05, // bDescriptorSubtype
+    0x01, // bFrameIndex
+    0x01, // bmCapabilities
+    0xe0, // wWidthL
+    0x01, // wWidthH
+    0x40, // wHeightL
+    0x01, // wHeightH
+    0x00, // dwMinBitRate0
+    0x00, // dwMinBitRate1
+    0x65, // dwMinBitRate2
+    0x04, // dwMinBitRate3
+    0x00, // dwMaxBitRate0
+    0x00, // dwMaxBitRate1
+    0x65, // dwMaxBitRate2
+    0x04, // dwMaxBitRate3
+    0x00, // dwMaxVideoFrameBufSize0
+    0xB0, // dwMaxVideoFrameBufSize1
+    0x04, // dwMaxVideoFrameBufSize2
+    0x00, // dwMaxVideoFrameBufSize3
+    0x15, // dwDefaultFrameInterval0
+    0x16, // dwDefaultFrameInterval1
+    0x05, // dwDefaultFrameInterval2
+    0x00, // dwDefaultFrameInterval3
+    0x01, // bFrameIntervalType
+    0x15, // dwFrameInterval0
+    0x16, // dwFrameInterval1
+    0x05, // dwFrameInterval2
+    0x00, // dwFrameInterval3
+    //  Descriptor Video Stream Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x01, // bInterfaceNumber
+    0x01, // bAlternateSetting
+    0x01, // bNumEndpoint
+    DEV_CLASS_VIDEO, // bInterfaceClass
+    0x02, // bInterfaceSubClass
+    0x00, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor Endpoint (Isochronous IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x82, // bEndpointAddress
+    0x05, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x04, // wMaxPacketSizeH
+    0x01, // bInterval
+};
+
+struct Device_t g_deviceVideo = { "Video", _videoDescriptorDevice, _videoDescriptorConfig, NULL };
 
 
 
