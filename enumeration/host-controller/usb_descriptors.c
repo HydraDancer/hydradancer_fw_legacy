@@ -1183,7 +1183,7 @@ unsigned char _ftdiDescriptorConfig[] = {
     //  Descriptor Config
     0x09, // bLength
     DEV_DESCR_CONFIG, // bDescriptorType
-    0xXX, // wTotalLengthL
+    0x20, // wTotalLengthL
     0x00, // wTotalLengthH
     0x01, // bNumInterfaces
     0x01, // bConfigurationValue
