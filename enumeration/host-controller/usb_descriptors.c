@@ -1085,8 +1085,10 @@ unsigned char _videoDescriptorConfig[] = {
 
 struct Device_t g_deviceVideo = { "Video", _videoDescriptorDevice, _videoDescriptorConfig, NULL };
 
+
 /*******************************************************************************
  * DEVICE DEVICE FIRMWARE UPDATE (DFU)
+ *
  * According to the specification this one is special
  * - There is no endpoints other than ep0 (control)
  * - Enumeration is done in 2 phases
@@ -1151,4 +1153,70 @@ unsigned char _dfuDescriptorConfig[] = {
 };
 
 struct Device_t g_deviceDFU = { "DFU", _dfuDescriptorDevice, _dfuDescriptorConfig, NULL };
+
+
+/*******************************************************************************
+ * DEVICE FTDI (VEndor Specific)
+ */
+unsigned char _ftdiDescriptorDevice[] = {
+    18,     // bLength
+    DEV_DESCR_DEVICE,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x00,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x03,   // idVendor (low)
+    0x04,   // idVendor (high)
+    0x01,   // idProduct (low)
+    0x60,   // idProduct (high)
+    0x01,   // bcdDevice (low)
+    0x00,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _ftdiDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    DEV_DESCR_CONFIG, // bDescriptorType
+    0x20, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x02, // bNumEndpoint
+    DEV_CLASS_VEN_SPEC, // bInterfaceClass
+    0xFF, // bInterfaceSubClass
+    0xFF, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor Endpoint (Bulk OUT)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x01, // bEndpointAddress
+    0x00, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x40, // wMaxPacketSizeH
+    0x00, // bInterval
+    //  Descriptor Endpoint (Bulk IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x83, // bEndpointAddress
+    0x00, // bmAttributes
+    0x00, // wMaxPacketSizeL
+    0x40, // wMaxPacketSizeH
+    0x00, // bInterval
+};
+
+struct Device_t g_deviceFTDI = { "FTDI", _ftdiDescriptorDevice, _ftdiDescriptorConfig, NULL };
 

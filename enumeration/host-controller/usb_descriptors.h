@@ -29,6 +29,7 @@ extern struct Device_t g_deviceSmartCard;
 extern struct Device_t g_devicePersonalHealthcare;
 extern struct Device_t g_deviceVideo;
 extern struct Device_t g_deviceDFU;
+extern struct Device_t g_deviceFTDI;
 
 extern struct DeviceConfig_t g_genericDeviceConfig;
 

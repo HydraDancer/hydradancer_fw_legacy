@@ -276,6 +276,10 @@ main(int argc, char *argv[])
         case 12:
             enumerate_device(g_deviceDFU);
             break;
+        // - Enumerate FTDI
+        case 13:
+            enumerate_device(g_deviceFTDI);
+            break;
         // - Disconnect Current Device 
         case 99:
             // Reset the board
