@@ -1,6 +1,8 @@
 #ifndef USB_DESCRIPTORS_H
 #define USB_DESCRIPTORS_H
 
+#include <stddef.h>
+
 
 /* enums */
 struct Device_t {
@@ -8,13 +10,6 @@ struct Device_t {
     unsigned char *descriptorDevice;
     unsigned char *descriptorConfig;
     unsigned char *descriptorHidReport;
-};
-
-struct DeviceConfig_t {
-    char *s_name;
-    unsigned char class;
-    unsigned char subClass;
-    unsigned char protocol;
 };
 
 /* variables */
@@ -31,7 +26,6 @@ extern struct Device_t g_deviceVideo;
 extern struct Device_t g_deviceDFU;
 extern struct Device_t g_deviceFTDI;
 
-extern struct DeviceConfig_t g_genericDeviceConfig;
-
+extern struct Device_t *g_devices[];
 
 #endif /* USB_DESCRIPTORS_H */
