@@ -272,6 +272,10 @@ main(int argc, char *argv[])
         case 11:
             enumerate_device(g_deviceVideo);
             break;
+        // - Enumerate DFU
+        case 12:
+            enumerate_device(g_deviceDFU);
+            break;
         // - Disconnect Current Device 
         case 99:
             // Reset the board
