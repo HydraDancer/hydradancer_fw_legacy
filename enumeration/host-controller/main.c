@@ -74,7 +74,7 @@ usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
 // TODOO: Use struct rather than multiple arguments tied together
 // TODO: Header doc
 bool
-enumerate_device(struct Device_t device)
+enumerate_device(struct Device_t device, bool verbose)
 {
     int retCode;
     int bbioRetCode;
@@ -92,7 +92,7 @@ enumerate_device(struct Device_t device)
 
     // Reset the board
     do {
-        printf("Resetting board\n");
+        if (verbose) { printf("Resetting board\n"); }
         bbio_command_send(BbioDisconnect);
         bbioRetCode = bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
@@ -102,7 +102,7 @@ enumerate_device(struct Device_t device)
 
     // Reset descriptors
     do {
-        printf("Resetting descriptors\n");
+        if (verbose) { printf("Resetting descriptors\n"); }
         bbio_command_send(BbioResetDescr);
         bbioRetCode = bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
@@ -112,7 +112,7 @@ enumerate_device(struct Device_t device)
 
     // Send device descriptor
     do {
-        printf("Setting device descriptor\n");
+        if (verbose) { printf("Setting device descriptor\n"); }
         bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sz_descriptorDevice);
         bbioRetCode = bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptorDevice, sz_descriptorDevice, NULL, 0);
@@ -122,7 +122,7 @@ enumerate_device(struct Device_t device)
 
     // Send configuration descriptor
     do {
-        printf("Setting configuration descriptor\n");
+        if (verbose) { printf("Setting configuration descriptor\n"); }
         bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sz_descriptorConfig);
         bbioRetCode = bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptorConfig, sz_descriptorConfig, NULL, 0);
@@ -134,7 +134,7 @@ enumerate_device(struct Device_t device)
     if (descriptorHidReport) {
         // Send HID report descriptor
         do {
-            printf("Setting configuration descriptor\n");
+            if (verbose) { printf("Setting configuration descriptor\n"); }
             bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHidReport, 0, sz_descriptorHidReport);
             bbioRetCode = bbio_get_return_code();
             retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptorHidReport, sz_descriptorHidReport, NULL, 0);
@@ -147,7 +147,7 @@ enumerate_device(struct Device_t device)
 
     // Connect the device
     do {
-        printf("Connecting the device\n");
+        if (verbose) { printf("Connecting the device\n"); }
         bbio_command_send(BbioConnect);
         bbioRetCode = bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
@@ -156,14 +156,13 @@ enumerate_device(struct Device_t device)
     } while (bbioRetCode);
 
     // Wait to see if our device is supported
-    printf("Querying results...\n");
+    if (verbose) { printf("Querying results...\n"); }
     for (int i = 0; i < TIMEOUT; ++i) {
         bbio_command_send(BbioGetStatus);
         bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
         if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
         bbioRetCode = bbio_get_return_code();
-        // printf("%d, 0x%X\n", i, bbioRetCode);    // TODO: Remove, used for debug only
         if (bbioRetCode == 1) {
             isDeviceSupported = true;
             break;
@@ -173,7 +172,7 @@ enumerate_device(struct Device_t device)
 
     // Reset the board
     do {
-        printf("Resetting board\n");
+        if (verbose) { printf("Resetting board\n"); }
         bbio_command_send(BbioDisconnect);
         bbioRetCode = bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
@@ -183,7 +182,7 @@ enumerate_device(struct Device_t device)
 
     // Reset descriptors
     do {
-        printf("Resetting descriptors\n");
+        if (verbose) { printf("Resetting descriptors\n"); }
         bbio_command_send(BbioResetDescr);
         bbioRetCode = bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
@@ -193,7 +192,14 @@ enumerate_device(struct Device_t device)
 
     // Print the result
     if (isDeviceSupported) {
-        printf("Class 0x%02X 0x%02X (%s) is supported\n", descriptorDevice[4], descriptorConfig[14], device.s_name);
+        printf("Class 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s) is supported\n",
+               descriptorDevice[4],
+               descriptorDevice[5],
+               descriptorDevice[6],
+               descriptorConfig[14],
+               descriptorConfig[15],
+               descriptorConfig[16],
+               device.s_name);
         return true;
     } else {
         printf("Class 0x%02X 0x%02X (%s) is NOT supported\n", descriptorDevice[4], descriptorConfig[14], device.s_name);
@@ -258,47 +264,47 @@ main(int argc, char *argv[])
             break;
         // - Enumerate Audio
         case 3:
-            enumerate_device(g_deviceAudio);
+            enumerate_device(g_deviceAudio, true);
             break;
         // - Enumerate CDC
         case 4:
-            enumerate_device(g_deviceCdc);
+            enumerate_device(g_deviceCdc, true);
             break;
         // - Enumerate Keyboard
         case 5:
-            enumerate_device(g_deviceKeyboard);
+            enumerate_device(g_deviceKeyboard, true);
             break;
         // - Enumerate Image
         case 6:
-            enumerate_device(g_deviceImage);
+            enumerate_device(g_deviceImage, true);
             break;
         // - Enumerate Image
         case 7:
-            enumerate_device(g_devicePrinter);
+            enumerate_device(g_devicePrinter, true);
             break;
         // - Enumerate Mass Storage
         case 8:
-            enumerate_device(g_deviceMassStorage);
+            enumerate_device(g_deviceMassStorage, true);
             break;
         // - Enumerate Smart Card
         case 9:
-            enumerate_device(g_deviceSmartCard);
+            enumerate_device(g_deviceSmartCard, true);
             break;
         // - Enumerate Personal Healthcare
         case 10:
-            enumerate_device(g_devicePersonalHealthcare);
+            enumerate_device(g_devicePersonalHealthcare, true);
             break;
         // - Enumerate Video
         case 11:
-            enumerate_device(g_deviceVideo);
+            enumerate_device(g_deviceVideo, true);
             break;
         // - Enumerate DFU
         case 12:
-            enumerate_device(g_deviceDFU);
+            enumerate_device(g_deviceDFU, true);
             break;
         // - Enumerate FTDI
         case 13:
-            enumerate_device(g_deviceFTDI);
+            enumerate_device(g_deviceFTDI, true);
             break;
         // - Disconnect Current Device 
         case 99:
