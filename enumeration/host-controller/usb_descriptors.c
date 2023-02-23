@@ -1195,7 +1195,7 @@ unsigned char _ftdiDescriptorConfig[] = {
     DEV_DESCR_INTERF, // bDescriptorType
     0x00, // bInterfaceNumber
     0x00, // bAlternateSetting
-    0x00, // bNumEndpoint
+    0x02, // bNumEndpoint
     DEV_CLASS_VEN_SPEC, // bInterfaceClass
     0xFF, // bInterfaceSubClass
     0xFF, // bInterfaceProtocol
