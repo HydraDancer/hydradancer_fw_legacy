@@ -29,6 +29,7 @@ menu_print(void)
     printf("10) Enumerate Personal Healthcare\n");
     printf("11) Enumerate Video\n");
     printf("12) Enumerate DFU\n");
+    printf("13) Enumerate FTDI\n");
     printf("99) Disconnect Current Device\n");
     printf("\n");
     printf("0) Exit\n");
