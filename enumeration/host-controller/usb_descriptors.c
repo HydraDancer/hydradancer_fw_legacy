@@ -35,6 +35,7 @@
 #define DEV_CLASS_SMART_CARD    0x0B
 #define DEV_CLASS_VIDEO         0x0E
 #define DEV_CLASS_PHDC          0x0F
+#define DEV_CLASS_APP_SPEC      0xFE
 #define DEV_CLASS_VEN_SPEC      0xFF
 
 
@@ -1084,5 +1085,70 @@ unsigned char _videoDescriptorConfig[] = {
 
 struct Device_t g_deviceVideo = { "Video", _videoDescriptorDevice, _videoDescriptorConfig, NULL };
 
+/*******************************************************************************
+ * DEVICE DEVICE FIRMWARE UPDATE (DFU)
+ * According to the specification this one is special
+ * - There is no endpoints other than ep0 (control)
+ * - Enumeration is done in 2 phases
+ *      - First enumeration the Run-Time DFU Descriptor is given
+ *      - Second enumeration the DFU Mode Descriptor is given
+ * Here we only enumerate for the first one, the Run-Time DFU Descriptor. If an
+ * anwser is given we assume DFU is supported
+ * Note that doing the whole process would require a firmware modification
+ */
+unsigned char _dfuDescriptorDevice[] = {
+    18,     // bLength
+    DEV_DESCR_DEVICE,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x00,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
 
+unsigned char _dfuDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    DEV_DESCR_CONFIG, // bDescriptorType
+    0x1B, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x00, // bNumEndpoint
+    DEV_CLASS_APP_SPEC, // bInterfaceClass
+    0x01, // bInterfaceSubClass
+    0x01, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor DFU Functional
+    0x09, // bLength
+    0x21, // bDescriptorType
+    0x03, // bmAttributes
+    0x64, // wDetachTimeOutL
+    0x00, // wDetachTimeOutH
+    0x80, // wTransferSizeL
+    0x00, // wTransferSizeH
+    0x37, // bcdDFUVersionL
+    0x13, // bcdDFUVersionH
+};
+
+struct Device_t g_deviceDFU = { "DFU", _dfuDescriptorDevice, _dfuDescriptorConfig, NULL };
 
