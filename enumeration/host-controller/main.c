@@ -171,6 +171,26 @@ enumerate_device(struct Device_t device)
         usleep(100000);
     }
 
+    // Reset the board
+    do {
+        printf("Resetting board\n");
+        bbio_command_send(BbioDisconnect);
+        bbioRetCode = bbio_get_return_code();
+        retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+        if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+        bbioRetCode |= bbio_get_return_code();
+    } while (bbioRetCode);
+
+    // Reset descriptors
+    do {
+        printf("Resetting descriptors\n");
+        bbio_command_send(BbioResetDescr);
+        bbioRetCode = bbio_get_return_code();
+        retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
+        if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+        bbioRetCode |= bbio_get_return_code();
+    } while (bbioRetCode);
+
     // Print the result
     if (isDeviceSupported) {
         printf("Class 0x%02X 0x%02X (%s) is supported\n", descriptorDevice[4], descriptorConfig[14], device.s_name);
