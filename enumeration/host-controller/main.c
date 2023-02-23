@@ -262,48 +262,53 @@ main(int argc, char *argv[])
                 usleep(100000);
             }
             break;
-        // - Enumerate Audio
+        // - Enumerate Automode
         case 3:
+            // TODO
+            // enumerate_device(g_deviceAudio, true);
+            break;
+        // - Enumerate Audio
+        case 4:
             enumerate_device(g_deviceAudio, true);
             break;
         // - Enumerate CDC
-        case 4:
+        case 5:
             enumerate_device(g_deviceCdc, true);
             break;
         // - Enumerate Keyboard
-        case 5:
+        case 6:
             enumerate_device(g_deviceKeyboard, true);
             break;
         // - Enumerate Image
-        case 6:
+        case 7:
             enumerate_device(g_deviceImage, true);
             break;
         // - Enumerate Image
-        case 7:
+        case 8:
             enumerate_device(g_devicePrinter, true);
             break;
         // - Enumerate Mass Storage
-        case 8:
+        case 9:
             enumerate_device(g_deviceMassStorage, true);
             break;
         // - Enumerate Smart Card
-        case 9:
+        case 10:
             enumerate_device(g_deviceSmartCard, true);
             break;
         // - Enumerate Personal Healthcare
-        case 10:
+        case 11:
             enumerate_device(g_devicePersonalHealthcare, true);
             break;
         // - Enumerate Video
-        case 11:
+        case 12:
             enumerate_device(g_deviceVideo, true);
             break;
         // - Enumerate DFU
-        case 12:
+        case 13:
             enumerate_device(g_deviceDFU, true);
             break;
         // - Enumerate FTDI
-        case 13:
+        case 14:
             enumerate_device(g_deviceFTDI, true);
             break;
         // - Disconnect Current Device 
