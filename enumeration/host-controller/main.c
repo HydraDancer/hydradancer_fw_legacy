@@ -264,8 +264,10 @@ main(int argc, char *argv[])
             break;
         // - Enumerate Automode
         case 3:
-            // TODO
-            // enumerate_device(g_deviceAudio, true);
+            for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
+                enumerate_device(**ppDevice, true);
+                usleep(1000000);
+            }
             break;
         // - Enumerate Audio
         case 4:
