@@ -1,8 +1,6 @@
 #ifndef USB_DESCRIPTORS_H
 #define USB_DESCRIPTORS_H
 
-#include <stddef.h>
-
 
 /* enums */
 struct Device_t {
