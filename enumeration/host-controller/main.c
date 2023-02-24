@@ -14,7 +14,7 @@
 
 
 /* macros */
-#define TIMEOUT 1000
+#define TIMEOUT 100
 
 /* enums */
 
