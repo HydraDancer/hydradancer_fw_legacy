@@ -14,7 +14,7 @@
 
 
 /* macros */
-#define TIMEOUT 100
+#define TIMEOUT 50
 
 /* enums */
 
@@ -92,6 +92,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset the board
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting board\n"); }
         bbio_command_send(BbioDisconnect);
         bbioRetCode = bbio_get_return_code();
@@ -102,6 +103,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset descriptors
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting descriptors\n"); }
         bbio_command_send(BbioResetDescr);
         bbioRetCode = bbio_get_return_code();
@@ -112,6 +114,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Send device descriptor
     do {
+        usleep(10000);
         if (verbose) { printf("Setting device descriptor\n"); }
         bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sz_descriptorDevice);
         bbioRetCode = bbio_get_return_code();
@@ -122,6 +125,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Send configuration descriptor
     do {
+        usleep(10000);
         if (verbose) { printf("Setting configuration descriptor\n"); }
         bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sz_descriptorConfig);
         bbioRetCode = bbio_get_return_code();
@@ -134,6 +138,7 @@ enumerate_device(struct Device_t device, bool verbose)
     if (descriptorHidReport) {
         // Send HID report descriptor
         do {
+            usleep(10000);
             if (verbose) { printf("Setting configuration descriptor\n"); }
             bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHidReport, 0, sz_descriptorHidReport);
             bbioRetCode = bbio_get_return_code();
@@ -147,6 +152,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Connect the device
     do {
+        usleep(10000);
         if (verbose) { printf("Connecting the device\n"); }
         bbio_command_send(BbioConnect);
         bbioRetCode = bbio_get_return_code();
@@ -158,6 +164,7 @@ enumerate_device(struct Device_t device, bool verbose)
     // Wait to see if our device is supported
     if (verbose) { printf("Querying results...\n"); }
     for (int i = 0; i < TIMEOUT; ++i) {
+        usleep(10000);
         bbio_command_send(BbioGetStatus);
         bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
@@ -172,6 +179,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset the board
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting board\n"); }
         bbio_command_send(BbioDisconnect);
         bbioRetCode = bbio_get_return_code();
@@ -182,6 +190,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset descriptors
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting descriptors\n"); }
         bbio_command_send(BbioResetDescr);
         bbioRetCode = bbio_get_return_code();
@@ -202,7 +211,14 @@ enumerate_device(struct Device_t device, bool verbose)
                device.s_name);
         return true;
     } else {
-        printf("Class 0x%02X 0x%02X (%s) is NOT supported\n", descriptorDevice[4], descriptorConfig[14], device.s_name);
+        printf("Class 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s) is NOT supported\n",
+               descriptorDevice[4],
+               descriptorDevice[5],
+               descriptorDevice[6],
+               descriptorConfig[14],
+               descriptorConfig[15],
+               descriptorConfig[16],
+               device.s_name);
         return false;
     }
 }
@@ -259,51 +275,58 @@ main(int argc, char *argv[])
             while (1) {
                 usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
                 usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
-                usleep(100000);
+                usleep(500000);
+            }
+            break;
+        // - Enumerate Automode
+        case 3:
+            for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
+                enumerate_device(**ppDevice, false);
+                usleep(500000);
             }
             break;
         // - Enumerate Audio
-        case 3:
+        case 4:
             enumerate_device(g_deviceAudio, true);
             break;
         // - Enumerate CDC
-        case 4:
+        case 5:
             enumerate_device(g_deviceCdc, true);
             break;
         // - Enumerate Keyboard
-        case 5:
+        case 6:
             enumerate_device(g_deviceKeyboard, true);
             break;
         // - Enumerate Image
-        case 6:
+        case 7:
             enumerate_device(g_deviceImage, true);
             break;
         // - Enumerate Image
-        case 7:
+        case 8:
             enumerate_device(g_devicePrinter, true);
             break;
         // - Enumerate Mass Storage
-        case 8:
+        case 9:
             enumerate_device(g_deviceMassStorage, true);
             break;
         // - Enumerate Smart Card
-        case 9:
+        case 10:
             enumerate_device(g_deviceSmartCard, true);
             break;
         // - Enumerate Personal Healthcare
-        case 10:
+        case 11:
             enumerate_device(g_devicePersonalHealthcare, true);
             break;
         // - Enumerate Video
-        case 11:
+        case 12:
             enumerate_device(g_deviceVideo, true);
             break;
         // - Enumerate DFU
-        case 12:
+        case 13:
             enumerate_device(g_deviceDFU, true);
             break;
         // - Enumerate FTDI
-        case 13:
+        case 14:
             enumerate_device(g_deviceFTDI, true);
             break;
         // - Disconnect Current Device 

@@ -100,12 +100,6 @@ struct Device_t g_deviceGeneric = { "Generic", _genericDescriptorDevice, _generi
 
 
 /*******************************************************************************
- * GENERIC DEVICES CONFIGURATIONS
- */
-struct DeviceConfig_t g_genericDeviceConfig = { "Generic Config", 0x00, 0x00, 0x00 };
-
-
-/*******************************************************************************
  * DEVICE AUDIO
  */
 
@@ -1219,4 +1213,24 @@ unsigned char _ftdiDescriptorConfig[] = {
 };
 
 struct Device_t g_deviceFTDI = { "FTDI", _ftdiDescriptorDevice, _ftdiDescriptorConfig, NULL };
+
+
+/*******************************************************************************
+ * AUTOMODE ARRAY
+ */
+struct Device_t *g_devices[] = {
+    &g_deviceGeneric,
+    &g_deviceAudio,
+    &g_deviceCdc,
+    &g_deviceKeyboard,
+    &g_deviceImage,
+    &g_devicePrinter,
+    &g_deviceMassStorage,
+    &g_deviceSmartCard,
+    &g_devicePersonalHealthcare,
+    &g_deviceVideo,
+    &g_deviceDFU,
+    &g_deviceFTDI,
+    NULL,   // Careful, must be null terminated
+};
 
