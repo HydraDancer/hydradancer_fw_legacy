@@ -14,7 +14,7 @@
 
 
 /* macros */
-#define TIMEOUT 100
+#define TIMEOUT 50
 
 /* enums */
 
@@ -268,7 +268,7 @@ main(int argc, char *argv[])
             while (1) {
                 usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
                 usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
-                usleep(100000);
+                usleep(500000);
             }
             break;
         // - Enumerate Automode
