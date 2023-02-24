@@ -92,6 +92,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset the board
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting board\n"); }
         bbio_command_send(BbioDisconnect);
         bbioRetCode = bbio_get_return_code();
@@ -102,6 +103,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset descriptors
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting descriptors\n"); }
         bbio_command_send(BbioResetDescr);
         bbioRetCode = bbio_get_return_code();
@@ -112,6 +114,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Send device descriptor
     do {
+        usleep(10000);
         if (verbose) { printf("Setting device descriptor\n"); }
         bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrDevice, 0, sz_descriptorDevice);
         bbioRetCode = bbio_get_return_code();
@@ -122,6 +125,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Send configuration descriptor
     do {
+        usleep(10000);
         if (verbose) { printf("Setting configuration descriptor\n"); }
         bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrConfig, 0, sz_descriptorConfig);
         bbioRetCode = bbio_get_return_code();
@@ -134,6 +138,7 @@ enumerate_device(struct Device_t device, bool verbose)
     if (descriptorHidReport) {
         // Send HID report descriptor
         do {
+            usleep(10000);
             if (verbose) { printf("Setting configuration descriptor\n"); }
             bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHidReport, 0, sz_descriptorHidReport);
             bbioRetCode = bbio_get_return_code();
@@ -147,6 +152,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Connect the device
     do {
+        usleep(10000);
         if (verbose) { printf("Connecting the device\n"); }
         bbio_command_send(BbioConnect);
         bbioRetCode = bbio_get_return_code();
@@ -158,6 +164,7 @@ enumerate_device(struct Device_t device, bool verbose)
     // Wait to see if our device is supported
     if (verbose) { printf("Querying results...\n"); }
     for (int i = 0; i < TIMEOUT; ++i) {
+        usleep(10000);
         bbio_command_send(BbioGetStatus);
         bbio_get_return_code();
         retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, (void *)dummyPacket, dummyPacketSize, NULL, 0);
@@ -172,6 +179,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset the board
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting board\n"); }
         bbio_command_send(BbioDisconnect);
         bbioRetCode = bbio_get_return_code();
@@ -182,6 +190,7 @@ enumerate_device(struct Device_t device, bool verbose)
 
     // Reset descriptors
     do {
+        usleep(10000);
         if (verbose) { printf("Resetting descriptors\n"); }
         bbio_command_send(BbioResetDescr);
         bbioRetCode = bbio_get_return_code();
@@ -265,8 +274,8 @@ main(int argc, char *argv[])
         // - Enumerate Automode
         case 3:
             for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
-                enumerate_device(**ppDevice, true);
-                usleep(1000000);
+                enumerate_device(**ppDevice, false);
+                usleep(100000);
             }
             break;
         // - Enumerate Audio
