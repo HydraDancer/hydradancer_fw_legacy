@@ -200,27 +200,18 @@ enumerate_device(struct Device_t device, bool verbose)
     } while (bbioRetCode);
 
     // Print the result
-    if (isDeviceSupported) {
-        printf("Class 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s) is supported\n",
-               descriptorDevice[4],
-               descriptorDevice[5],
-               descriptorDevice[6],
-               descriptorConfig[14],
-               descriptorConfig[15],
-               descriptorConfig[16],
-               device.s_name);
-        return true;
-    } else {
-        printf("Class 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s) is NOT supported\n",
-               descriptorDevice[4],
-               descriptorDevice[5],
-               descriptorDevice[6],
-               descriptorConfig[14],
-               descriptorConfig[15],
-               descriptorConfig[16],
-               device.s_name);
-        return false;
-    }
+    printf("%s 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s)\n",
+           isDeviceSupported ? "SUPPORTED    " : "NOT SUPPORTED",
+           descriptorDevice[4],
+           descriptorDevice[5],
+           descriptorDevice[6],
+           descriptorConfig[14],
+           descriptorConfig[15],
+           descriptorConfig[16],
+           device.s_name);
+
+    return isDeviceSupported;
+    
 }
 
 
