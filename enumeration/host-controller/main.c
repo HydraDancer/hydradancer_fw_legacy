@@ -211,7 +211,14 @@ enumerate_device(struct Device_t device, bool verbose)
                device.s_name);
         return true;
     } else {
-        printf("Class 0x%02X 0x%02X (%s) is NOT supported\n", descriptorDevice[4], descriptorConfig[14], device.s_name);
+        printf("Class 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s) is NOT supported\n",
+               descriptorDevice[4],
+               descriptorDevice[5],
+               descriptorDevice[6],
+               descriptorConfig[14],
+               descriptorConfig[15],
+               descriptorConfig[16],
+               device.s_name);
         return false;
     }
 }
