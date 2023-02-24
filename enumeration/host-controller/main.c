@@ -275,7 +275,7 @@ main(int argc, char *argv[])
         case 3:
             for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
                 enumerate_device(**ppDevice, false);
-                usleep(100000);
+                usleep(500000);
             }
             break;
         // - Enumerate Audio
