@@ -84,6 +84,48 @@ USB Bulk Endpoints configuration
 The BBIO protocol is used only on Board2
 Note: Board1 send & receive data(over HSPI/SerDes) to Board2 without analyzing anything inside in a transparent way.
 
+
+## 2.1 Struture of the BBIO Protocol
+
+The BBIO protocol works with a pair of packets/transactions :
+- The first packet describe the command
+- The second packet is the payload associated with the command
+
+When the command has no payload attached a dummy packet shall be sent.
+
+Note that after each packet sent the return code must be querried.
+
+A complete transaction could look like this :
+```
+usb_transfer(EP1OUT, bbioCommandSetDescriptor)
+returnCode = usb_transfer(EP1IN)
+usb_transfer(EP1OUT, payload)
+returnCode = usb_transfer(EP1IN)
+```
+
+
+## 2.1.1 Structure of the command
+
+- 8 bits Commands
+- 8 bits SubCommand (optional)
+- Additional data related to the SubCommand (optional)
+
+
+### 2.1.1.1 BBIO Commands
+
+|  Command          |  Value         |  Comment  |
+|-------------------|----------------|-----------|
+|  BbioMainMode     |  0b00000001    |           |
+|  BbioIdentifMode  |  0b00000010    |           | 
+|  BbioSetDescr     |  0b00000011    |           | 
+|  BbioSetEndp      |  0b00000100    |           | 
+|  BbioConnect      |  0b00000101    |           | 
+|  BbioGetStatus    |  0b00000110    |           | 
+|  BbioDisconnect   |  0b00000111    |           | 
+|  BbioResetDescr   |  0b00001000    |           | 
+
+--------------------------------------------------------------------------------
+
 - ## 2.1 Main BBIO protocol format
   - 8 bits Main mode
   - 8 bits Commands
