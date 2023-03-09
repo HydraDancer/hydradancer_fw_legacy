@@ -94,6 +94,7 @@ The BBIO protocol works with a pair of packets/transactions :
 When the command has no payload attached a dummy packet shall be sent.
 
 Note that after each packet sent the return code must be querried.
+A return code of 0 indicate a success, whereas a return code different than 0 is specific to the issue.
 
 A complete transaction could look like this :
 ```
@@ -113,16 +114,63 @@ returnCode = usb_transfer(EP1IN)
 
 ### 2.1.1.1 BBIO Commands
 
-|  Command          |  Value         |  Comment  |
-|-------------------|----------------|-----------|
-|  BbioMainMode     |  0b00000001    |           |
-|  BbioIdentifMode  |  0b00000010    |           | 
-|  BbioSetDescr     |  0b00000011    |           | 
-|  BbioSetEndp      |  0b00000100    |           | 
-|  BbioConnect      |  0b00000101    |           | 
-|  BbioGetStatus    |  0b00000110    |           | 
-|  BbioDisconnect   |  0b00000111    |           | 
-|  BbioResetDescr   |  0b00001000    |           | 
+|  Command          |  Value         |  Comment                  |
+|-------------------|----------------|---------------------------|
+|  BbioMainMode     |  0b00000001    | Unused                    |
+|  BbioIdentifMode  |  0b00000010    | Unused                    | 
+|  BbioSetDescr     |  0b00000011    | Requires a SubCommand     | 
+|  BbioSetEndp      |  0b00000100    | Requires additional datas | 
+|  BbioConnect      |  0b00000101    |                           | 
+|  BbioGetStatus    |  0b00000110    |                           | 
+|  BbioDisconnect   |  0b00000111    |                           | 
+|  BbioResetDescr   |  0b00001000    |                           | 
+
+
+### 2.1.1.2 BBIO SubCommands
+
+|  Command                   |   Value         |  Comment                     |
+|----------------------------|-----------------|------------------------------|
+|  BbioSubSetDescrDevice     |   0b00000001    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrConfig     |   0b00000010    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrInterface  |   0b00000011    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrHidReport  |   0b00000100    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrEndpoint   |   0b00000101    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrString     |   0b00000110    | Associated with BbioSetDescr | 
+
+### 2.1.1.3 BBIO Addtional datas
+
+#### BbioSetEndp
+
+An array of bytes 0 terminated.
+Each byte describing an endpoint to set.
+
+The structure of a byte describing an endpoint is as follow :
+```
+0b00yy Xxxx
+```
+
+Where yy correspond to the mode : (Not used as of now)
+- 01: isochronous
+- 10: bulk
+- 11: interrupt
+
+And Xxxx correspond to the endpoint number
+- X: 0 for OUT, 1 for IN
+- xxx: the endpoint number (from 1 to 7)
+
+
+# 3 Enumeration and Fuzzing
+
+When enumerating a device the following happens :
+```
+bbio_set_descriptor_device()
+bbio_set_descriptor_configuration()
+bbio_set_descriptor_endpoints()
+bbio_connect()
+bbio_get_status()   // Is our device supported ?
+```
+
+Fuzzing can be seen as enumerating a device with faulted/altered field(s).
 
 --------------------------------------------------------------------------------
 
