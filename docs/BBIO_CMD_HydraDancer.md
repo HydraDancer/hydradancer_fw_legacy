@@ -141,7 +141,7 @@ returnCode = usb_transfer(EP1IN)
 
 #### BbioSetEndp
 
-An array of bytes 0 terminated.
+An array of bytes 0-terminated.
 Each byte describing an endpoint to set.
 
 The structure of a byte describing an endpoint is as follow :
