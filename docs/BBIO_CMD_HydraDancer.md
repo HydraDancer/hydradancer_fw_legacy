@@ -172,76 +172,11 @@ bbio_get_status()   // Is our device supported ?
 
 Fuzzing can be seen as enumerating a device with faulted/altered field(s).
 
---------------------------------------------------------------------------------
-
-- ## 2.1 Main BBIO protocol format
-  - 8 bits Main mode
-  - 8 bits Commands
-  - 8 bits Sub Commands and/or N data depending on commands
-
-- ## 2.2 BBIO Main mode (8 bits in binary)
-  - `0b00000000` Reset binary mode. Returns BBIO1 (5 bytes)
-  - `0b00000001` Mode identification. Returns MAIN (4 bytes)
-  - `0b01000000` HydraDancer USB Device Emulation for Target Host
-    - This mode use embedded USB device descriptors which shall be set with BBIO commands see "2.2.1 HydraDancer USB Device Emulation for Target Host BBIO commands"
-  - `0b01000001` HydraDancer USB Host Emulation for Target Device
-  - `0b01000010` HydraDancer live USB Device Emulation for Target Host 
-    - This mode does not set any USB device descriptors and all is done on Evaluator Host over USB3 in real-time
-
-Note: HydraUSB3 fuzzing mode USB Host is not supported and requires some reverse engineering for USB3 part to support USB Host mode without blob.
-
-  - ## 2.2.1 HydraDancer USB Device Emulation for Target Host BBIO commands
-    - BBIO Commands (8 bits in binary)
-      - `0b00000000` Return to main mode. Returns BBIO1 (5 bytes)
-      - `0b00000001` Mode identification. Returns USBD (4 bytes)
-      - `0b00000010` Set USB device descriptors configurations see "2.2.1.2 Set USB device descriptors configurations BBIO Sub Commands"
-
-    - ### 2.2.1.1 HydraUSB3 USB Device fuzzing mode USB device descriptors configurations tree
-
-      ![USB Device Descriptor Tree](USB_DeviceDescriptor_Tree.png)
-      - Reference https://www.beyondlogic.org/usbnutshell/usb5.shtml
-
-    - ### 2.2.1.2 Set USB device descriptors configurations BBIO Sub Commands
-
-      - #### 2.2.1.2.1 Set Device Descriptor
-        - `0b00000001` Byte 0 Sub Command Set Device Descriptor
-        - `0b0000xxxx` Byte 1 Index of Device Descriptor (xxxx shall be forced to 0 as so far we have only one Device Descriptor)
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
-
-      - #### 2.2.1.2.2 Set Configuration Descriptors
-        - `0b00000010` Byte 0 Sub Command Set Configuration Descriptor for each Device Descriptor
-        - `0b0000xxxx` Byte 1 Index of Configuration Descriptor with xxxx from 0 to 15 for up to 16 Configuration Descriptors
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
-
-      - #### 2.2.1.2.3 Set Interface Descriptors for each Configuration Descriptor
-        - `0b00000011` Byte 0 Sub Command Set Interface Descriptor for each Configuration Descriptor
-        - `0b0000xxxx` Byte 1 Index of Interface Descriptor for each Configuration Descriptor with xxxx from 0 to 15
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
-
-      - #### 2.2.1.2.4 Set Endpoint Descriptors for each Interface Descriptor
-        - `0b00000100` Byte 0 Sub Command Set Endpoint Descriptor for each Interface Descriptor
-        - `0b0000xxxx` Byte 1 Index of Endpoint Descriptor for each Interface Descriptor with xxxx from 0 to 15
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
-
-      - #### 2.2.1.2.5 Set String Descriptors
-        - `0b00000101` Byte 0 Sub Command Set String Descriptor
-        - `0b0000xxxx` Byte 1 Index of String Descriptor with xxxx from 0 to 15
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
 
 Warning the device is limited in memory to be checked what is possible with remaining XRAM (as lot of KB are reserved for different devices HSPI, SerDes, USB2/USB3)
 - It will requires a basic memory allocator for that purpose to optimize memory (and avoid memory fragmentation) as much as possible.
   - See https://github.com/hydrausb3/HydraDancer/issues/20 "Add memory pool allocator"
-  - If there is no enough memory available each command shall returns an error (usually 0x00)
+  - If there is no enough memory available each command shall returns an error (usually 0x01)
 
 ## Future
 An other HydraUSB3 USB Device fuzzing passthrough mode shall be studied(with potentially MITM features to be added/configured)
