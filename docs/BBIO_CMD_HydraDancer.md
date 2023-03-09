@@ -132,10 +132,13 @@ returnCode = usb_transfer(EP1IN)
 |----------------------------|-----------------|------------------------------|
 |  BbioSubSetDescrDevice     |   0b00000001    | Associated with BbioSetDescr | 
 |  BbioSubSetDescrConfig     |   0b00000010    | Associated with BbioSetDescr | 
-|  BbioSubSetDescrInterface  |   0b00000011    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrInterface  |   0b00000011    | Not Implemented \*           | 
 |  BbioSubSetDescrHidReport  |   0b00000100    | Associated with BbioSetDescr | 
-|  BbioSubSetDescrEndpoint   |   0b00000101    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrEndpoint   |   0b00000101    | Not Implemented \*           | 
 |  BbioSubSetDescrString     |   0b00000110    | Associated with BbioSetDescr | 
+
+\* When setting the configuration descriptor, the whole tree is sent, thus the interface and endpoint descriptors are already sent.
+
 
 ### 2.1.1.3 BBIO Addtional datas
 
