@@ -1,4 +1,4 @@
-# Firmware and BBIO commands proposal for HydraDancer 30 Jan 2023 Draft v0.2.1
+# Firmware and BBIO commands proposal for HydraDancer 13 Mar 2023 Draft v0.2.2
 
 # 1 HydraDancer Introduction
 
@@ -84,74 +84,102 @@ USB Bulk Endpoints configuration
 The BBIO protocol is used only on Board2
 Note: Board1 send & receive data(over HSPI/SerDes) to Board2 without analyzing anything inside in a transparent way.
 
-- ## 2.1 Main BBIO protocol format
-  - 8 bits Main mode
-  - 8 bits Commands
-  - 8 bits Sub Commands and/or N data depending on commands
 
-- ## 2.2 BBIO Main mode (8 bits in binary)
-  - `0b00000000` Reset binary mode. Returns BBIO1 (5 bytes)
-  - `0b00000001` Mode identification. Returns MAIN (4 bytes)
-  - `0b01000000` HydraDancer USB Device Emulation for Target Host
-    - This mode use embedded USB device descriptors which shall be set with BBIO commands see "2.2.1 HydraDancer USB Device Emulation for Target Host BBIO commands"
-  - `0b01000001` HydraDancer USB Host Emulation for Target Device
-  - `0b01000010` HydraDancer live USB Device Emulation for Target Host 
-    - This mode does not set any USB device descriptors and all is done on Evaluator Host over USB3 in real-time
+## 2.1 Struture of the BBIO Protocol
 
-Note: HydraUSB3 fuzzing mode USB Host is not supported and requires some reverse engineering for USB3 part to support USB Host mode without blob.
+The BBIO protocol works with a pair of packets/transactions :
+- The first packet describes the command
+- The second packet is the payload associated with the command
 
-  - ## 2.2.1 HydraDancer USB Device Emulation for Target Host BBIO commands
-    - BBIO Commands (8 bits in binary)
-      - `0b00000000` Return to main mode. Returns BBIO1 (5 bytes)
-      - `0b00000001` Mode identification. Returns USBD (4 bytes)
-      - `0b00000010` Set USB device descriptors configurations see "2.2.1.2 Set USB device descriptors configurations BBIO Sub Commands"
+When the command has no payload attached a dummy packet shall be sent.
 
-    - ### 2.2.1.1 HydraUSB3 USB Device fuzzing mode USB device descriptors configurations tree
+Note that after each packet sent the return code must be querried.
+A return code of 0 indicates a success, whereas a return code different than 0 is specific to the issue.
 
-      ![USB Device Descriptor Tree](USB_DeviceDescriptor_Tree.png)
-      - Reference https://www.beyondlogic.org/usbnutshell/usb5.shtml
+A complete transaction could look like this :
+```
+usb_transfer(EP1OUT, bbioCommandSetDescriptor)
+returnCode = usb_transfer(EP1IN)
+usb_transfer(EP1OUT, payload)
+returnCode = usb_transfer(EP1IN)
+```
 
-    - ### 2.2.1.2 Set USB device descriptors configurations BBIO Sub Commands
 
-      - #### 2.2.1.2.1 Set Device Descriptor
-        - `0b00000001` Byte 0 Sub Command Set Device Descriptor
-        - `0b0000xxxx` Byte 1 Index of Device Descriptor (xxxx shall be forced to 0 as so far we have only one Device Descriptor)
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
+## 2.1.1 Structure of the command
 
-      - #### 2.2.1.2.2 Set Configuration Descriptors
-        - `0b00000010` Byte 0 Sub Command Set Configuration Descriptor for each Device Descriptor
-        - `0b0000xxxx` Byte 1 Index of Configuration Descriptor with xxxx from 0 to 15 for up to 16 Configuration Descriptors
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
+- 8 bits Command
+- 8 bits SubCommand (optional)
+- Additional data related to the Command/SubCommand (optional)
 
-      - #### 2.2.1.2.3 Set Interface Descriptors for each Configuration Descriptor
-        - `0b00000011` Byte 0 Sub Command Set Interface Descriptor for each Configuration Descriptor
-        - `0b0000xxxx` Byte 1 Index of Interface Descriptor for each Configuration Descriptor with xxxx from 0 to 15
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
 
-      - #### 2.2.1.2.4 Set Endpoint Descriptors for each Interface Descriptor
-        - `0b00000100` Byte 0 Sub Command Set Endpoint Descriptor for each Interface Descriptor
-        - `0b0000xxxx` Byte 1 Index of Endpoint Descriptor for each Interface Descriptor with xxxx from 0 to 15
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
+### 2.1.1.1 BBIO Commands
 
-      - #### 2.2.1.2.5 Set String Descriptors
-        - `0b00000101` Byte 0 Sub Command Set String Descriptor
-        - `0b0000xxxx` Byte 1 Index of String Descriptor with xxxx from 0 to 15
-        - Followed by a data packet 
-          - 16bits (Big Endian) size in bytes and N data bytes
-        - This commands returns 0x00 if successful, non-zero in case of error.
+|  Command          |  Value         |  Comment                  |
+|-------------------|----------------|---------------------------|
+|  BbioMainMode     |  0b00000001    | Unused                    |
+|  BbioIdentifMode  |  0b00000010    | Unused                    | 
+|  BbioSetDescr     |  0b00000011    | Requires a SubCommand     | 
+|  BbioSetEndp      |  0b00000100    | Requires additional datas | 
+|  BbioConnect      |  0b00000101    |                           | 
+|  BbioGetStatus    |  0b00000110    |                           | 
+|  BbioDisconnect   |  0b00000111    |                           | 
+|  BbioResetDescr   |  0b00001000    |                           | 
+
+
+### 2.1.1.2 BBIO SubCommands
+
+|  Command                   |   Value         |  Comment                     |
+|----------------------------|-----------------|------------------------------|
+|  BbioSubSetDescrDevice     |   0b00000001    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrConfig     |   0b00000010    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrInterface  |   0b00000011    | Not Implemented \*           | 
+|  BbioSubSetDescrHidReport  |   0b00000100    | Associated with BbioSetDescr | 
+|  BbioSubSetDescrEndpoint   |   0b00000101    | Not Implemented \*           | 
+|  BbioSubSetDescrString     |   0b00000110    | Associated with BbioSetDescr | 
+
+\* When setting the configuration descriptor, the whole tree is sent, thus the interface and endpoint descriptors are already sent.
+
+
+### 2.1.1.3 BBIO Addtional datas
+
+#### BbioSetEndp
+
+An array of bytes 0-terminated.
+Each byte describing an endpoint to set.
+
+The structure of a byte describing an endpoint is as follow :
+```
+0b00yy Xxxx
+```
+
+Where yy correspond to the mode : (Not used as of now)
+- 01: isochronous
+- 10: bulk
+- 11: interrupt
+
+And Xxxx correspond to the endpoint number
+- X: 0 for OUT, 1 for IN
+- xxx: the endpoint number (from 1 to 7)
+
+
+# 3 Enumeration and Fuzzing
+
+When enumerating a device the following happens :
+```
+bbio_set_descriptor_device()
+bbio_set_descriptor_configuration()
+bbio_set_descriptor_endpoints()
+bbio_connect()
+bbio_get_status()   // Is our device supported ?
+```
+
+Fuzzing can be seen as enumerating a device with faulted/altered field(s).
+
 
 Warning the device is limited in memory to be checked what is possible with remaining XRAM (as lot of KB are reserved for different devices HSPI, SerDes, USB2/USB3)
 - It will requires a basic memory allocator for that purpose to optimize memory (and avoid memory fragmentation) as much as possible.
   - See https://github.com/hydrausb3/HydraDancer/issues/20 "Add memory pool allocator"
-  - If there is no enough memory available each command shall returns an error (usually 0x00)
+  - If there is no enough memory available each command shall returns an error (usually 0x01)
 
 ## Future
 An other HydraUSB3 USB Device fuzzing passthrough mode shall be studied(with potentially MITM features to be added/configured)
