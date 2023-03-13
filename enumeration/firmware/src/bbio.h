@@ -44,7 +44,7 @@ extern uint8_t *g_bbioDescriptorHidReport;
 extern uint8_t *g_bbioDescriptorsString[];
 
 extern uint16_t g_bbioDescriptorDeviceSize;
-extern uint16_t g_descriptorConfiguratioSize;
+extern uint16_t g_bbioDescriptorConfigurationSize;
 extern uint16_t g_bbioDescriptorHidReportSize;
 extern uint16_t g_bbioDescriptorsStringSizes[];
 
