@@ -155,6 +155,7 @@ bbio_command_handle(uint8_t *bufferData)
         }
 
         memset(_descriptorsStore, 0, _DESCRIPTOR_STORE_CAPACITY);
+        _descriptorsStoreCursor = _descriptorsStore;
         return 0;
     default:
         log_to_evaluator("ERROR: bbio_command_handle() unknown command\r\n");
