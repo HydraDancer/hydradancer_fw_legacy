@@ -88,13 +88,13 @@ Note: Board1 send & receive data(over HSPI/SerDes) to Board2 without analyzing a
 ## 2.1 Struture of the BBIO Protocol
 
 The BBIO protocol works with a pair of packets/transactions :
-- The first packet describe the command
+- The first packet describes the command
 - The second packet is the payload associated with the command
 
 When the command has no payload attached a dummy packet shall be sent.
 
 Note that after each packet sent the return code must be querried.
-A return code of 0 indicate a success, whereas a return code different than 0 is specific to the issue.
+A return code of 0 indicates a success, whereas a return code different than 0 is specific to the issue.
 
 A complete transaction could look like this :
 ```
@@ -107,9 +107,9 @@ returnCode = usb_transfer(EP1IN)
 
 ## 2.1.1 Structure of the command
 
-- 8 bits Commands
+- 8 bits Command
 - 8 bits SubCommand (optional)
-- Additional data related to the SubCommand (optional)
+- Additional data related to the Command/SubCommand (optional)
 
 
 ### 2.1.1.1 BBIO Commands
