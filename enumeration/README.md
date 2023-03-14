@@ -17,6 +17,13 @@ More explanations about how to flash can be found here :
 * [Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
 
 - Build and run `host-controller`
+```
+# From ./host-controller
+$ make clean all
+
+$ ./build/host-controller
+```
+Note: root privileges may be required.
 
 The enumeration is done through `host-controller`, you can either enumerate one
 by one manually or use _automode_ to automatically enumerate every device
