@@ -5,22 +5,22 @@ This firmware aims to offer the enumeration capability of umap (with the facedan
 
 ## How To Use
 
-- Build and Flash the firmware on both board
+### Build and Flash the firmware on both boards
 ```
 # From ./firmware
-$ make clean all
 
-$ /path/to/wch-ch56x-isp -v flash /path/to/firmware/build/hydrausb3-enumeration.bin
+$ make clean all
+$ /path/to/wch-ch56x-isp -v flash /path/to/build/hydrausb3-enumeration.bin
 ```
 More explanations about how to flash can be found here :
 * [Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
 * [Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
 
-- Build and run `host-controller`
+### Build and run `host-controller`
 ```
 # From ./host-controller
-$ make clean all
 
+$ make clean all
 $ ./build/host-controller
 ```
 Note: root privileges may be required.
