@@ -13,7 +13,7 @@ DEBUG = -g
 
 BUILD_DIR = ./build
 
-PROJECT = $(BUILD_DIR)/hydrausb3-keyboard
+PROJECT = $(BUILD_DIR)/hydrausb3-enumeration
 
 RVMSIS_DIR  = ../../wch-ch56x-bsp/rvmsis
 RVMSIS_SRCS = $(wildcard $(RVMSIS_DIR)/*.c)
