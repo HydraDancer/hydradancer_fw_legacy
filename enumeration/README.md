@@ -5,7 +5,17 @@ This firmware aims to offer the enumeration capability of umap (with the facedan
 
 ## How To Use
 
-- Flash the firmware on both board
+- Build and Flash the firmware on both board
+```
+# From ./firmware
+$ make clean all
+
+$ /path/to/wch-ch56x-isp -v flash /path/to/firmware/build/hydrausb3-enumeration.bin
+```
+More explanations about how to flash can be found here :
+(Linux)[https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux]
+(Windows)[https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows]
+
 - Build and run `host-controller`
 
 The enumeration is done through `host-controller`, you can either enumerate one
@@ -18,10 +28,10 @@ already implemented.
 To know if a device is recognized by the host ToE (Target of Evaluation) we
 behave as a USB device until the host ToE sends us a setConfiguration().
 
-The top board is connected to the Evalutor (the computer running the
+The top board is connected to the Evaluator (the computer running the
 evaluation) and the bottom board to the ToE.
 
-the `host-controller` is the software running on the Evalutor. It controls the
+the `host-controller` is the software running on the Evaluator. It controls the
 enumeration process.
 
 The enumeration process works as follow :
