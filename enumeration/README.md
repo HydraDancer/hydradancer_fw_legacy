@@ -58,3 +58,62 @@ To add a device to enumeration (automode) you need to :
     - add those arrays in a `struct Device_t`
 - add this struct in `g_devices` (At the bottom of `usb_descriptors.c`)
 
+The following generic device can be copy-pasted and adapted to create a new device :
+```C
+/*******************************************************************************
+ * DEVICE GENERIC
+ */
+unsigned char _genericDescriptorDevice[] = {
+    0x12,   // bLength
+    DEV_DESCR_DEVICE,   // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x00,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x00,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    0x01,   // bNumConfigurations
+};
+
+unsigned char _genericDescriptorConfig[] = {
+    //  Descriptor Config
+	0x09, // bLength
+	DEV_DESCR_CONFIG, // bDescriptorType
+	0x19, // wTotalLengthL
+	0x00, // wTotalLengthH
+	0x01, // bNumInterfaces
+	0x01, // bConfigurationValue
+	0x00, // iConfiguration
+	0x80, // bmAttributes
+	0x64, // MaxPower
+    //  Descriptor Interface
+	0x09, // bLength
+	DEV_DESCR_INTERF, // bDescriptorType
+	0x00, // bInterfaceNumber
+	0x00, // bAlternateSetting
+	0x01, // bNumEndpoint
+	0x00, // bInterfaceClass
+	0x00, // bInterfaceSubClass
+	0x00, // bInterfaceProtocol
+	0x00, // iInterface
+    //  Descriptor Endpoint
+	0x07, // bLength
+	DEV_DESCR_ENDP, // bDescriptorType
+	0x01, // bEndpointAddress (OUT)
+	0x02, // bmAttributes
+	0x00, // wMaxPacketSizeL
+	0x02, // wMaxPacketSizeH
+	0x00, // bInterval
+};
+
+struct Device_t g_deviceGeneric = { "Generic", _genericDescriptorDevice, _genericDescriptorConfig, NULL };
+```
