@@ -17,8 +17,8 @@ menu_print(void)
 {
     printf("HydraDancer host controller\n");
     printf("Select your action:\n");
-    printf("1)  Log once\n");
-    printf("2)  Log infinite loop\n");
+    printf("1)  Set verbosity ON\n");
+    printf("2)  Set verbosity OFF (default)\n");
     printf("3)  Auto mode\n");
     printf("4)  Enumerate Audio\n");
     printf("5)  Enumerate CDC\n");
@@ -31,6 +31,7 @@ menu_print(void)
     printf("12) Enumerate Video\n");
     printf("13) Enumerate DFU\n");
     printf("14) Enumerate FTDI\n");
+    printf("98) Print logs\n");
     printf("99) Disconnect Current Device\n");
     printf("\n");
     printf("0) Exit\n");
