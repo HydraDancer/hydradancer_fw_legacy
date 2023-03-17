@@ -72,6 +72,13 @@ usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
     memset(buffer, 0, capBuffer);
 }
 
+void
+print_table_devices_header(void)
+{
+    printf("                  Device Descriptor        Configuration Descriptor\n");
+    printf("Status           Class SubClass Protocol    Class SubClass Protocol\n");
+}
+
 // TODOO: Use struct rather than multiple arguments tied together
 // TODO: Header doc
 bool
@@ -228,7 +235,7 @@ enumerate_device(struct Device_t device, bool verbose)
     } while (bbioRetCode);
 
     // Print the result
-    printf("%s 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s)\n",
+    printf("%s     0x%02X     0x%02X     0x%02X:    0x%02X     0x%02X     0x%02X (%s)\n",
            isDeviceSupported ? "SUPPORTED    " : "NOT SUPPORTED",
            descriptorDevice[4],
            descriptorDevice[5],
@@ -293,6 +300,9 @@ main(int argc, char *argv[])
         case 3:
             printf("Enumeration has started\n");
             printf("It can take up to 5 seconds (timeout) if the device is not supported by the ToE\n");
+            printf("\n");
+
+            print_table_devices_header();
 
             for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
                 enumerate_device(**ppDevice, g_verbosity);
