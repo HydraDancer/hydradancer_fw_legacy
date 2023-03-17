@@ -4,23 +4,23 @@
 
 /* enums */
 enum BbioCommand {
-    BbioMainMode      = 0b00000001,
-    BbioIdentifMode   = 0b00000010,
-    BbioSetDescr      = 0b00000011,
-    BbioSetEndp       = 0b00000100,
-    BbioConnect       = 0b00000101,
-    BbioGetStatus     = 0b00000110,
-    BbioDisconnect    = 0b00000111,
-    BbioResetDescr    = 0b00001000,
+    BbioMainMode      = 0x01, // 0b00000001
+    BbioIdentifMode   = 0x02, // 0b00000010
+    BbioSetDescr      = 0x03, // 0b00000011
+    BbioSetEndp       = 0x04, // 0b00000100
+    BbioConnect       = 0x05, // 0b00000101
+    BbioGetStatus     = 0x06, // 0b00000110
+    BbioDisconnect    = 0x07, // 0b00000111
+    BbioResetDescr    = 0x08, // 0b00001000
 };
 
 enum BbioSubCommand {
-    BbioSubSetDescrDevice      = 0b00000001,
-    BbioSubSetDescrConfig      = 0b00000010,
-    BbioSubSetDescrInterface   = 0b00000011,
-    BbioSubSetDescrHidReport   = 0b00000100,
-    BbioSubSetDescrEndpoint    = 0b00000101,
-    BbioSubSetDescrString      = 0b00000110,
+    BbioSubSetDescrDevice      = 0x01, // 0b00000001
+    BbioSubSetDescrConfig      = 0x02, // 0b00000010
+    BbioSubSetDescrInterface   = 0x03, // 0b00000011
+    BbioSubSetDescrHidReport   = 0x04, // 0b00000100
+    BbioSubSetDescrEndpoint    = 0x05, // 0b00000101
+    BbioSubSetDescrString      = 0x06, // 0b00000110
 };
 
 /* variables */
