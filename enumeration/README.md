@@ -22,6 +22,11 @@ method to the final user.
 ## How To Use
 
 ### Build and Flash the firmware on both boards
+
+Note that when connecting the board (in flash mode) you have 10 seconds to
+flash it, after that delay it swaps back to the firmware already present on the
+board.
+
 ```
 $ cd ./firmware
 
@@ -142,3 +147,25 @@ unsigned char _genericDescriptorConfig[] = {
 
 struct Device_t g_deviceGeneric = { "Generic", _genericDescriptorDevice, _genericDescriptorConfig, NULL };
 ```
+
+
+## Common issues
+
+- Make sure to have gcc toolchain for RISC-V, instructions can be found here :
+* [How to flash: Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
+* [How to flash: Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
+
+- Do not forget to clone the submodules
+```
+$ git submodule init
+$ git submodule update
+```
+
+- As mentionned in _How to flash_, when connecting the board (in flash mode)
+  you have 10 seconds to flash it, after that delay it swaps back to the
+  firmware already present on the board.
+
+
+
+
+
