@@ -58,7 +58,16 @@ the `host-controller` is the software running on the Evaluator. It controls the
 enumeration process.
 
 The enumeration process works as follow :
-![architecture-diagram](architecture-diagram.png)
+```mermaid
+sequenceDiagram
+    Evaluator->>+HydraUSB3: Configuration of the USB device to emulate
+    Evaluator->>+HydraUSB3: Connect Command
+    HydraUSB3->>+TargetofEvaluation:  
+    TargetofEvaluation->>+HydraUSB3: Enumeration phase
+    Evaluator->>+HydraUSB3: Query results
+    HydraUSB3->>+Evaluator: Results
+```
+<!---![architecture-diagram](architecture-diagram.png)--->
 
 
 Addtional informations can be found here :
