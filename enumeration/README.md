@@ -21,6 +21,11 @@ method to the final user.
 
 ## How To Use
 
+Build and flash the firmware on both board.
+
+Build and run host-controller. Everything is done through that software.
+
+
 ### Build and Flash the firmware on both boards
 
 Note that when connecting the board (in flash mode) you have 10 seconds to
@@ -80,6 +85,8 @@ Addtional informations can be found here :
 
 
 ## Adding devices to enumeration
+
+Adding devices to enumerations is done in `host-controller`.
 
 To add a device to enumeration (automode) you need to :
 - add the descriptors in `usb_descriptors.c`
