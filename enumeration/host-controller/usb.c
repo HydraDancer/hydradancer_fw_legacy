@@ -32,7 +32,7 @@ usb_init_verbose(void)
 
     g_deviceHandle = libusb_open_device_with_vid_pid(NULL, ID_VENDOR, ID_PRODUCT);
     if (g_deviceHandle == NULL) {
-        printf("Error finding USB device\n");
+        printf("Error USB device not found\n");
         libusb_exit(NULL);
         return 2;
     }

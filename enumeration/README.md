@@ -165,6 +165,7 @@ $ git submodule update
   you have 10 seconds to flash it, after that delay it swaps back to the
   firmware already present on the board.
 
+- "Error USB device not found", ensure device is plugged and not in flash mode, additionally it can be a permissions issue, try in root.
 
 
 
