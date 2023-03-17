@@ -34,8 +34,8 @@ $ make clean all
 $ /path/to/wch-ch56x-isp -v flash /path/to/build/hydrausb3-enumeration.bin
 ```
 More explanations about how to flash can be found here :
-* [Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
-* [Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
+* [How to Flash: Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
+* [How to Flash: Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
 
 ### Build and run `host-controller`
 ```
