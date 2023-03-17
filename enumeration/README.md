@@ -3,6 +3,22 @@
 This firmware aims to offer the enumeration capability of umap (with the facedancer).
 
 
+## DISCLAIMER !
+
+Ensuring a device is supported by the ToE can be done in 2 ways :
+- During the enumeration phase (enumeration as in the spec.), a device can be
+  considered supported when the ToE sends a `setConfiguration()` to the device
+  (the last command issued during the enumeration phase).
+- Waiting to receive a packet on a given endpoint (other than endpoint 0).
+
+Here we choose the first option, note that it might have false positives, as it
+is the case on linux hosts (linux hosts always sends the `setConfiguration()`
+even if no driver were loaded).
+
+To be more exhaustive both mode should be implemented to let the choice of the
+method to the final user.
+
+
 ## How To Use
 
 ### Build and Flash the firmware on both boards
