@@ -301,6 +301,9 @@ main(int argc, char *argv[])
             break;
         // - Enumerate Automode
         case 3:
+            printf("Enumeration has started\n");
+            printf("It can take up to 5 seconds (timeout) if the device is not supported by the ToE\n");
+
             for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
                 enumerate_device(**ppDevice, false);
                 usleep(500000);
