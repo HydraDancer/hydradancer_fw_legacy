@@ -152,8 +152,8 @@ struct Device_t g_deviceGeneric = { "Generic", _genericDescriptorDevice, _generi
 ## Common issues
 
 - Make sure to have gcc toolchain for RISC-V, instructions can be found here :
-* [How to flash: Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
-* [How to flash: Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
+    * [How to flash: Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
+    * [How to flash: Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
 
 - Do not forget to clone the submodules
 ```
