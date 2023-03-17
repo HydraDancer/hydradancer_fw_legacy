@@ -24,10 +24,10 @@ bool g_verbosity = false;
 
 
 /* functions declaration */
-void handler_sigint(int sig);
+void handler_sigint();
 int usb_init_verbose(void);
 void usb_close(void);
-void usb_log_print(char endpoint, unsigned char *buffer, int capBuffer);
+void usb_log_print(unsigned char endpoint, unsigned char *buffer, int capBuffer);
 
 
 /* functions implementation */
@@ -40,7 +40,7 @@ void usb_log_print(char endpoint, unsigned char *buffer, int capBuffer);
  * @return  None
  */
 void
-handler_sigint(int sig)
+handler_sigint()
 {
     usb_close();
 
@@ -55,7 +55,7 @@ handler_sigint(int sig)
  * @return  None
  */
 void
-usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
+usb_log_print(unsigned char endpoint, unsigned char *buffer, int capBuffer)
 {
     int retCode;
 
@@ -258,7 +258,7 @@ enumerate_device(struct Device_t device, bool verbose)
  * @return  None
  */
 int
-main(int argc, char *argv[])
+main(void)
 {
     bool exit = false;
     int retCode;
