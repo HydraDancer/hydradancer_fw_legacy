@@ -79,6 +79,15 @@ sequenceDiagram
 ```
 <!---![architecture-diagram](architecture-diagram.png)--->
 
+### Limitations
+
+- Currently only the enumeration phase is done, there is no communication with
+  the driver once the enumeration is done.
+
+- The configuration (descriptors) of the device has to be uploaded before
+  "connecting" (with BBIO command, not physically). It can not be sent "on the
+  fly", while the enumeration is ongoing.
+
 
 Addtional informations can be found here :
 [BBIO_CMD_HydraDancer](https://github.com/hydrausb3/HydraDancer/blob/main/docs/BBIO_CMD_HydraDancer.md)
