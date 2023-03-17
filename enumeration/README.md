@@ -21,6 +21,11 @@ method to the final user.
 
 ## How To Use
 
+Build and flash the firmware on both board.
+
+Build and run host-controller. Everything is done through that software.
+
+
 ### Build and Flash the firmware on both boards
 
 Note that when connecting the board (in flash mode) you have 10 seconds to
@@ -74,12 +79,23 @@ sequenceDiagram
 ```
 <!---![architecture-diagram](architecture-diagram.png)--->
 
+### Limitations
+
+- Currently only the enumeration phase is done, there is no communication with
+  the driver once the enumeration is done.
+
+- The configuration (descriptors) of the device has to be uploaded before
+  "connecting" (with BBIO command, not physically). It can not be sent "on the
+  fly", while the enumeration is ongoing.
+
 
 Addtional informations can be found here :
 [BBIO_CMD_HydraDancer](https://github.com/hydrausb3/HydraDancer/blob/main/docs/BBIO_CMD_HydraDancer.md)
 
 
 ## Adding devices to enumeration
+
+Adding devices to enumerations is done in `host-controller`.
 
 To add a device to enumeration (automode) you need to :
 - add the descriptors in `usb_descriptors.c`
@@ -165,6 +181,7 @@ $ git submodule update
   you have 10 seconds to flash it, after that delay it swaps back to the
   firmware already present on the board.
 
+- "Error USB device not found", ensure device is plugged and not in flash mode, additionally it can be a permissions issue, try in root.
 
 
 

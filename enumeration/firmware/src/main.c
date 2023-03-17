@@ -81,9 +81,9 @@ main(void)
     memset((void *)hspiDmaAddr1, 0, HSPI_DMA_LEN1);
     hspiDmaAddr1[HSPI_DMA_LEN1-1] = 0;
     if (g_isHost) {
-        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT8_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, HSPI_DMA_LEN);
+        HSPI_DoubleDMA_Init(HSPI_HOST, RB_HSPI_DAT32_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, HSPI_DMA_LEN);
     } else {
-        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT8_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, 0);
+        HSPI_DoubleDMA_Init(HSPI_DEVICE, RB_HSPI_DAT32_MOD, (uint32_t)hspiDmaAddr0, (uint32_t)hspiDmaAddr1, 0);
     }
 
     /* SerDes Init */

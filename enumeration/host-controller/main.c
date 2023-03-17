@@ -20,13 +20,14 @@
 
 
 /* variables */
+bool g_verbosity = false;
 
 
 /* functions declaration */
-void handler_sigint(int sig);
+void handler_sigint();
 int usb_init_verbose(void);
 void usb_close(void);
-void usb_log_print(char endpoint, unsigned char *buffer, int capBuffer);
+void usb_log_print(unsigned char endpoint, unsigned char *buffer, int capBuffer);
 
 
 /* functions implementation */
@@ -39,7 +40,7 @@ void usb_log_print(char endpoint, unsigned char *buffer, int capBuffer);
  * @return  None
  */
 void
-handler_sigint(int sig)
+handler_sigint()
 {
     usb_close();
 
@@ -54,7 +55,7 @@ handler_sigint(int sig)
  * @return  None
  */
 void
-usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
+usb_log_print(unsigned char endpoint, unsigned char *buffer, int capBuffer)
 {
     int retCode;
 
@@ -69,6 +70,13 @@ usb_log_print(char endpoint, unsigned char *buffer, int capBuffer)
         printf("[ERROR]\tData NOT received successfully: %s\n", libusb_strerror(retCode));
     }
     memset(buffer, 0, capBuffer);
+}
+
+void
+print_table_devices_header(void)
+{
+    printf("                  Device Descriptor        Configuration Descriptor\n");
+    printf("Status           Class SubClass Protocol    Class SubClass Protocol\n");
 }
 
 // TODOO: Use struct rather than multiple arguments tied together
@@ -227,7 +235,7 @@ enumerate_device(struct Device_t device, bool verbose)
     } while (bbioRetCode);
 
     // Print the result
-    printf("%s 0x%02X 0x%02X 0x%02X:0x%02X 0x%02X 0x%02X (%s)\n",
+    printf("%s     0x%02X     0x%02X     0x%02X:    0x%02X     0x%02X     0x%02X (%s)\n",
            isDeviceSupported ? "SUPPORTED    " : "NOT SUPPORTED",
            descriptorDevice[4],
            descriptorDevice[5],
@@ -250,7 +258,7 @@ enumerate_device(struct Device_t device, bool verbose)
  * @return  None
  */
 int
-main(int argc, char *argv[])
+main(void)
 {
     bool exit = false;
     int retCode;
@@ -265,7 +273,10 @@ main(int argc, char *argv[])
 
     signal(SIGINT, handler_sigint);
 
-    usb_init_verbose();
+    retCode = usb_init_verbose();
+    if (retCode) {
+        return retCode;
+    }
 
 
     while (!exit) {
@@ -275,8 +286,75 @@ main(int argc, char *argv[])
         
         // Handle selected action :
         switch (userChoice) {
-        // - get log once
+        // - Set verbosity ON
         case 1:
+            g_verbosity = true;
+            printf("Verbosity turned ON\n");
+            break;
+        // - Set verbosity OFF
+        case 2:
+            g_verbosity = false;
+            printf("Verbosity turned OFF\n");
+            break;
+        // - Enumerate Automode
+        case 3:
+            printf("Enumeration has started\n");
+            printf("It can take up to 5 seconds (timeout) if the device is not supported by the ToE\n");
+            printf("\n");
+
+            print_table_devices_header();
+
+            for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
+                enumerate_device(**ppDevice, g_verbosity);
+                usleep(500000);
+            }
+            break;
+        // - Enumerate Audio
+        case 4:
+            enumerate_device(g_deviceAudio, g_verbosity);
+            break;
+        // - Enumerate CDC
+        case 5:
+            enumerate_device(g_deviceCdc, g_verbosity);
+            break;
+        // - Enumerate Keyboard
+        case 6:
+            enumerate_device(g_deviceKeyboard, g_verbosity);
+            break;
+        // - Enumerate Image
+        case 7:
+            enumerate_device(g_deviceImage, g_verbosity);
+            break;
+        // - Enumerate Image
+        case 8:
+            enumerate_device(g_devicePrinter, g_verbosity);
+            break;
+        // - Enumerate Mass Storage
+        case 9:
+            enumerate_device(g_deviceMassStorage, g_verbosity);
+            break;
+        // - Enumerate Smart Card
+        case 10:
+            enumerate_device(g_deviceSmartCard, g_verbosity);
+            break;
+        // - Enumerate Personal Healthcare
+        case 11:
+            enumerate_device(g_devicePersonalHealthcare, g_verbosity);
+            break;
+        // - Enumerate Video
+        case 12:
+            enumerate_device(g_deviceVideo, g_verbosity);
+            break;
+        // - Enumerate DFU
+        case 13:
+            enumerate_device(g_deviceDFU, g_verbosity);
+            break;
+        // - Enumerate FTDI
+        case 14:
+            enumerate_device(g_deviceFTDI, g_verbosity);
+            break;
+        // - Get log
+        case 98:
             // TODOO: Fix bug where the first IN bulk transfer is empty (even
             // when there is data to transmit)
             memset(buffer, 0, capBuffer);
@@ -288,64 +366,6 @@ main(int argc, char *argv[])
             usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
             break;
-        // - get log infinite loop
-        case 2:
-            while (1) {
-                usb_log_print(EP_DEBUG_BOARD_TOP, buffer, capBuffer);
-                usb_log_print(EP_DEBUG_BOARD_BOTTOM, buffer, capBuffer);
-                usleep(500000);
-            }
-            break;
-        // - Enumerate Automode
-        case 3:
-            for (struct Device_t **ppDevice = g_devices; *ppDevice; ++ppDevice) {
-                enumerate_device(**ppDevice, false);
-                usleep(500000);
-            }
-            break;
-        // - Enumerate Audio
-        case 4:
-            enumerate_device(g_deviceAudio, true);
-            break;
-        // - Enumerate CDC
-        case 5:
-            enumerate_device(g_deviceCdc, true);
-            break;
-        // - Enumerate Keyboard
-        case 6:
-            enumerate_device(g_deviceKeyboard, true);
-            break;
-        // - Enumerate Image
-        case 7:
-            enumerate_device(g_deviceImage, true);
-            break;
-        // - Enumerate Image
-        case 8:
-            enumerate_device(g_devicePrinter, true);
-            break;
-        // - Enumerate Mass Storage
-        case 9:
-            enumerate_device(g_deviceMassStorage, true);
-            break;
-        // - Enumerate Smart Card
-        case 10:
-            enumerate_device(g_deviceSmartCard, true);
-            break;
-        // - Enumerate Personal Healthcare
-        case 11:
-            enumerate_device(g_devicePersonalHealthcare, true);
-            break;
-        // - Enumerate Video
-        case 12:
-            enumerate_device(g_deviceVideo, true);
-            break;
-        // - Enumerate DFU
-        case 13:
-            enumerate_device(g_deviceDFU, true);
-            break;
-        // - Enumerate FTDI
-        case 14:
-            enumerate_device(g_deviceFTDI, true);
             break;
         // - Disconnect Current Device 
         case 99:

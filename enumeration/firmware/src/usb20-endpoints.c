@@ -3,8 +3,6 @@
 #include "log.h"
 
 
-#include "rot13-example.h"  // Included only for the rot13 example, TODO: remove
-
 /* variables */
 uint16_t sizeEndp6LoggingBuff = 0;
 const uint16_t capacityEndp6LoggingBuff = 4096;
@@ -76,8 +74,6 @@ epX_transceive_and_update(uint8_t uisToken, uint8_t **pBuffer, uint16_t *pSizeBu
             *(uint32_t *)pBuffer += U20_UEP0_MAXSIZE; /* Careful! We increase from the PREVIOUSLY read value */
         } else {
             *pBuffer = bufferResetValue;
-
-            g_top_readyToTransmitUsbPacket = false; // Part of the rot13 example
 
             R16_UEP0_T_LEN = 0;
             R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1;
