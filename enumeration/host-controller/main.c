@@ -265,7 +265,10 @@ main(int argc, char *argv[])
 
     signal(SIGINT, handler_sigint);
 
-    usb_init_verbose();
+    retCode = usb_init_verbose();
+    if (retCode) {
+        return retCode;
+    }
 
 
     while (!exit) {
