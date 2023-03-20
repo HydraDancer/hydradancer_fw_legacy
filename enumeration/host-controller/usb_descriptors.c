@@ -406,7 +406,7 @@ unsigned char _keyboardDescriptorConfig[] = {
     0x00, // bAlternateSetting
     0x01, // bNumEndpoint
     DEV_CLASS_HID, // bInterfaceClass
-    0x00, // bInterfaceSubClass
+    0x01, // bInterfaceSubClass
     0x01, // bInterfaceProtocol
     0x00, // iInterface
     //  Descriptor HID
