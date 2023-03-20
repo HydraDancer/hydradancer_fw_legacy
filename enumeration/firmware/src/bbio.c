@@ -20,11 +20,13 @@ bool g_doesToeSupportCurrentDevice = false;
 uint8_t *g_bbioDescriptorDevice;
 uint8_t *g_bbioDescriptorConfiguration;
 uint8_t *g_bbioDescriptorHidReport;
+uint8_t *g_bbioDescriptorHubReport;
 uint8_t *g_bbioDescriptorsString[_DESCRIPTOR_STRING_CAPACITY];
 
 uint16_t g_bbioDescriptorDeviceSize;
 uint16_t g_bbioDescriptorConfigurationSize;
 uint16_t g_bbioDescriptorHidReportSize;
+uint16_t g_bbioDescriptorHubReportSize;
 uint16_t g_bbioDescriptorsStringSizes[_DESCRIPTOR_STRING_CAPACITY];
 
 /* internal variables */
@@ -132,6 +134,7 @@ bbio_command_handle(uint8_t *bufferData)
         g_descriptorDevice    = g_bbioDescriptorDevice;
         g_descriptorConfig    = g_bbioDescriptorConfiguration;
         g_descriptorHidReport = g_bbioDescriptorHidReport;
+        g_descriptorHubReport = g_bbioDescriptorHubReport;
         g_descriptorStrings   = g_bbioDescriptorsString;
 
         g_doesToeSupportCurrentDevice = false;  // Reset the value
@@ -197,6 +200,11 @@ bbio_command_set_descriptor_handle(uint8_t *bufferData)
         // HID Report descriptor
         g_bbioDescriptorHidReport     = _descriptorsStoreCursor;
         g_bbioDescriptorHidReportSize = _descrSize;
+    }
+    else if (_subCommand == BbioSubSetDescrHubReport) { 
+        // HUB Report descriptor
+        g_bbioDescriptorHubReport     = _descriptorsStoreCursor;
+        g_bbioDescriptorHubReportSize = _descrSize;
     }
     else if (_subCommand == BbioSubSetDescrString) { 
         // String descriptor

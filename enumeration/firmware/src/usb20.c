@@ -14,6 +14,7 @@ uint16_t g_descriptorConfigCustomSize = 0;
 uint8_t *g_descriptorDevice     = NULL;
 uint8_t *g_descriptorConfig     = NULL;
 uint8_t *g_descriptorHidReport  = NULL;
+uint8_t *g_descriptorHubReport  = NULL;
 uint8_t **g_descriptorStrings   = NULL;
 
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
@@ -485,6 +486,11 @@ usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBu
         // configuration descriptor
         *pBuffer = g_descriptorHidReport;
         *pSizeBuffer = (g_descriptorConfig[26] << 8) + g_descriptorConfig[25];
+        break;
+    case USB_DESCR_TYP_HUB:
+        // WARNING! We get the size from the descriptor itself
+        *pBuffer = g_descriptorHubReport;
+        *pSizeBuffer = g_descriptorHubReport[0];
         break;
     default:
         log_to_evaluator("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");

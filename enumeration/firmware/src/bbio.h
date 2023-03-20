@@ -42,11 +42,13 @@ extern bool g_doesToeSupportCurrentDevice;
 extern uint8_t *g_bbioDescriptorDevice;
 extern uint8_t *g_bbioDescriptorConfiguration;
 extern uint8_t *g_bbioDescriptorHidReport;
+extern uint8_t *g_bbioDescriptorHubReport;
 extern uint8_t *g_bbioDescriptorsString[];
 
 extern uint16_t g_bbioDescriptorDeviceSize;
 extern uint16_t g_bbioDescriptorConfigurationSize;
 extern uint16_t g_bbioDescriptorHidReportSize;
+extern uint16_t g_bbioDescriptorHubReportSize;
 extern uint16_t g_bbioDescriptorsStringSizes[];
 
 
