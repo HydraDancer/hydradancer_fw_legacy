@@ -466,16 +466,19 @@ usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBu
     }
     break;
     case USB_DESCR_TYP_INTERF:
+        log_to_evaluator("getDescriptor(USB_DESCR_TYP_INTERF) not implemented\r\n");
         /* Not supported for now */
         // *pBuffer = (uint8_t *)&stInterfaceDescriptor;
         // *pSizeBuffer = stInterfaceDescriptor.bLength;
         break;
     case USB_DESCR_TYP_ENDP:
+        log_to_evaluator("getDescriptor(USB_DESCR_TYP_ENDP) not implemented\r\n");
         /* Not supported for now */
         // *pBuffer = (uint8_t *)&stEndpointDescriptor;
         // *pSizeBuffer = stEndpointDescriptor.bLength;
         break;
     case USB_DESCR_TYP_HID:
+        log_to_evaluator("getDescriptor(USB_DESCR_TYP_HID) not implemented\r\n");
         /* Not supported yet, it should already be sent with the configuration
          * descriptor */
         // *pBuffer = (uint8_t *)&stHidDescriptor;
@@ -486,11 +489,6 @@ usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBu
         // configuration descriptor
         *pBuffer = g_descriptorHidReport;
         *pSizeBuffer = (g_descriptorConfig[26] << 8) + g_descriptorConfig[25];
-        break;
-    case USB_DESCR_TYP_HUB:
-        // WARNING! We get the size from the descriptor itself
-        *pBuffer = g_descriptorHubReport;
-        *pSizeBuffer = g_descriptorHubReport[0];
         break;
     default:
         log_to_evaluator("ERROR: fill_buffer_with_descriptor() invalid descriptor requested");
