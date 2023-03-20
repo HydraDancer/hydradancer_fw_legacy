@@ -166,7 +166,7 @@ enumerate_device(struct Device_t device, bool verbose)
     if (descriptorHidReport) {
         // Send HID report descriptor
         do {
-            if (verbose) { printf("Setting configuration descriptor\n"); }
+            if (verbose) { printf("Setting HID report descriptor\n"); }
             bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHidReport, 0, sz_descriptorHidReport);
             usleep(10000);
             bbioRetCode = bbio_get_return_code();
@@ -183,7 +183,7 @@ enumerate_device(struct Device_t device, bool verbose)
     if (descriptorHubReport) {
         // Send HID report descriptor
         do {
-            if (verbose) { printf("Setting configuration descriptor\n"); }
+            if (verbose) { printf("Setting HUB descriptor\n"); }
             bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHubReport, 0, sz_descriptorHubReport);
             usleep(10000);
             bbioRetCode = bbio_get_return_code();
