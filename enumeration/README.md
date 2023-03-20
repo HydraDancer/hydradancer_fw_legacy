@@ -19,6 +19,26 @@ To be more exhaustive both mode should be implemented to let the choice of the
 method to the final user.
 
 
+## Quick Start
+
+
+Prerequisites :
+- MRS toolchains (more infos here:
+[Linux](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
+[Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
+)
+- pkg-config
+- libusb (1.0.X developer)
+
+
+```shell
+$ git clone --recursive git@github.com:hydrausb3/HydraDancer.git
+$ cd ./HydraDancer
+
+
+
+```
+
 ## How To Use
 
 Build and flash the firmware on both board.
