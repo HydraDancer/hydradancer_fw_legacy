@@ -55,8 +55,8 @@ cd ./firmware
 make clean all
 # Put the jumper on P3 (Flash Mode)
 # Warning ! You have 10 seconds to flash the board !
-sudo ~/wch-ch56x-isp/1ch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash first board
-sudo ~/wch-ch56x-isp/1ch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash second board
+sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash first board
+sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash second board
 
 # Build and run host controller software
 cd ../host-controller
