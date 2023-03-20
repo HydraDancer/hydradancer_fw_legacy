@@ -14,6 +14,7 @@ uint16_t g_descriptorConfigCustomSize = 0;
 uint8_t *g_descriptorDevice     = NULL;
 uint8_t *g_descriptorConfig     = NULL;
 uint8_t *g_descriptorHidReport  = NULL;
+uint8_t *g_descriptorHubReport  = NULL;
 uint8_t **g_descriptorStrings   = NULL;
 
 __attribute__((aligned(16))) uint8_t endp0RTbuff[512] __attribute__((section(".DMADATA"))); // Endpoint 0 data transceiver buffer.
@@ -465,16 +466,19 @@ usb20_fill_buffer_with_descriptor(UINT16_UINT8 descritorRequested, uint8_t **pBu
     }
     break;
     case USB_DESCR_TYP_INTERF:
+        log_to_evaluator("getDescriptor(USB_DESCR_TYP_INTERF) not implemented\r\n");
         /* Not supported for now */
         // *pBuffer = (uint8_t *)&stInterfaceDescriptor;
         // *pSizeBuffer = stInterfaceDescriptor.bLength;
         break;
     case USB_DESCR_TYP_ENDP:
+        log_to_evaluator("getDescriptor(USB_DESCR_TYP_ENDP) not implemented\r\n");
         /* Not supported for now */
         // *pBuffer = (uint8_t *)&stEndpointDescriptor;
         // *pSizeBuffer = stEndpointDescriptor.bLength;
         break;
     case USB_DESCR_TYP_HID:
+        log_to_evaluator("getDescriptor(USB_DESCR_TYP_HID) not implemented\r\n");
         /* Not supported yet, it should already be sent with the configuration
          * descriptor */
         // *pBuffer = (uint8_t *)&stHidDescriptor;

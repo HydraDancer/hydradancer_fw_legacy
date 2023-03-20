@@ -94,9 +94,17 @@ enumerate_device(struct Device_t device, bool verbose)
     unsigned char *descriptorDevice = device.descriptorDevice;
     unsigned char *descriptorConfig = device.descriptorConfig;
     unsigned char *descriptorHidReport = device.descriptorHidReport;
+    unsigned char *descriptorHubReport = device.descriptorHubReport;
     int sz_descriptorDevice = descriptorDevice[0];
     int sz_descriptorConfig = (descriptorConfig[3] << 8) + descriptorConfig[2];         // From 2 char to short
-    int sz_descriptorHidReport = (descriptorConfig[26] << 8) + descriptorConfig[25];    // From 2 char to short
+    int sz_descriptorHidReport = 0;
+    int sz_descriptorHubReport = 0;
+    if (descriptorHidReport) {
+        sz_descriptorHidReport = (descriptorConfig[26] << 8) + descriptorConfig[25];    // From 2 char to short
+    }
+    if (descriptorHubReport) {
+        sz_descriptorHubReport = descriptorHubReport[0];
+    }
 
     // Reset the board
     do {
@@ -158,12 +166,29 @@ enumerate_device(struct Device_t device, bool verbose)
     if (descriptorHidReport) {
         // Send HID report descriptor
         do {
-            if (verbose) { printf("Setting configuration descriptor\n"); }
+            if (verbose) { printf("Setting HID report descriptor\n"); }
             bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHidReport, 0, sz_descriptorHidReport);
             usleep(10000);
             bbioRetCode = bbio_get_return_code();
             usleep(10000);
             retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptorHidReport, sz_descriptorHidReport, NULL, 0);
+            usleep(10000);
+            if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
+            bbioRetCode |= bbio_get_return_code();
+            usleep(10000);
+        } while (bbioRetCode);
+    }
+
+    // if it exists
+    if (descriptorHubReport) {
+        // Send HID report descriptor
+        do {
+            if (verbose) { printf("Setting HUB descriptor\n"); }
+            bbio_command_sub_send(BbioSetDescr, BbioSubSetDescrHubReport, 0, sz_descriptorHubReport);
+            usleep(10000);
+            bbioRetCode = bbio_get_return_code();
+            usleep(10000);
+            retCode = libusb_bulk_transfer(g_deviceHandle, EP1OUT, descriptorHubReport, sz_descriptorHubReport, NULL, 0);
             usleep(10000);
             if (retCode) { printf("[ERROR]\t usb_descriptor_set(): bulk transfer failed"); }
             bbioRetCode |= bbio_get_return_code();
@@ -352,6 +377,10 @@ main(void)
         // - Enumerate FTDI
         case 14:
             enumerate_device(g_deviceFTDI, g_verbosity);
+            break;
+        // - Enumerate Hub
+        case 15:
+            enumerate_device(g_deviceHub, g_verbosity);
             break;
         // - Get log
         case 98:

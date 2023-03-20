@@ -8,6 +8,7 @@ struct Device_t {
     unsigned char *descriptorDevice;
     unsigned char *descriptorConfig;
     unsigned char *descriptorHidReport;
+    unsigned char *descriptorHubReport;
 };
 
 /* variables */
@@ -23,6 +24,7 @@ extern struct Device_t g_devicePersonalHealthcare;
 extern struct Device_t g_deviceVideo;
 extern struct Device_t g_deviceDFU;
 extern struct Device_t g_deviceFTDI;
+extern struct Device_t g_deviceHub;
 
 extern struct Device_t *g_devices[];
 

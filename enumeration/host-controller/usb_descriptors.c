@@ -96,7 +96,7 @@ unsigned char _genericDescriptorConfig[] = {
 	0x00, // bInterval
 };
 
-struct Device_t g_deviceGeneric = { "Generic", _genericDescriptorDevice, _genericDescriptorConfig, NULL };
+struct Device_t g_deviceGeneric = { "Generic", _genericDescriptorDevice, _genericDescriptorConfig, NULL, NULL };
 
 
 /*******************************************************************************
@@ -250,7 +250,7 @@ unsigned char _audioDescriptorConfig[] = {
     0x00, //  wLockDelayH         Unused
 };
 
-struct Device_t g_deviceAudio = { "Audio", _audioDescriptorDevice, _audioDescriptorConfig, NULL };
+struct Device_t g_deviceAudio = { "Audio", _audioDescriptorDevice, _audioDescriptorConfig, NULL, NULL };
 
 
 /* CDC descriptors is based on
@@ -361,7 +361,7 @@ unsigned char _cdcDescriptorConfig[] = {
         0x00, // bInterval
 };
 
-struct Device_t g_deviceCdc = { "CDC (Virtual COM Port)", _cdcDescriptorDevice, _cdcDescriptorConfig, NULL };
+struct Device_t g_deviceCdc = { "CDC (Virtual COM Port)", _cdcDescriptorDevice, _cdcDescriptorConfig, NULL, NULL };
 
 
 /*******************************************************************************
@@ -406,7 +406,7 @@ unsigned char _keyboardDescriptorConfig[] = {
     0x00, // bAlternateSetting
     0x01, // bNumEndpoint
     DEV_CLASS_HID, // bInterfaceClass
-    0x00, // bInterfaceSubClass
+    0x01, // bInterfaceSubClass
     0x01, // bInterfaceProtocol
     0x00, // iInterface
     //  Descriptor HID
@@ -444,7 +444,7 @@ unsigned char _keyboardDescriptorHidReport[] = {
 	0xC0,		    // End Collection
 };
 
-struct Device_t g_deviceKeyboard = { "Keyboard", _keyboardDescriptorDevice, _keyboardDescriptorConfig, _keyboardDescriptorHidReport };
+struct Device_t g_deviceKeyboard = { "Keyboard", _keyboardDescriptorDevice, _keyboardDescriptorConfig, _keyboardDescriptorHidReport, NULL };
 
 /* Image descriptor is based on
  * https://www.xmos.ai/download/AN00132:-USB-Image-Device-Class(2.0.2rc1).pdf
@@ -520,7 +520,7 @@ unsigned char _imageDescriptorConfig[] = {
     0x01, // bInterval
 };
 
-struct Device_t g_deviceImage = { "Image", _imageDescriptorDevice, _imageDescriptorConfig, NULL };
+struct Device_t g_deviceImage = { "Image", _imageDescriptorDevice, _imageDescriptorConfig, NULL, NULL };
 
 
 /* Printer descriptor is based on
@@ -581,7 +581,7 @@ unsigned char _printerDescriptorConfig[] = {
     0x01, // bInterval
 };
 
-struct Device_t g_devicePrinter = { "printer", _printerDescriptorDevice, _printerDescriptorConfig, NULL };
+struct Device_t g_devicePrinter = { "printer", _printerDescriptorDevice, _printerDescriptorConfig, NULL, NULL };
 
 
 /* Mass Storage descriptor is based on
@@ -650,7 +650,7 @@ unsigned char _massStorageDescriptorConfig[] = {
     0x00, // bInterval
 };
 
-struct Device_t g_deviceMassStorage = { "MassStorage", _massStorageDescriptorDevice, _massStorageDescriptorConfig, NULL };
+struct Device_t g_deviceMassStorage = { "MassStorage", _massStorageDescriptorDevice, _massStorageDescriptorConfig, NULL, NULL };
 
 
 /*******************************************************************************
@@ -771,7 +771,7 @@ unsigned char _smartCardDescriptorConfig[] = {
     0x00, // bInterval
 };
 
-struct Device_t g_deviceSmartCard = { "SmartCard", _smartCardDescriptorDevice, _smartCardDescriptorConfig, NULL };
+struct Device_t g_deviceSmartCard = { "SmartCard", _smartCardDescriptorDevice, _smartCardDescriptorConfig, NULL, NULL };
 
 
 /*******************************************************************************
@@ -855,7 +855,7 @@ unsigned char _personalHealthcareDescriptorConfig[] = {
     0x01, // bInterval
 };
 
-struct Device_t g_devicePersonalHealthcare = { "PersonalHealthcare", _personalHealthcareDescriptorDevice, _personalHealthcareDescriptorConfig, NULL };
+struct Device_t g_devicePersonalHealthcare = { "PersonalHealthcare", _personalHealthcareDescriptorDevice, _personalHealthcareDescriptorConfig, NULL, NULL };
 
 
 /*******************************************************************************
@@ -1077,7 +1077,7 @@ unsigned char _videoDescriptorConfig[] = {
     0x01, // bInterval
 };
 
-struct Device_t g_deviceVideo = { "Video", _videoDescriptorDevice, _videoDescriptorConfig, NULL };
+struct Device_t g_deviceVideo = { "Video", _videoDescriptorDevice, _videoDescriptorConfig, NULL, NULL };
 
 
 /*******************************************************************************
@@ -1146,7 +1146,7 @@ unsigned char _dfuDescriptorConfig[] = {
     0x13, // bcdDFUVersionH
 };
 
-struct Device_t g_deviceDFU = { "DFU", _dfuDescriptorDevice, _dfuDescriptorConfig, NULL };
+struct Device_t g_deviceDFU = { "DFU", _dfuDescriptorDevice, _dfuDescriptorConfig, NULL, NULL };
 
 
 /*******************************************************************************
@@ -1212,7 +1212,81 @@ unsigned char _ftdiDescriptorConfig[] = {
     0x00, // bInterval
 };
 
-struct Device_t g_deviceFTDI = { "FTDI", _ftdiDescriptorDevice, _ftdiDescriptorConfig, NULL };
+struct Device_t g_deviceFTDI = { "FTDI", _ftdiDescriptorDevice, _ftdiDescriptorConfig, NULL, NULL };
+
+/*******************************************************************************
+ * DEVICE HUB
+ */
+
+/* Hub device is based on
+ * https://docplayer.net/25762520-Genesys-logic-inc-gl850-usb-port-hub-controller.html
+ */
+
+unsigned char _hubDescriptorDevice[] = {
+    18,     // bLength
+    DEV_DESCR_DEVICE,      // bDescriptorType
+    0x00,   // bcdUSB (low)
+    0x02,   // bcdUSB (high)
+    0x09,   // bDeviceClass (Defined in the interface descriptor)
+    0x00,   // bDeviceSubClass
+    0x01,   // bDeviceProtocol
+    64,     // bMaxPacketSize0
+    0x34,   // idVendor (low)
+    0x12,   // idVendor (high)
+    0xCD,   // idProduct (low)
+    0xAB,   // idProduct (high)
+    0x00,   // bcdDevice (low)
+    0x42,   // bcdDevice (high)
+    0x00,   // iManufacturer
+    0x00,   // iProduct
+    0x00,   // iSerialNumber
+    1,      // bNumConfigurations
+};
+
+unsigned char _hubDescriptorConfig[] = {
+    //  Descriptor Config
+    0x09, // bLength
+    DEV_DESCR_CONFIG, // bDescriptorType
+    0x19, // wTotalLengthL
+    0x00, // wTotalLengthH
+    0x01, // bNumInterfaces
+    0x01, // bConfigurationValue
+    0x00, // iConfiguration
+    0x80, // bmAttributes
+    0x64, // MaxPower
+    //  Descriptor Interface
+    0x09, // bLength
+    DEV_DESCR_INTERF, // bDescriptorType
+    0x00, // bInterfaceNumber
+    0x00, // bAlternateSetting
+    0x01, // bNumEndpoint
+    0x09, // bInterfaceClass
+    0x00, // bInterfaceSubClass
+    0x01, // bInterfaceProtocol
+    0x00, // iInterface
+    //  Descriptor Endpoint (Interrupt IN)
+    0x07, // bLength
+    DEV_DESCR_ENDP, // bDescriptorType
+    0x81, // bEndpointAddress
+    0x03, // bmAttributes
+    0x01, // wMaxPacketSizeL
+    0x00, // wMaxPacketSizeH
+    0x0C, // bInterval
+};
+
+unsigned char _hubDescriptorReport[] = {
+    0x09, // bLength
+    0x29, // bDescriptorType
+    0x04, // bNbrPorts
+    0x89, // wHubCharacteristicsL
+    0x80, // wHubCharacteristicsH
+    0x32, // bPwrOn2PwrGood
+    0x64, // bHubContrCurrent
+    0x00, // bDeviceRemoveable
+    0xFF, // bPortPwrCtrlMask
+};
+
+struct Device_t g_deviceHub = { "Hub", _hubDescriptorDevice, _hubDescriptorConfig, NULL, _hubDescriptorReport };
 
 
 /*******************************************************************************
@@ -1231,6 +1305,7 @@ struct Device_t *g_devices[] = {
     &g_deviceVideo,
     &g_deviceDFU,
     &g_deviceFTDI,
+    &g_deviceHub,
     NULL,   // Careful, must be null terminated
 };
 

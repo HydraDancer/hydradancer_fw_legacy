@@ -300,98 +300,111 @@ USBHS_IRQHandler(void)
 
         /* If bRequest != 0 it is a non standard request, thus not covered  by the spec */
         if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD) {
-            return;
-        }
-
-        switch(SetupReq) {
-        case USB_GET_STATUS:
-            endp0RTbuff[0] = 0x00;
-            endp0RTbuff[1] = 0x00;
-            bytesToWrite = 2;
-
-            // Here should be the handling of the halt endpoint's command
-            break;
-        case USB_CLEAR_FEATURE:
-            switch (SetupReqType & USB_REQ_RECIP_MASK) {
-            case USB_REQ_RECIP_DEVICE:
-                /* Not implemented */
-                break;
-            case USB_REQ_RECIP_INTERF:
-                /* Not implemented */
-                break;
-            case USB_REQ_RECIP_ENDP:
-                /* Not implemented */
-                // usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
-                break;
-            default:
-                log_to_evaluator("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
-                break;
+            if ((SetupReqType & USB_REQ_TYP_MASK) != USB_REQ_TYP_CLASS) {
+                return;
             }
-            break;
-        case USB_SET_FEATURE:
-            switch (SetupReqType & USB_REQ_RECIP_MASK) {
-            case USB_REQ_RECIP_DEVICE:
-                /* Not implemented */
-                log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
+            /* As of now only Hub enumeration requires a class specific
+             * response. */
+            /* HID uses it too but for setIdle(), which can be discarded for
+             * enumeration. */
+            if (SetupReq == HUB_GET_DESCRIPTOR) {
+                // WARNING! We get the size from the descriptor itself
+                pDataToWrite = g_descriptorHubReport;
+                bytesToWrite = g_descriptorHubReport[0];
+            }
+
+        } else {
+            switch(SetupReq) {
+            case USB_GET_STATUS:
+                endp0RTbuff[0] = 0x00;
+                endp0RTbuff[1] = 0x00;
+                bytesToWrite = 2;
+
+                // Here should be the handling of the halt endpoint's command
                 break;
-            case USB_REQ_RECIP_INTERF:
-                /* Not implemented */
-                log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
-                break;
-            case USB_REQ_RECIP_ENDP:
-                switch (UsbSetupBuf->wValue.w) {
-                case 0x0000: /* ENDPOINT_HALT */
-                    usb20_endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
+            case USB_CLEAR_FEATURE:
+                switch (SetupReqType & USB_REQ_RECIP_MASK) {
+                case USB_REQ_RECIP_DEVICE:
+                    /* Not implemented */
+                    break;
+                case USB_REQ_RECIP_INTERF:
+                    /* Not implemented */
+                    break;
+                case USB_REQ_RECIP_ENDP:
+                    /* Not implemented */
+                    // usb20_endpoint_clear(UsbSetupBuf->wValue.bw.bb1);
                     break;
                 default:
-                    log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
+                    log_to_evaluator("ERROR: SETUP Interrupt USB_CLEAR_FEATURE invalid recipient");
                     break;
                 }
                 break;
+            case USB_SET_FEATURE:
+                switch (SetupReqType & USB_REQ_RECIP_MASK) {
+                case USB_REQ_RECIP_DEVICE:
+                    /* Not implemented */
+                    log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward device) unimplemented");
+                    break;
+                case USB_REQ_RECIP_INTERF:
+                    /* Not implemented */
+                    log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward interface) unimplemented");
+                    break;
+                case USB_REQ_RECIP_ENDP:
+                    switch (UsbSetupBuf->wValue.w) {
+                    case 0x0000: /* ENDPOINT_HALT */
+                        usb20_endpoint_halt(UsbSetupBuf->wValue.bw.bb1);
+                        break;
+                    default:
+                        log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE (toward endpoint) unimplemented");
+                        break;
+                    }
+                    break;
+                default:
+                    log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE invalid recipient");
+                    break;
+                }
+                break;
+            case USB_SET_ADDRESS:
+                // NOTE: Address should not be set in this transaction but rather in the
+                // following one (RB_USB_IF_TRANSFER IN)
+                break;
+            case USB_GET_DESCRIPTOR:
+                // log_to_evaluator("getDescriptor(0x%04x)\r\n", UsbSetupBuf->wValue);
+                usb20_fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
+                break;
+            case USB_SET_DESCRIPTOR:
+                /* Unused */
+                break;
+            case USB_GET_CONFIGURATION:
+                /* We have only one configuration, hardcoded for now */
+                endp0RTbuff[0] = 1;
+                bytesToWrite = 1;
+                break;
+            case USB_SET_CONFIGURATION:
+                /* As of now there is only one configuration */
+                if (!g_isHost) {
+                    /* As mentionned in Issue #45 :
+                     * After giving an address to the device and getting its
+                     * descriptors, the last step is to set a configuration
+                     * Thus, when a configuration is set we can assume that the
+                     * device is supported by the ToE's USB stack
+                     */
+                    g_doesToeSupportCurrentDevice = true;   /* From src/bbio.h */
+                }
+                break;
+            case USB_GET_INTERFACE:
+                /* We have only one interface, hardcoded for now */
+                endp0RTbuff[0] = 0;
+                bytesToWrite = 1;
+                break;
+            case USB_SET_INTERFACE:
+                /* As of now there is only one interface */
+                break;
+            case USB_SYNCH_FRAME:
+                break;
             default:
-                log_to_evaluator("ERROR: SETUP Interrupt USB_SET_FEATURE invalid recipient");
                 break;
             }
-            break;
-        case USB_SET_ADDRESS:
-            // NOTE: Address should not be set in this transaction but rather in the
-            // following one (RB_USB_IF_TRANSFER IN)
-            break;
-        case USB_GET_DESCRIPTOR:
-            usb20_fill_buffer_with_descriptor(UsbSetupBuf->wValue, &pDataToWrite, &bytesToWrite);
-            break;
-        case USB_SET_DESCRIPTOR:
-            /* Unused */
-            break;
-        case USB_GET_CONFIGURATION:
-            /* We have only one configuration, hardcoded for now */
-            endp0RTbuff[0] = 1;
-            bytesToWrite = 1;
-            break;
-        case USB_SET_CONFIGURATION:
-            /* As of now there is only one configuration */
-            if (!g_isHost) {
-                /* As mentionned in Issue #45 :
-                 * After giving an address to the device and getting its
-                 * descriptors, the last step is to set a configuration
-                 * Thus, when a configuration is set we can assume that the
-                 * device is supported by the ToE's USB stack
-                 */
-                g_doesToeSupportCurrentDevice = true;   /* From src/bbio.h */
-            }
-            break;
-        case USB_GET_INTERFACE:
-            /* We have only one interface, hardcoded for now */
-            endp0RTbuff[0] = 0;
-            bytesToWrite = 1;
-            break;
-        case USB_SET_INTERFACE:
-            /* As of now there is only one interface */
-            break;
-        case USB_SYNCH_FRAME:
-            break;
-        default:
-            break;
         }
 
         if (SetupReqLen < bytesToWrite) {
