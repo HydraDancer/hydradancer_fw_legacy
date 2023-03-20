@@ -39,7 +39,7 @@ $ make
 $
 $ cd ~
 $ git clone --recursive git@github.com:hydrausb3/HydraDancer.git
-$ cd ./HydraDancer
+$ cd ./HydraDancer/firmware
 $
 $ # Building and flashing firmware
 $ cd ./firmware
