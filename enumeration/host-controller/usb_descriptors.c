@@ -1260,10 +1260,10 @@ unsigned char _hubDescriptorConfig[] = {
     0x00, // bInterfaceNumber
     0x00, // bAlternateSetting
     0x01, // bNumEndpoint
-    DEV_CLASS_VEN_SPEC, // bInterfaceClass
-    0x09, // bInterfaceSubClass
-    0x00, // bInterfaceProtocol
-    0x01, // iInterface
+    0x09, // bInterfaceClass
+    0x00, // bInterfaceSubClass
+    0x01, // bInterfaceProtocol
+    0x00, // iInterface
     //  Descriptor Endpoint (Interrupt IN)
     0x07, // bLength
     DEV_DESCR_ENDP, // bDescriptorType
