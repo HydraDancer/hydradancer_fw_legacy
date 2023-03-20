@@ -32,11 +32,26 @@ Prerequisites :
 
 
 ```shell
+$ cd ~
+$ git clone --recursive git@github.com:hydrausb3/wch-ch56x-isp.git
+$ cd ./wch-ch56x-isp
+$ make
+
+$ cd ~
 $ git clone --recursive git@github.com:hydrausb3/HydraDancer.git
 $ cd ./HydraDancer
-
-
-
+$
+$ # Building and flashing firmware
+$ cd ./firmware
+$ make clean all
+$ # Put the jumper on P3 (Flash Mode)
+$ # Warning ! Wou have 10 seconds to flash the board !
+$ sudo ~/wch-ch56x-isp/1ch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash first board
+$ sudo ~/wch-ch56x-isp/1ch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash second board
+$
+$ cd ../host-controller
+$ make clean all
+$ sudo ./build/host-controller
 ```
 
 ## How To Use
