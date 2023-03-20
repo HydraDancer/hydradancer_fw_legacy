@@ -31,7 +31,7 @@ menu_print(void)
     printf("12) Enumerate Video\n");
     printf("13) Enumerate DFU\n");
     printf("14) Enumerate FTDI\n");
-    printf("14) Enumerate Hub\n");
+    printf("15) Enumerate Hub\n");
     printf("98) Print logs\n");
     printf("99) Disconnect Current Device\n");
     printf("\n");

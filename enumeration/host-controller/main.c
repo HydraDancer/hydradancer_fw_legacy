@@ -97,8 +97,14 @@ enumerate_device(struct Device_t device, bool verbose)
     unsigned char *descriptorHubReport = device.descriptorHubReport;
     int sz_descriptorDevice = descriptorDevice[0];
     int sz_descriptorConfig = (descriptorConfig[3] << 8) + descriptorConfig[2];         // From 2 char to short
-    int sz_descriptorHidReport = (descriptorConfig[26] << 8) + descriptorConfig[25];    // From 2 char to short
-    int sz_descriptorHubReport = descriptorHubReport[0];
+    int sz_descriptorHidReport = 0;
+    int sz_descriptorHubReport = 0;
+    if (descriptorHidReport) {
+        sz_descriptorHidReport = (descriptorConfig[26] << 8) + descriptorConfig[25];    // From 2 char to short
+    }
+    if (descriptorHubReport) {
+        sz_descriptorHubReport = descriptorHubReport[0];
+    }
 
     // Reset the board
     do {
