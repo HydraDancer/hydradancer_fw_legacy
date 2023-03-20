@@ -54,7 +54,7 @@ cd ./HydraDancer/firmware
 cd ./firmware
 make clean all
 # Put the jumper on P3 (Flash Mode)
-# Warning ! Wou have 10 seconds to flash the board !
+# Warning ! You have 10 seconds to flash the board !
 sudo ~/wch-ch56x-isp/1ch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash first board
 sudo ~/wch-ch56x-isp/1ch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash second board
 
