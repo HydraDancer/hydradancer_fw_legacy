@@ -36,7 +36,7 @@ $ cd ~
 $ git clone --recursive git@github.com:hydrausb3/wch-ch56x-isp.git
 $ cd ./wch-ch56x-isp
 $ make
-
+$
 $ cd ~
 $ git clone --recursive git@github.com:hydrausb3/HydraDancer.git
 $ cd ./HydraDancer
