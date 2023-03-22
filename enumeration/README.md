@@ -41,13 +41,13 @@ PATH=$PATH:~/MRS_Toolchain_Linux_x64_V1.50/RISC-V\ Embedded\ GCC/bin
 
 # Get and build the flashing tool
 cd ~
-git clone --recursive git@github.com:hydrausb3/wch-ch56x-isp.git
+git clone --recursive https://github.com/hydrausb3/wch-ch56x-isp.git
 cd ./wch-ch56x-isp
 make
 
 # Get the HydraDancer sources
 cd ~
-git clone --recursive git@github.com:hydrausb3/HydraDancer.git
+git clone --recursive https://github.com/hydrausb3/HydraDancer.git
 cd ./HydraDancer/firmware
 
 # Building and flashing firmware
