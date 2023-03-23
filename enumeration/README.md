@@ -19,6 +19,66 @@ To be more exhaustive both mode should be implemented to let the choice of the
 method to the final user.
 
 
+## Quick Start
+
+
+### Prerequisites
+
+- MRS toolchains (more infos here:
+[Linux](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux),
+[Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
+)
+- pkg-config
+- libusb (1.0.X developer)
+
+
+### Physical configuration
+
+- Add a jumper on PB24 on the top board (used by the firmware to determine if
+  it is top or bottom board)
+- Connect SerDes together (GXP to GXP and GXM to GXM, see the following picture)
+
+![SerDes and PB24](./serdes-and-pb-connected.jpg)
+
+
+
+### Firmware and host-controller
+
+To build and flash the firmware and build and run the host-controller :
+
+```shell
+# Get the MRS toolchain
+cd ~
+wget http://file.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.50.tar.xz
+mkdir -p MRS_Toolchain_Linux_x64_V1.50
+tar xvf MRS_Toolchain_Linux_x64_V1.50.tar.xz --directory=MRS_Toolchain_Linux_x64_V1.50
+PATH=$PATH:~/MRS_Toolchain_Linux_x64_V1.50/RISC-V\ Embedded\ GCC/bin
+
+# Get and build the flashing tool
+cd ~
+git clone --recursive https://github.com/hydrausb3/wch-ch56x-isp.git
+cd ./wch-ch56x-isp
+make
+
+# Get the HydraDancer sources
+cd ~
+git clone --recursive https://github.com/hydrausb3/HydraDancer.git
+cd ./HydraDancer/firmware
+
+# Building and flashing firmware
+cd ./firmware
+make clean all
+# Put the jumper on P3 (Flash Mode)
+# Warning ! You have 10 seconds to flash the board !
+sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash first board
+sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash second board
+
+# Build and run host controller software
+cd ../host-controller
+make clean all
+sudo ./build/host-controller
+```
+
 ## How To Use
 
 Build and flash the firmware on both board.
