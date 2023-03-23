@@ -38,7 +38,7 @@ method to the final user.
   it is top or bottom board)
 - Connect SerDes together (GXP to GXP and GXM to GXM, see the following picture)
 
-[SerDes and PB24](./serdes-and-pb-connected.jpg)
+![SerDes and PB24](./serdes-and-pb-connected.jpg)
 
 
 
