@@ -22,7 +22,8 @@ method to the final user.
 ## Quick Start
 
 
-Prerequisites :
+### Prerequisites
+
 - MRS toolchains (more infos here:
 [Linux](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux),
 [Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
@@ -30,6 +31,20 @@ Prerequisites :
 - pkg-config
 - libusb (1.0.X developer)
 
+
+### Physical configuration
+
+- Add a jumper on PB24 on the top board (used by the firmware to determine if
+  it is top or bottom board)
+- Connect SerDes together (GXP to GXP and GXM to GXM, see the following picture)
+
+[SerDes and PB24](./serdes-and-pb-connected.jpg)
+
+
+
+### Firmware and host-controller
+
+To build and flash the firmware and build and run the host-controller :
 
 ```shell
 # Get the MRS toolchain
