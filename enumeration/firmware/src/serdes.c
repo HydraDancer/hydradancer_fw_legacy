@@ -56,6 +56,7 @@ serdes_log(const char *fmt, ...)
     SerDes_DMA_Tx();
     SerDes_Wait_Txdone();
     serdes_wait_for_tx(SDS_PLL_FREQ_1_20G);
+    va_end(ap);
     // bsp_enable_interrupt();
 }
 

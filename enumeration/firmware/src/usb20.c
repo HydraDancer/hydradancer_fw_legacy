@@ -600,6 +600,7 @@ usb20_log(enum Endpoint endp, const char *fmt, ...)
     
     bytesWritten = vsnprintf(loggingbuff + *pSizeLoggingBuff, sizeLeft, fmt, ap);
     *pSizeLoggingBuff += bytesWritten;
+    va_end(ap);
     bsp_enable_interrupt();
 }
 /* @fn      usb20_vlog
