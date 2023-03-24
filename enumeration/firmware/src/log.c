@@ -22,4 +22,5 @@ log_to_evaluator(const char *fmt, ...)
         serdes_vlog(fmt, ap);
     }
 
+    va_end(ap);
 }
