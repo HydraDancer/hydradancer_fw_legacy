@@ -20,6 +20,9 @@
 #define U20_MAXPACKET_LEN       512
 #define U20_UEP0_MAXSIZE        8
 #define UsbSetupBuf ((PUSB_SETUP)endp0RTbuff)
+#undef FREQ_SYS
+/* System clock / MCU frequency in Hz */
+#define FREQ_SYS (120000000)
 
 /* enums */
 enum Speed { SpeedLow = UCST_LS, SpeedFull = UCST_FS, SpeedHigh = UCST_HS };

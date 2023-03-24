@@ -26,6 +26,11 @@
 
 // TODOO: Add clock for debug (PFIC_Enable(SysTick) ?)
 
+/* macros */
+#undef FREQ_SYS
+/* System clock / MCU frequency in Hz */
+#define FREQ_SYS (120000000)
+
 /* variables */
 static bool g_isHost = false;
 

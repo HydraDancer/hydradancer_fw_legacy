@@ -35,6 +35,11 @@
 // TODO: Add defaults to switches.
 // TODO: Add idle state.
 
+/* macros */
+#undef FREQ_SYS
+/* System clock / MCU frequency in Hz */
+#define FREQ_SYS (120000000)
+
 /* variables */
 static bool g_isHost = false;
 uint8_t HSPI_WORKARROUND = false;
