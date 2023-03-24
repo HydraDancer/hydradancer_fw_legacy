@@ -1,7 +1,6 @@
-#include <libusb-1.0/libusb.h>
-
 #include <stdio.h>
 #include <stddef.h>
+#include "libusb.h"
 
 #include "usb.h"
 
@@ -37,8 +36,22 @@ usb_init_verbose(void)
         return 2;
     }
 
-    libusb_set_auto_detach_kernel_driver(g_deviceHandle, INTERFACE);
-
+    libusb_set_auto_detach_kernel_driver(g_deviceHandle, USB_INTERFACE);
+    /*
+	if(libusb_kernel_driver_active(g_deviceHandle, 0) == 1)
+	{
+		printf("Kernel Driver Active\n");
+		if(libusb_detach_kernel_driver(g_deviceHandle, 0) == 0)
+		{
+			printf("Kernel Driver Detached!\n");
+		}
+		else
+		{
+			printf("libusb_opendev() error could not detach kernel driver!\n");
+			return 4;
+		}
+	}	
+	*/
     retCode = libusb_claim_interface(g_deviceHandle, 0);
     if ( retCode < 0) {
         printf("Error claiming interface: %s\n", libusb_error_name(retCode));
@@ -63,8 +76,8 @@ usb_init_verbose(void)
 void
 usb_close(void)
 {
-    libusb_release_interface(g_deviceHandle, INTERFACE);
+    libusb_release_interface(g_deviceHandle, USB_INTERFACE);
+    //libusb_release_interface(g_deviceHandle, 0);
     libusb_close(g_deviceHandle);
     libusb_exit(NULL);
 }
-
