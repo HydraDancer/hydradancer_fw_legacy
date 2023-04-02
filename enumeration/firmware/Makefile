@@ -1,6 +1,17 @@
 RM := rm -rf
 
-COMPILER_PREFIX ?= riscv-none-embed
+# Check and choose riscv compiler either closed source from MounRiver Studio riscv-none-embed" or open source one GCC riscv-none-elf 
+# For open source GCC riscv-none-elf see https://github.com/hydrausb3/riscv-none-elf-gcc-xpack/releases/
+COMPILER_PREFIX := $(shell command -v riscv-none-embed-gcc >/dev/null 2>&1 && echo "riscv-none-embed" || true)
+COMPILER_PREFIX := $(if $(COMPILER_PREFIX),$(COMPILER_PREFIX),$(shell command -v riscv-none-elf-gcc >/dev/null 2>&1 && echo "riscv-none-elf" || true))
+
+ifeq ($(COMPILER_PREFIX),riscv-none-embed)
+    MARCH_OPT := -march=rv32imac
+else ifeq ($(COMPILER_PREFIX),riscv-none-elf)
+    MARCH_OPT := -march=rv32imac_zicsr
+else
+    $(error Unknown COMPILER_PREFIX: $(COMPILER_PREFIX))
+endif
 
 # Define option(s) defined in pre-processor compiler option(s)
 # DEFINE_OPTS = -DDEBUG=1
@@ -13,7 +24,7 @@ DEBUG = -g
 
 BUILD_DIR = ./build
 
-PROJECT = $(BUILD_DIR)/hydrausb3-enumeration
+PROJECT = $(BUILD_DIR)/HydraDancer-enumeration-fw
 
 RVMSIS_DIR  = ../../wch-ch56x-bsp/rvmsis
 RVMSIS_SRCS = $(wildcard $(RVMSIS_DIR)/*.c)
@@ -40,7 +51,7 @@ OBJS += $(BUILD_DIR)/startup_CH56x.o
 DEPS  = $(subst .o,.d,$(OBJS))
 LIBS  =
 
-BASE_OPTS = -march=rv32imac -mabi=ilp32 -msmall-data-limit=8 $(OPTIM_OPTS) -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections
+BASE_OPTS = $(MARCH_OPT) -mabi=ilp32 -msmall-data-limit=8 $(OPTIM_OPTS) -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections
 C_OPTS    = $(BASE_OPTS) $(DEBUG) $(DEFINE_OPTS)\
               $(INCLUDES) -std=gnu99 -MMD -MP -MT"$(@)"
 LD_OPTS   = -T ".ld" -nostartfiles -Xlinker --gc-sections -Xlinker --print-memory-usage -Wl,-Map,"$(PROJECT).map" --specs=nano.specs --specs=nosys.specs
@@ -99,12 +110,6 @@ $(BUILD_DIR)/%.o: ../../wch-ch56x-bsp/board/%.c | $$(@D)/.
 	@echo 'Building file: $<'
 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
 	@echo ' '
-
-# $(BUILD_DIR)/%.o: ../../wch-ch56x-bsp/usb/usb_devbulk/%.c | $$(@D)/.
-# 	@echo 'Building file: $<'
-# 	mkdir -p $(@D)
-# 	$(COMPILER_PREFIX)-gcc $(C_OPTS) -c -o "$@" "$<"
-# 	@echo ' '
 
 # Tool invocations
 $(PROJECT).elf: $(OBJS)
