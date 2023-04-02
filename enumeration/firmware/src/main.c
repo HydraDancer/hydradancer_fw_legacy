@@ -39,6 +39,10 @@ const uint16_t capacityEndp1Buff = 4096;
 __attribute__((aligned(16))) uint8_t endp1BuffRaw[4096];
 uint8_t *endp1Buff = endp1BuffRaw;
 
+/* usb20.h global variables for Evaluator Host USB2.0 communication */
+enum Speed g_usb20Speed = SpeedHigh;
+enum Endpoint g_usb20EpInMask  = Ep1Mask | Ep6Mask| Ep7Mask;
+enum Endpoint g_usb20EpOutMask = Ep1Mask;
 
 /*********************************************************************
  * @fn      main
@@ -57,10 +61,6 @@ main(void)
 
     /* USB Init */
     if (bsp_switch()) {
-        g_usb20Speed = SpeedHigh;
-        g_usb20EpInMask  = Ep1Mask | Ep6Mask| Ep7Mask;
-        g_usb20EpOutMask = Ep1Mask;
-
         // Filling structures "describing" our USB peripheral
         g_descriptorDevice  = (uint8_t *)&stBoardTopDeviceDescriptor;
         g_descriptorConfig  = (uint8_t *)&stBoardTopConfigurationDescriptor;

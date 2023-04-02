@@ -32,9 +32,9 @@ enum Endpoint {
 
 
 /* variables */
-enum Speed g_usb20Speed;
-enum Endpoint g_usb20EpInMask;
-enum Endpoint g_usb20EpOutMask;
+extern enum Speed g_usb20Speed;
+extern enum Endpoint g_usb20EpInMask;
+extern enum Endpoint g_usb20EpOutMask;
 
 // If this variable is != 0 then use this size rather than .wTotalLength
 extern uint16_t g_descriptorConfigCustomSize;
