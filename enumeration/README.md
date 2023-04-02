@@ -24,7 +24,7 @@ method to the final user.
 
 ### Prerequisites
 
-- MRS toolchains (more infos here:
+- MRS toolchains / GCC RISC-V 12.2 (more infos here:
 [Linux](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux),
 [Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
 )
@@ -47,7 +47,7 @@ method to the final user.
 To build and flash the firmware and build and run the host-controller :
 
 ```shell
-# Get the MRS toolchain
+# Get the MRS toolchain (GCC RISC-V 12.2 can be used too)
 cd ~
 wget http://file.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.50.tar.xz
 mkdir -p MRS_Toolchain_Linux_x64_V1.50
@@ -70,8 +70,8 @@ cd ./firmware
 make clean all
 # Put the jumper on P3 (Flash Mode)
 # Warning ! You have 10 seconds to flash the board !
-sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash first board
-sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/hydrausb3-enumeration.bin # Flash second board
+sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/HydraDancer-enumeration-fw.bin # Flash first board
+sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/HydraDancer-enumeration-fw.bin # Flash second board
 
 # Build and run host controller software
 cd ../host-controller
@@ -96,9 +96,9 @@ board.
 $ cd ./firmware
 
 $ make clean all
-$ /path/to/wch-ch56x-isp -v flash /path/to/build/hydrausb3-enumeration.bin
+$ /path/to/wch-ch56x-isp -v flash /path/to/build/HydraDancer-enumeration-fw.bin
 ```
-More explanations about how to flash can be found here :
+More explanations about how to build/flash can be found here :
 * [How to Flash: Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
 * [How to Flash: Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
 
