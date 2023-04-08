@@ -21,7 +21,7 @@ all: $(OBJS)
 build:
 	mkdir -p ./build
 ifeq ($(OS), Windows_NT)
-	cp C:/msys64/mingw64/bin/libusb-1.0.dll ./build/
+	-cp C:/msys64/mingw64/bin/libusb-1.0.dll ./build/
 endif
 clean:
 	rm -rf ./build

@@ -1,0 +1,103 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  RISCV_GCC_PATH: /opt/gcc_riscv/xpack-riscv-none-elf-gcc-12.2.0-1/bin
+
+jobs:
+  Firmware-build-and-upload:
+    strategy:
+      matrix:
+        PROJECT_NAME: [enumeration]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+
+      - name: Cache GCC archive
+        uses: actions/cache@v3
+        with:
+          path: /opt/gcc_riscv
+          key: gcc-riscv-${{ runner.os }}-${{ hashFiles('xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz') }}
+          restore-keys: gcc-riscv-${{ runner.os }}-
+
+      - name: Use GCC archive cache
+        run: |
+          ls /opt/gcc_riscv/xpack-riscv-none-elf-gcc-12.2.0-1/bin/riscv-none-elf-gcc || true
+
+      - name: Restore GCC archive cache
+        if: steps.use-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /opt/gcc_riscv
+          wget https://github.com/hydrausb3/riscv-none-elf-gcc-xpack/releases/download/12.2.0-1/xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz
+          tar xvfz xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz -C /opt/gcc_riscv/
+
+      - name: Verify GCC installation
+        run: |
+          export PATH="$PATH:${{ env.RISCV_GCC_PATH }}"
+          riscv-none-elf-gcc --version
+
+      - name: Build ${{ matrix.PROJECT_NAME }}
+        run: |
+          export PATH="$PATH:${{ env.RISCV_GCC_PATH }}"
+          cd ${{ matrix.PROJECT_NAME }}/firmware
+          make
+
+      - name: Upload artifact ${{ matrix.PROJECT_NAME }}-fw
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.PROJECT_NAME }}-fw
+          path: ${{ matrix.PROJECT_NAME }}/firmware
+
+  host-controller_Ubuntu:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install prerequisites
+      run: |
+        set -x
+        sudo apt -q update
+        sudo apt install libusb-1.0-0-dev
+
+    - name: Build app
+      shell: bash
+      run: |
+         cd enumeration/host-controller
+         make
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: host-controller_Ubuntu
+        path: enumeration/host-controller
+
+  host-controller_Windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: msys2/setup-msys2@v2
+      with:
+          msystem: MINGW64
+          update: true
+          install: git mingw-w64-x86_64-make mingw-w64-x86_64-gcc mingw-w64-x86_64-libusb
+
+    - name: Build app
+      run: |
+         cd enumeration/host-controller
+         mingw32-make
+         cp /mingw64/bin/libusb-1.0.dll ./build/
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: host-controller_Windows
+        path: enumeration/host-controller

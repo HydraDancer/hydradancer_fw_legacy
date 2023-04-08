@@ -50,7 +50,8 @@ int
 menu_get_input(void)
 {
     int userChoice = 0;
-    scanf("%d", &userChoice);
+    if(scanf("%d", &userChoice) != 1)
+		return -1;
 
     while (!getchar());
 
