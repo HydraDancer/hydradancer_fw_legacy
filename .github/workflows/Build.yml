@@ -18,7 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Checkout submodules
-        run: git submodule update --init --recursive
+        run: |
+            git submodule update --init --recursive
+            git fetch --prune --unshallow
 
       - name: Cache GCC archive
         uses: actions/cache@v3
@@ -43,27 +45,48 @@ jobs:
           export PATH="$PATH:${{ env.RISCV_GCC_PATH }}"
           riscv-none-elf-gcc --version
 
+      - name: Get build timestamp
+        id: id_date
+        shell: bash
+        run: echo "timestamp=$(date +%Y-%m-%d-%H-%M-%S)" >> $GITHUB_OUTPUT
+
+      - name: Get app version + timestamp
+        id: id_version
+        run: echo "app_version=$(git describe --tags HEAD)-${{steps.id_date.outputs.timestamp}}" >> $GITHUB_OUTPUT
+
       - name: Build ${{ matrix.PROJECT_NAME }}
         run: |
           export PATH="$PATH:${{ env.RISCV_GCC_PATH }}"
           cd ${{ matrix.PROJECT_NAME }}/firmware
           make
 
-      - name: Upload artifact ${{ matrix.PROJECT_NAME }}-fw
+      - name: Upload artifact ${{ matrix.PROJECT_NAME }}-fw-${{steps.id_version.outputs.app_version}}
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.PROJECT_NAME }}-fw
+          name: ${{ matrix.PROJECT_NAME }}-fw-${{steps.id_version.outputs.app_version}}
           path: ${{ matrix.PROJECT_NAME }}/firmware
 
   host-controller_Ubuntu:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
+    - name: Checkout
+      run: git fetch --prune --unshallow
+
     - name: Install prerequisites
       run: |
         set -x
         sudo apt -q update
         sudo apt install libusb-1.0-0-dev
+
+    - name: Get build timestamp
+      id: id_date
+      shell: bash
+      run: echo "timestamp=$(date +%Y-%m-%d-%H-%M-%S)" >> $GITHUB_OUTPUT
+
+    - name: Get app version + timestamp
+      id: id_version
+      run: echo "app_version=$(git describe --tags HEAD)-${{steps.id_date.outputs.timestamp}}" >> $GITHUB_OUTPUT
 
     - name: Build app
       shell: bash
@@ -74,7 +97,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: host-controller_Ubuntu
+        name: host-controller_Ubuntu-${{steps.id_version.outputs.app_version}}
         path: enumeration/host-controller
 
   host-controller_Windows:
@@ -84,11 +107,22 @@ jobs:
         shell: msys2 {0}
     steps:
     - uses: actions/checkout@v3
+    - name: Checkout
+      run: git fetch --prune --unshallow    
     - uses: msys2/setup-msys2@v2
       with:
           msystem: MINGW64
           update: true
           install: git mingw-w64-x86_64-make mingw-w64-x86_64-gcc mingw-w64-x86_64-libusb
+
+    - name: Get build timestamp
+      id: id_date
+      shell: bash
+      run: echo "timestamp=$(date +%Y-%m-%d-%H-%M-%S)" >> $GITHUB_OUTPUT
+
+    - name: Get app version + timestamp
+      id: id_version
+      run: echo "app_version=$(git describe --tags HEAD)-${{steps.id_date.outputs.timestamp}}" >> $GITHUB_OUTPUT
 
     - name: Build app
       run: |
@@ -99,5 +133,5 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: host-controller_Windows
+        name: host-controller_Windows-${{steps.id_version.outputs.app_version}}
         path: enumeration/host-controller
