@@ -108,7 +108,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Checkout
-      run: git fetch --prune --unshallow    
+      run: git fetch --prune --unshallow
+    
+    - name: Setypt MSYS2/MINGW64
     - uses: msys2/setup-msys2@v2
       with:
           msystem: MINGW64
