@@ -6,126 +6,132 @@ This firmware aims to offer the enumeration capability of umap (with the facedan
 ## DISCLAIMER !
 
 Ensuring a device is supported by the ToE can be done in 2 ways :
-- During the enumeration phase (enumeration as in the spec.), a device can be
-  considered supported when the ToE sends a `setConfiguration()` to the device
-  (the last command issued during the enumeration phase).
+- During the enumeration phase (enumeration as in the spec.), a device can be considered supported when the ToE sends a `setConfiguration()` to the device (the last command issued during the enumeration phase).
 - Waiting to receive a packet on a given endpoint (other than endpoint 0).
 
-Here we choose the first option, note that it might have false positives, as it
-is the case on linux hosts (linux hosts always sends the `setConfiguration()`
-even if no driver were loaded).
+Here we choose the first option, note that it might have false positives, as it is the case on linux hosts (linux hosts always sends the `setConfiguration()` even if no driver were loaded).
 
-To be more exhaustive both mode should be implemented to let the choice of the
-method to the final user.
+To be more exhaustive both mode should be implemented to let the choice of the method to the final user.
 
 
-## Quick Start
+## Prerequisites
 
+To build and flash the firmware, get either the MRS toolchain or the GNU RISC-V toolchain repacked by HydraUSB3 team. More info here: [Linux](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux), [Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
 
-### Prerequisites
-
-- MRS toolchains / GCC RISC-V 12.2 (more infos here:
-[Linux](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux),
-[Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
-)
+To build and run the host-controller, get the following dependencies:
 - pkg-config
 - libusb (1.0.X developer)
 
+### MRS toolchain
+```shell
+wget http://file.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.50.tar.xz
+mkdir -p MRS_Toolchain_Linux_x64_V1.50
+tar xf MRS_Toolchain_Linux_x64_V1.50.tar.xz --directory=MRS_Toolchain_Linux_x64_V1.50
+```
+To use it, add it to your path.
+```
+export PATH="$PATH:$(pwd)/MRS_Toolchain_Linux_x64_V1.50/RISC-V Embedded GCC/bin"
+```
+### GCC RISC-V 12.2 toolchain
 
-### Physical configuration
+Get the latest release from https://github.com/hydrausb3/riscv-none-elf-gcc-xpack/releases , e.g.:
 
-- Add a jumper on PB24 on the top board (used by the firmware to determine if
-  it is top or bottom board)
+```shell
+wget https://github.com/hydrausb3/riscv-none-elf-gcc-xpack/releases/download/12.2.0-1/xpack-riscv-none-elf-gcc-12.2.0-2-linux-x64.tar.gz
+tar xf xpack-riscv-none-elf-gcc-12.2.0-2-linux-x64.tar.gz
+```
+To use it, add it to your path.
+```shell
+export PATH="$PATH:$(pwd)/xpack-riscv-none-elf-gcc-12.2.0-1/bin"
+```
+
+## Physical configuration
+
+- Add a jumper on PB24 on the top board (used by the firmware to determine if it is top or bottom board)
 - Connect SerDes together (GXP to GXP and GXM to GXM, see the following picture)
 
 ![SerDes and PB24](./serdes-and-pb-connected.jpg)
 
+If you feel capable, you can also desolder the PB24 header on the top board and solder a female header on the other side of the board, so both PB24 jumpers will be connected together.
 
+## Permissions
 
-### Firmware and host-controller
-
-To build and flash the firmware and build and run the host-controller :
-
+To be able to access the HydraDancer boards and flash them, root privileges may be required, or you can provide them to your regular user, e.g. with the creation of a file `/etc/udev/rules.d/99-hydrausb3.rules` with
+```
+# UDEV Rules for HydraUSB3 boards, https://github.com/hydrausb3
+# WinChipHead CH569W Bootloader
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", MODE="0664", GROUP="plugdev"
+```
+and having your user as member of the group `plugdev`.
+## Firmware Compilation
+Get and build the flashing tool
 ```shell
-# Get the MRS toolchain (GCC RISC-V 12.2 can be used too)
-cd ~
-wget http://file.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.50.tar.xz
-mkdir -p MRS_Toolchain_Linux_x64_V1.50
-tar xvf MRS_Toolchain_Linux_x64_V1.50.tar.xz --directory=MRS_Toolchain_Linux_x64_V1.50
-PATH=$PATH:~/MRS_Toolchain_Linux_x64_V1.50/RISC-V\ Embedded\ GCC/bin
-
-# Get and build the flashing tool
-cd ~
-git clone --recursive https://github.com/hydrausb3/wch-ch56x-isp.git
-cd ./wch-ch56x-isp
+git clone https://github.com/hydrausb3/wch-ch56x-isp.git
+cd wch-ch56x-isp
 make
-
-# Get the HydraDancer sources
-cd ~
+cd -
+```
+Get the HydraDancer sources
+```shell
 git clone --recursive https://github.com/hydrausb3/HydraDancer.git
-cd ./HydraDancer/firmware
-
-# Building and flashing firmware
-cd ./firmware
+cd HydraDancer
+```
+Note: if already you cloned it without `--recursive`, you can fix it with
+```shell
+git submodule init
+git submodule update
+```
+Building and flashing firmware
+```shell
+cd enumeration/firmware
 make clean all
-# Put the jumper on P3 (Flash Mode)
-# Warning ! You have 10 seconds to flash the board !
-sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/HydraDancer-enumeration-fw.bin # Flash first board
-sudo ~/wch-ch56x-isp/wch-ch56x-isp -v flash ./build/HydraDancer-enumeration-fw.bin # Flash second board
+```
+## Firmware Flashing
+Set top board in Flash Mode.
+With a jumper on P3:
 
-# Build and run host controller software
+* Put a jumper on the top board (both boards are connected to the same jumper)
+* Press & release reset button of the top board
+
+Or with a button or momentary short on P3:
+
+* Press Flash mode button (common to both boards)
+* Press & release reset button of the top board
+* Release Flash mode button
+
+Warning! You have 10 seconds to flash the board! Note: root privileges may be required, see above.
+```shell
+../../../wch-ch56x-isp/wch-ch56x-isp -v flash ./build/HydraDancer-enumeration-fw.bin
+```
+
+
+Press & release reset button of the top board again to leave Flash Mode. If you used a jumper, don't forget to remove it before resetting the board!
+
+
+Repeat the same procedure with the bottom board. (exact same procedure but press the bottom board reset button)
+
+## Host Controller Software Compilation
+```shell
 cd ../host-controller
 make clean all
-sudo ./build/host-controller
 ```
 
-## How To Use
-
-Build and flash the firmware on both board.
-
-Build and run host-controller. Everything is done through that software.
-
-
-### Build and Flash the firmware on both boards
-
-Note that when connecting the board (in flash mode) you have 10 seconds to
-flash it, after that delay it swaps back to the firmware already present on the
-board.
-
+## Running Host Controller Software
+```shell
+./build/host-controller
 ```
-$ cd ./firmware
+Note: root privileges may be required, see above.
 
-$ make clean all
-$ /path/to/wch-ch56x-isp -v flash /path/to/build/HydraDancer-enumeration-fw.bin
-```
-More explanations about how to build/flash can be found here :
-* [How to Flash: Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
-* [How to Flash: Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
-
-### Build and run `host-controller`
-```
-$ cd ./host-controller
-
-$ make clean all
-$ ./build/host-controller
-```
-Note: root privileges may be required.
-
-The enumeration is done through `host-controller`, you can either enumerate one
-by one manually or use _automode_ to automatically enumerate every device
-already implemented.
+The enumeration is done through `host-controller`, you can either enumerate one by one manually or use _automode_ to automatically enumerate every device already implemented.
 
 
 ## Global overview
 
-To know if a device is recognized by the host ToE (Target of Evaluation) we
-behave as a USB device until the host ToE sends us a setConfiguration().
+To know if a device is recognized by the host ToE (Target of Evaluation) we behave as a USB device until the host ToE sends us a `setConfiguration()`.
 
-The top board is connected to the Evaluator (the computer running the
-evaluation) and the bottom board to the ToE.
+The top board is connected to the Evaluator (the computer running the evaluation) and the bottom board to the ToE.
 
-the `host-controller` is the software running on the Evaluator. It controls the
-enumeration process.
+The `host-controller` is the software running on the Evaluator. It controls the enumeration process.
 
 The enumeration process works as follow :
 ```mermaid
@@ -141,16 +147,12 @@ sequenceDiagram
 
 ### Limitations
 
-- Currently only the enumeration phase is done, there is no communication with
-  the driver once the enumeration is done.
+- Currently only the enumeration phase is done, there is no communication with the driver once the enumeration is done.
 
-- The configuration (descriptors) of the device has to be uploaded before
-  "connecting" (with BBIO command, not physically). It can not be sent "on the
-  fly", while the enumeration is ongoing.
+- The configuration (descriptors) of the device has to be uploaded before "connecting" (with BBIO command, not physically). It can not be sent "on the fly", while the enumeration is ongoing.
 
 
-Addtional informations can be found here :
-[BBIO_CMD_HydraDancer](https://github.com/hydrausb3/HydraDancer/blob/main/docs/BBIO_CMD_HydraDancer.md)
+Addtional informations can be found here: [BBIO_CMD_HydraDancer](https://github.com/hydrausb3/HydraDancer/blob/main/docs/BBIO_CMD_HydraDancer.md).
 
 
 ## Adding devices to enumeration
@@ -227,22 +229,10 @@ struct Device_t g_deviceGeneric = { "Generic", _genericDescriptorDevice, _generi
 
 ## Common issues
 
-- Make sure to have gcc toolchain for RISC-V, instructions can be found here :
-    * [How to flash: Linux  ](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux)
-    * [How to flash: Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows)
+- Make sure to have the proper toolchain for RISC-V, instructions can be found here [for Linux](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-linux) and [for Windows](https://github.com/hydrausb3/hydrausb3_fw/wiki/how-to-build-flash-and-use-examples-on-windows).
 
-- Do not forget to clone the submodules
-```
-$ git submodule init
-$ git submodule update
-```
+- Do not forget to clone the submodules. If not yet done, you can fix it with `git submodule init && git submodule update`.
 
-- As mentionned in _How to flash_, when connecting the board (in flash mode)
-  you have 10 seconds to flash it, after that delay it swaps back to the
-  firmware already present on the board.
+- "Fail to open device 4348:55e0": As mentioned in _How to flash_, when connecting the board (in flash mode) you have 10 seconds to flash it, after that delay it swaps back to the firmware already present on the board. Ensure device is plugged and in flash mode, additionally it can be a permissions issue, try as root.
 
-- "Error USB device not found", ensure device is plugged and not in flash mode, additionally it can be a permissions issue, try in root.
-
-
-
-
+- "Error USB device not found": ensure device is plugged and not in flash mode, additionally it can be a permissions issue, try as root.
