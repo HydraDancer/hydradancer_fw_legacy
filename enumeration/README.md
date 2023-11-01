@@ -101,7 +101,7 @@ Or with a button or momentary short on P3:
 
 Warning! You have 10 seconds to flash the board! Note: root privileges may be required, see above.
 ```shell
-../../../wch-ch56x-isp/wch-ch56x-isp -v flash ./build/HydraDancer-enumeration-fw.bin
+../../../wch-ch56x-isp/wch-ch56x-isp -v -f=./build/HydraDancer-enumeration-fw.bin
 ```
 
 
